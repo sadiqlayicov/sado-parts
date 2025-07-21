@@ -1,33 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-// GET - Get single product
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, context: any) {
+  const { params } = context;
   try {
     const product = await prisma.product.findUnique({
       where: { id: params.id },
-      include: {
-        category: true
-      }
-    })
-
+    });
     if (!product) {
-      return NextResponse.json(
-        { error: 'Məhsul tapılmadı' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Məhsul tapılmadı' }, { status: 404 });
     }
-
-    return NextResponse.json(product)
+    return NextResponse.json(product);
   } catch (error) {
-    console.error('Get product error:', error)
-    return NextResponse.json(
-      { error: 'Məhsul əldə etmə xətası' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Məhsulu əldə etmək mümkün olmadı.' }, { status: 500 });
   }
 }
 
