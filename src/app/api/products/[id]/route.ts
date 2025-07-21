@@ -31,35 +31,15 @@ export async function PUT(request: NextRequest, ...args: any[]) {
   }
 }
 
-// DELETE - Delete product
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, ...args: any[]) {
+  const context = args[0];
+  const { params } = context;
   try {
-    const existingProduct = await prisma.product.findUnique({
-      where: { id: params.id }
-    })
-
-    if (!existingProduct) {
-      return NextResponse.json(
-        { error: 'Məhsul tapılmadı' },
-        { status: 404 }
-      )
-    }
-
     await prisma.product.delete({
-      where: { id: params.id }
-    })
-
-    return NextResponse.json({
-      message: 'Məhsul uğurla silindi'
-    })
+      where: { id: params.id },
+    });
+    return NextResponse.json({ message: 'Məhsul uğurla silindi.' });
   } catch (error) {
-    console.error('Delete product error:', error)
-    return NextResponse.json(
-      { error: 'Məhsul silmə xətası' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Məhsulu silmək mümkün olmadı.' }, { status: 500 });
   }
 } 
