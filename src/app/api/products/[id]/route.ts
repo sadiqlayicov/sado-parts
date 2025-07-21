@@ -16,7 +16,8 @@ export async function GET(request: NextRequest, context: any) {
   }
 }
 
-export async function PUT(request: NextRequest, context: any) {
+export async function PUT(request: NextRequest, ...args: any[]) {
+  const context = args[0];
   const { params } = context;
   try {
     const body = await request.json();
