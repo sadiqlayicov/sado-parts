@@ -16,55 +16,17 @@ export async function GET(request: NextRequest, context: any) {
   }
 }
 
-// PUT - Update product
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: { params: { id: string } }) {
+  const { params } = context;
   try {
-    const body = await request.json()
-    const { name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured } = body
-
-    const existingProduct = await prisma.product.findUnique({
-      where: { id: params.id }
-    })
-
-    if (!existingProduct) {
-      return NextResponse.json(
-        { error: 'Məhsul tapılmadı' },
-        { status: 404 }
-      )
-    }
-
+    const body = await request.json();
     const product = await prisma.product.update({
       where: { id: params.id },
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        salePrice: salePrice ? parseFloat(salePrice) : null,
-        sku,
-        stock: parseInt(stock) || 0,
-        images: images ? JSON.stringify(images) : null,
-        categoryId,
-        isActive,
-        isFeatured
-      },
-      include: {
-        category: true
-      }
-    })
-
-    return NextResponse.json({
-      message: 'Məhsul uğurla yeniləndi',
-      product
-    })
+      data: body,
+    });
+    return NextResponse.json(product);
   } catch (error) {
-    console.error('Update product error:', error)
-    return NextResponse.json(
-      { error: 'Məhsul yeniləmə xətası' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Məhsulu yeniləmək mümkün olmadı.' }, { status: 500 });
   }
 }
 
