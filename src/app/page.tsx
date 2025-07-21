@@ -31,7 +31,7 @@ const featuredCategories = [
 export default function HomePage() {
   return (
     <main style={{ padding: 32, textAlign: 'center' }}>
-      <h1>"Sado Parts" Ana Səhifə</h1>
+      <h1>&quot;Sado Parts&quot; Ana Səhifə</h1>
       <p>Sayt uğurla deploy olundu! Menyudan və ya /catalog səhifəsindən istifadə edin.</p>
     </main>
   );
