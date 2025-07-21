@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
+import { Suspense } from "react";
 
 const products = [
   // Двигатели и запчасти
@@ -77,7 +78,15 @@ const products = [
   { id: 48, name: "Охлаждающая жидкость", desc: "Охлаждающая жидкость 5л", price: 850, category: "consumables", stock: 30, sku: "CONS-COOLANT", catalogNumber: "CONS-COOL-047", brand: "Consumables" }
 ];
 
-export default function CatalogPage() {
+export default function CatalogPageWrapper() {
+  return (
+    <Suspense fallback={<div>Yüklənir...</div>}>
+      <CatalogPage />
+    </Suspense>
+  );
+}
+
+function CatalogPage() {
   const searchParams = useSearchParams();
   const { isApproved, isAdmin, calculateDiscountedPrice, getDiscountPercentage } = useAuth();
   
