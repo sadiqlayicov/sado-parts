@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "../components/AuthProvider";
 
-// Sample product data
 const hotProducts = [
   { id: 1, name: "Поршень двигателя Toyota 2.5L", price: 12500, brand: "Toyota", image: "/product1.jpg", sku: "TOY-2.5-PISTON" },
   { id: 2, name: "Масляный фильтр Komatsu", price: 850, brand: "Komatsu", image: "/product2.jpg", sku: "KOM-OIL-FILTER" },
@@ -31,8 +29,51 @@ const featuredCategories = [
 export default function HomePage() {
   return (
     <main style={{ padding: 32, textAlign: 'center' }}>
-      <h1>&quot;Sado Parts&quot; Ana Səhifə</h1>
-      <p>Sayt uğurla deploy olundu! Menyudan və ya /catalog səhifəsindən istifadə edin.</p>
+      <h1 style={{ fontSize: 32, fontWeight: 'bold', marginBottom: 16 }}>&quot;Sado Parts&quot; Ana Səhifə</h1>
+      <p style={{ marginBottom: 32 }}>Sayt uğurla deploy olundu! Menyudan və ya /catalog səhifəsindən istifadə edin.</p>
+
+      <section style={{ marginBottom: 48 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>🔥 Hot Products</h2>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap' }}>
+          {hotProducts.map(product => (
+            <div key={product.id} style={{ background: '#222', color: '#fff', borderRadius: 12, padding: 16, width: 220 }}>
+              <Image src={product.image} alt={product.name} width={180} height={120} style={{ borderRadius: 8, objectFit: 'cover' }} />
+              <h3 style={{ fontWeight: 'bold', margin: '12px 0 4px' }}>{product.name}</h3>
+              <div style={{ color: '#0af', fontWeight: 'bold' }}>{product.price.toLocaleString()}₽</div>
+              <div style={{ fontSize: 12, color: '#aaa' }}>{product.brand}</div>
+              <div style={{ fontSize: 12, color: '#aaa' }}>SKU: {product.sku}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ marginBottom: 48 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>🆕 New Arrivals</h2>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap' }}>
+          {newArrivals.map(product => (
+            <div key={product.id} style={{ background: '#222', color: '#fff', borderRadius: 12, padding: 16, width: 220 }}>
+              <Image src={product.image} alt={product.name} width={180} height={120} style={{ borderRadius: 8, objectFit: 'cover' }} />
+              <h3 style={{ fontWeight: 'bold', margin: '12px 0 4px' }}>{product.name}</h3>
+              <div style={{ color: '#0af', fontWeight: 'bold' }}>{product.price.toLocaleString()}₽</div>
+              <div style={{ fontSize: 12, color: '#aaa' }}>{product.brand}</div>
+              <div style={{ fontSize: 12, color: '#aaa' }}>SKU: {product.sku}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>📂 Featured Categories</h2>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap' }}>
+          {featuredCategories.map(category => (
+            <div key={category.id} style={{ background: '#222', color: '#fff', borderRadius: 12, padding: 16, width: 200 }}>
+              <Image src={category.image} alt={category.name} width={180} height={100} style={{ borderRadius: 8, objectFit: 'cover' }} />
+              <h3 style={{ fontWeight: 'bold', margin: '12px 0 4px' }}>{category.name}</h3>
+              <div style={{ fontSize: 12, color: '#aaa' }}>{category.count} məhsul</div>
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
