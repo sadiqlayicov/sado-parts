@@ -3,15 +3,23 @@
 import Link from 'next/link';
 import { useCart } from '../../components/CartProvider';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../components/AuthProvider';
 
 export default function CartPage() {
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const router = useRouter();
 
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleCheckout = async () => {
+    if (!user) {
+      router.push('/login'); // və ya '/register' səhifəsinə yönləndirə bilərsiniz
+      return;
+    }
     setIsLoading(true);
     
     // Имитация оформления заказа
