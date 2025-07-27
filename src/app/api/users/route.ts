@@ -1,9 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyToken } from '@/lib/auth'
+
+// Helper function to verify admin authorization
+async function verifyAdminAuth(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { error: 'Missing or invalid authorization header', status: 401 }
+  }
+
+  const token = authHeader.substring(7)
+  const payload = verifyToken(token)
+  
+  if (!payload) {
+    return { error: 'Invalid or expired token', status: 401 }
+  }
+
+  if (payload.role !== 'ADMIN') {
+    return { error: 'Admin access required', status: 403 }
+  }
+
+  return { payload }
+}
 
 // GET - Get all users
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAdminAuth(request)
+    if (authResult.error) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    }
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
@@ -74,6 +100,10 @@ export async function GET(request: NextRequest) {
 // POST - Create new user (admin only)
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await verifyAdminAuth(request)
+    if (authResult.error) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    }
     const body = await request.json()
     const { email, password, firstName, lastName, phone, role } = body
 

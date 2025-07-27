@@ -77,19 +77,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Загрузка пользователя из localStorage при инициализации
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('sado-parts-user');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        setIsAuthenticated(true);
-        setIsRegistered(userData.isRegistered);
-        setIsApproved(userData.isApproved);
-        setIsAdmin(userData.isAdmin);
+    const initializeAuth = async () => {
+      try {
+        const token = localStorage.getItem('sado-parts-token');
+        const savedUser = localStorage.getItem('sado-parts-user');
+        
+        if (token && savedUser) {
+          // Verify token is still valid by making a test request
+          try {
+            const response = await fetch('/api/users', {
+              method: 'HEAD', // Just check if we can access protected route
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (response.ok) {
+              const userData = JSON.parse(savedUser);
+              setUser(userData);
+              setIsAuthenticated(true);
+              setIsRegistered(userData.isRegistered);
+              setIsApproved(userData.isApproved);
+              setIsAdmin(userData.isAdmin);
+            } else {
+              // Token is invalid, clear stored data
+              localStorage.removeItem('sado-parts-token');
+              localStorage.removeItem('sado-parts-user');
+            }
+          } catch {
+            // Network error or token invalid, clear stored data
+            localStorage.removeItem('sado-parts-token');
+            localStorage.removeItem('sado-parts-user');
+          }
+        }
+      } catch (error) {
+        // Handle error silently and clear any corrupted data
+        localStorage.removeItem('sado-parts-token');
+        localStorage.removeItem('sado-parts-user');
       }
-    } catch (error) {
-      // Handle error silently
-    }
+    };
+    
+    initializeAuth();
   }, []);
 
   // Сохранение пользователя в localStorage при изменениях
@@ -102,46 +130,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Имитация API запроса
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Простая проверка для демонстрации
-        if (email && password) {
-          // Проверяем существующих пользователей
-          const existingUser = users.find(u => u.email === email);
-          
-          if (existingUser) {
-            setUser(existingUser);
-            setIsAuthenticated(true);
-            setIsRegistered(existingUser.isRegistered);
-            setIsApproved(existingUser.isApproved);
-            setIsAdmin(existingUser.isAdmin);
-            resolve(true);
-          } else {
-            // Создаем нового пользователя (не одобренного)
-            const newUser: User = {
-              id: Date.now().toString(),
-              email,
-              name: email.split('@')[0],
-              isRegistered: true,
-              isApproved: false,
-              isAdmin: false,
-              discountPercentage: 0
-            };
-            
-            setUsers(prev => [...prev, newUser]);
-            setUser(newUser);
-            setIsAuthenticated(true);
-            setIsRegistered(true);
-            setIsApproved(false);
-            setIsAdmin(false);
-            resolve(true);
-          }
-        } else {
-          resolve(false);
-        }
-      }, 1000);
-    });
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const userData: User = {
+          id: data.user.id,
+          email: data.user.email,
+          name: `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim() || data.user.email,
+          isRegistered: true,
+          isApproved: data.user.isApproved,
+          isAdmin: data.user.role === 'ADMIN',
+          discountPercentage: 0 // This should come from user data if available
+        };
+
+        // Store the JWT token
+        localStorage.setItem('sado-parts-token', data.token);
+        
+        setUser(userData);
+        setIsAuthenticated(true);
+        setIsRegistered(true);
+        setIsApproved(userData.isApproved);
+        setIsAdmin(userData.isAdmin);
+        
+        return true;
+      } else {
+        // Clear any existing auth data on failed login
+        localStorage.removeItem('sado-parts-token');
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsRegistered(false);
+        setIsApproved(false);
+        setIsAdmin(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      // Clear any existing auth data on error
+      localStorage.removeItem('sado-parts-token');
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsRegistered(false);
+      setIsApproved(false);
+      setIsAdmin(false);
+      return false;
+    }
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
@@ -182,6 +222,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Clear JWT token from localStorage
+    localStorage.removeItem('sado-parts-token');
+    localStorage.removeItem('sado-parts-user');
+    
     setUser(null);
     setIsAuthenticated(false);
     setIsRegistered(false);
