@@ -116,102 +116,25 @@ export default function ImportExportPage() {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setShowImportModal(true);
+      setShowImportModal(true); // Modalı aç!
     }
   };
 
-  const handleImport = async () => {
-    if (!selectedFile) return;
-
-    const newJob: ImportJob = {
-      id: Date.now().toString(),
-      name: selectedFile.name,
-      type: 'import',
-      format: selectedFile.name.endsWith('.xlsx') ? 'excel' : 
-              selectedFile.name.endsWith('.csv') ? 'csv' : 
-              selectedFile.name.endsWith('.json') ? 'json' : 'xml',
-      status: 'running',
-      progress: 0,
-      totalItems: Math.floor(Math.random() * 200) + 50,
-      processedItems: 0,
-      createdAt: new Date().toLocaleString()
-    };
-
-    setImportJobs(prev => [newJob, ...prev]);
-    setShowImportModal(false);
-    setSelectedFile(null);
-
-    // Simulate import process
-    const interval = setInterval(() => {
-      setImportJobs(prev => prev.map(job => {
-        if (job.id === newJob.id && job.status === 'running') {
-          const newProgress = Math.min(job.progress + Math.random() * 20, 100);
-          const newProcessedItems = Math.floor((newProgress / 100) * job.totalItems);
-          
-          if (newProgress >= 100) {
-            clearInterval(interval);
-            return {
-              ...job,
-              progress: 100,
-              processedItems: job.totalItems,
-              status: 'completed' as const,
-              completedAt: new Date().toLocaleString()
-            };
-          }
-          
-          return {
-            ...job,
-            progress: newProgress,
-            processedItems: newProcessedItems
-          };
-        }
-        return job;
-      }));
-    }, 1000);
+  // For import
+  const handleImport = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    await fetch('/api/import-export', {
+      method: 'POST',
+      body: formData,
+    });
+    // Optionally, refetch products or show success
   };
-
-  const handleExport = (format: string) => {
-    const newJob: ImportJob = {
-      id: Date.now().toString(),
-      name: `export_${Date.now()}.${format}`,
-      type: 'export',
-      format: format as any,
-      status: 'running',
-      progress: 0,
-      totalItems: Math.floor(Math.random() * 500) + 100,
-      processedItems: 0,
-      createdAt: new Date().toLocaleString()
-    };
-
-    setImportJobs(prev => [newJob, ...prev]);
-
-    // Simulate export process
-    const interval = setInterval(() => {
-      setImportJobs(prev => prev.map(job => {
-        if (job.id === newJob.id && job.status === 'running') {
-          const newProgress = Math.min(job.progress + Math.random() * 30, 100);
-          const newProcessedItems = Math.floor((newProgress / 100) * job.totalItems);
-          
-          if (newProgress >= 100) {
-            clearInterval(interval);
-            return {
-              ...job,
-              progress: 100,
-              processedItems: job.totalItems,
-              status: 'completed' as const,
-              completedAt: new Date().toLocaleString()
-            };
-          }
-          
-          return {
-            ...job,
-            progress: newProgress,
-            processedItems: newProcessedItems
-          };
-        }
-        return job;
-      }));
-    }, 800);
+  // For export
+  const handleExport = async () => {
+    const res = await fetch('/api/products');
+    const products = await res.json();
+    // Convert products to CSV/Excel and trigger download
   };
 
   const handleCancelJob = (jobId: string) => {
@@ -263,29 +186,18 @@ export default function ImportExportPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Импорт данных</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition">
-                <FaFileExcel className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Excel файл</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Поддерживает .xlsx и .xls файлы
-                </p>
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="excel-upload"
-                />
-                <label
-                  htmlFor="excel-upload"
-                  className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition cursor-pointer"
-                >
-                  <FaUpload className="mr-2" />
-                  Выбрать файл
-                </label>
-              </div>
+            {/* Place this at the top of the import section, outside the grid */}
+            <div className="mb-4">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition cursor-pointer"
+                style={{ marginTop: '16px' }}
+              />
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition">
                 <FaFileCsv className="h-12 w-12 text-blue-600 mx-auto mb-4" />
                 <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">CSV файл</h4>
@@ -340,7 +252,7 @@ export default function ImportExportPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <button
-                onClick={() => handleExport('xlsx')}
+                onClick={() => handleExport()}
                 className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
               >
                 <FaFileExcel className="h-8 w-8 text-green-600 mr-3" />
@@ -351,7 +263,7 @@ export default function ImportExportPage() {
               </button>
 
               <button
-                onClick={() => handleExport('csv')}
+                onClick={() => handleExport()}
                 className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
               >
                 <FaFileCsv className="h-8 w-8 text-blue-600 mr-3" />
@@ -362,7 +274,7 @@ export default function ImportExportPage() {
               </button>
 
               <button
-                onClick={() => handleExport('json')}
+                onClick={() => handleExport()}
                 className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
               >
                 <FaFileAlt className="h-8 w-8 text-yellow-600 mr-3" />
@@ -373,7 +285,7 @@ export default function ImportExportPage() {
               </button>
 
               <button
-                onClick={() => handleExport('xml')}
+                onClick={() => handleExport()}
                 className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
               >
                 <FaFileAlt className="h-8 w-8 text-purple-600 mr-3" />
@@ -507,7 +419,7 @@ export default function ImportExportPage() {
             
             <div className="flex space-x-3 mt-6">
               <button
-                onClick={handleImport}
+                onClick={() => handleImport(selectedFile)}
                 className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
               >
                 Начать импорт

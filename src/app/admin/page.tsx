@@ -60,6 +60,28 @@ export default function AdminDashboard() {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showUserManagementModal, setShowUserManagementModal] = useState(false);
 
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/analytics');
+        const data = await res.json();
+        setStats({
+          totalUsers: data.userCount || 0,
+          totalProducts: data.productCount || 0,
+          totalOrders: data.orderCount || 0,
+          totalRevenue: data.totalSales || 0,
+          pendingOrders: 0, // Əgər backend-də varsa əlavə et
+          lowStockProducts: 0, // Əgər backend-də varsa əlavə et
+          newReviews: 0, // Əgər backend-də varsa əlavə et
+          activePromotions: 0 // Əgər backend-də varsa əlavə et
+        });
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    }
+    fetchStats();
+  }, []);
+
   if (!isAuthenticated || !isAdmin) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">

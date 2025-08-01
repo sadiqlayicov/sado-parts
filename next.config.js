@@ -11,6 +11,10 @@ const nextConfig = {
       },
     ];
   },
+  // i18n: {
+  //   locales: ['az', 'ru', 'en', 'zh', 'de'],
+  //   defaultLocale: 'az',
+  // },
 };
 
 module.exports = nextConfig; 

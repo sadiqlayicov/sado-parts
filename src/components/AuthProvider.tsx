@@ -25,6 +25,8 @@ interface AuthContextType {
   logout: () => void;
   calculateDiscountedPrice: (originalPrice: number) => number;
   getDiscountPercentage: () => number;
+  refreshUserStatus: () => Promise<void>;
+  clearCachedData: () => void;
   // Admin functions
   approveUser: (userId: string) => Promise<boolean>;
   setUserDiscount: (userId: string, discountPercentage: number) => Promise<boolean>;
@@ -101,47 +103,108 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Имитация API запроса
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Простая проверка для демонстрации
-        if (email && password) {
-          // Проверяем существующих пользователей
-          const existingUser = users.find(u => u.email === email);
-          
-          if (existingUser) {
-            setUser(existingUser);
-            setIsAuthenticated(true);
-            setIsRegistered(existingUser.isRegistered);
-            setIsApproved(existingUser.isApproved);
-            setIsAdmin(existingUser.isAdmin);
-            resolve(true);
-          } else {
-            // Создаем нового пользователя (не одобренного)
-            const newUser: User = {
-              id: Date.now().toString(),
-              email,
-              name: email.split('@')[0],
-              isRegistered: true,
-              isApproved: false,
-              isAdmin: false,
-              discountPercentage: 0
-            };
-            
-            setUsers(prev => [...prev, newUser]);
-            setUser(newUser);
-            setIsAuthenticated(true);
-            setIsRegistered(true);
-            setIsApproved(false);
-            setIsAdmin(false);
-            resolve(true);
-          }
-        } else {
-          resolve(false);
+  // Real API functions
+  const refreshUserData = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`/api/users/${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('API response for user refresh:', data);
+        
+        // Extract user data from the response
+        const userData = data.user || data;
+        const updatedUser = {
+          ...user,
+          isApproved: userData.isApproved,
+          discountPercentage: userData.discountPercentage || 0
+        };
+        
+        // Check if approval status changed
+        const wasApproved = user.isApproved;
+        const isNowApproved = userData.isApproved;
+        
+        console.log('Approval status check:', { wasApproved, isNowApproved, userData });
+        
+        setUser(updatedUser);
+        setIsApproved(userData.isApproved);
+        localStorage.setItem('sado-parts-user', JSON.stringify(updatedUser));
+        console.log('User data refreshed:', updatedUser);
+        
+        // Show notification if approval status changed
+        if (!wasApproved && isNowApproved) {
+          alert('🎉 Поздравляем! Ваш аккаунт был одобрен администратором!');
         }
-      }, 1000);
-    });
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
+  // Manual refresh function that can be called from components
+  const refreshUserStatus = async () => {
+    await refreshUserData();
+  };
+
+  // Clear cached data and force fresh login
+  const clearCachedData = () => {
+    localStorage.removeItem('sado-parts-user');
+    setUser(null);
+    setIsAuthenticated(false);
+    setIsRegistered(false);
+    setIsApproved(false);
+    setIsAdmin(false);
+  };
+
+  // Check user approval status periodically
+  useEffect(() => {
+    if (user && !user.isAdmin) {
+      // Check more frequently if user is not approved yet
+      const interval = setInterval(refreshUserData, user.isApproved ? 30000 : 5000); // 5 seconds if not approved, 30 seconds if approved
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/login-simple', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const userData: User = {
+          id: data.user.id,
+          email: data.user.email,
+          name: `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim() || 'User',
+          isRegistered: true,
+          isApproved: data.user.isApproved,
+          isAdmin: data.user.role === 'ADMIN',
+          discountPercentage: data.user.discountPercentage || 0
+        };
+
+        setUser(userData);
+        setIsAuthenticated(true);
+        setIsRegistered(true);
+        setIsApproved(data.user.isApproved);
+        setIsAdmin(data.user.role === 'ADMIN');
+        localStorage.setItem('sado-parts-user', JSON.stringify(userData));
+        return true;
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Login failed');
+        return false;
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed');
+      return false;
+    }
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
@@ -187,12 +250,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsRegistered(false);
     setIsApproved(false);
     setIsAdmin(false);
+    localStorage.removeItem('sado-parts-user');
   };
 
   // Расчет цены со скидкой для одобренных пользователей
   const calculateDiscountedPrice = (originalPrice: number): number => {
     if (isApproved && isAuthenticated && user && user.discountPercentage > 0) {
-      return Math.round(originalPrice * (1 - user.discountPercentage / 100));
+      const discountedPrice = originalPrice * (1 - user.discountPercentage / 100);
+      return Math.floor(discountedPrice * 100) / 100; // Сохраняем 2 знака после запятой
     }
     return originalPrice;
   };
@@ -204,21 +269,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Admin functions
   const approveUser = async (userId: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        setUsers(prev => prev.map(u => 
-          u.id === userId 
-            ? { 
-                ...u, 
-                isApproved: true, 
-                approvedBy: user?.email || 'admin',
-                approvedAt: new Date().toISOString()
-              }
-            : u
-        ));
-        resolve(true);
-      }, 500);
-    });
+    try {
+      const response = await fetch(`/api/users/${userId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isApproved: true })
+      });
+
+      if (response.ok) {
+        // If the approved user is the current user, refresh their data immediately
+        if (user && user.id === userId) {
+          await refreshUserData();
+        }
+        return true;
+      } else {
+        console.error('Failed to approve user');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error approving user:', error);
+      return false;
+    }
   };
 
   const setUserDiscount = async (userId: string, discountPercentage: number): Promise<boolean> => {
@@ -254,6 +327,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       calculateDiscountedPrice,
       getDiscountPercentage,
+      refreshUserStatus,
+      clearCachedData,
       approveUser,
       setUserDiscount,
       getAllUsers,

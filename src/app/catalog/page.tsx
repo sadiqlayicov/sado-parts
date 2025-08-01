@@ -1,86 +1,15 @@
 'use client';
 
 import Link from "next/link";
-import { useState, useMemo } from "react";
-import { useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
 import { Suspense } from "react";
-
-const products = [
-  // Двигатели и запчасти
-  { id: 1, name: "Поршень двигателя Toyota 2.5L", desc: "Оригинальный поршень для двигателя Toyota 2.5L", price: 12500, category: "engine", stock: 15, sku: "TOY-2.5-PISTON", catalogNumber: "TOY-2500-PST-001", brand: "Toyota" },
-  { id: 2, name: "Масляный фильтр Komatsu", desc: "Фильтр масляный для погрузчиков Komatsu", price: 850, category: "engine", stock: 45, sku: "KOM-OIL-FILTER", catalogNumber: "KOM-OF-001", brand: "Komatsu" },
-  { id: 3, name: "Воздушный фильтр Nissan", desc: "Фильтр воздушный для двигателей Nissan", price: 1200, category: "engine", stock: 32, sku: "NIS-AIR-FILTER", catalogNumber: "NIS-AF-002", brand: "Nissan" },
-  { id: 4, name: "Топливный насос Mitsubishi", desc: "Насос топливный высокого давления", price: 18500, category: "engine", stock: 8, sku: "MIT-FUEL-PUMP", catalogNumber: "MIT-FP-003", brand: "Mitsubishi" },
-  { id: 5, name: "Турбина Garrett", desc: "Турбокомпрессор Garrett для дизельных двигателей", price: 45000, category: "engine", stock: 5, sku: "GAR-TURBO", catalogNumber: "GAR-TB-004", brand: "Garrett" },
-  { id: 6, name: "Ремень ГРМ Toyota", desc: "Ремень газораспределительного механизма", price: 3200, category: "engine", stock: 25, sku: "TOY-TIMING-BELT", catalogNumber: "TOY-TB-005", brand: "Toyota" },
-  { id: 7, name: "Клапан впускной Komatsu", desc: "Впускной клапан для двигателей Komatsu", price: 2800, category: "engine", stock: 18, sku: "KOM-INTAKE-VALVE", catalogNumber: "KOM-IV-006", brand: "Komatsu" },
-  { id: 8, name: "Прокладка ГБЦ Nissan", desc: "Прокладка головки блока цилиндров", price: 4500, category: "engine", stock: 12, sku: "NIS-HEAD-GASKET", catalogNumber: "NIS-HG-007", brand: "Nissan" },
-  
-  // Гидравлика
-  { id: 9, name: "Гидроцилиндр подъема", desc: "Гидроцилиндр для подъема вил", price: 28000, category: "hydraulic", stock: 6, sku: "HYD-LIFT-CYL", catalogNumber: "HYD-LC-008", brand: "Hydraulic" },
-  { id: 10, name: "Гидронасос Kawasaki", desc: "Насос гидравлический Kawasaki", price: 35000, category: "hydraulic", stock: 4, sku: "KAW-HYD-PUMP", catalogNumber: "KAW-HP-009", brand: "Kawasaki" },
-  { id: 11, name: "Гидрораспределитель", desc: "Распределитель гидравлический 4-секционный", price: 18500, category: "hydraulic", stock: 9, sku: "HYD-DISTRIBUTOR", catalogNumber: "HYD-DIST-010", brand: "Hydraulic" },
-  { id: 12, name: "Гидрошланг высокого давления", desc: "Шланг гидравлический 1/2 дюйма", price: 1200, category: "hydraulic", stock: 35, sku: "HYD-HOSE-HP", catalogNumber: "HYD-HH-011", brand: "Hydraulic" },
-  { id: 13, name: "Гидрофильтр", desc: "Фильтр гидравлический тонкой очистки", price: 850, category: "hydraulic", stock: 28, sku: "HYD-FILTER", catalogNumber: "HYD-FIL-012", brand: "Hydraulic" },
-  { id: 14, name: "Гидробак", desc: "Бак гидравлический 50 литров", price: 8500, category: "hydraulic", stock: 7, sku: "HYD-TANK", catalogNumber: "HYD-TNK-013", brand: "Hydraulic" },
-  
-  // Трансмиссия
-  { id: 15, name: "Сцепление сухое", desc: "Сцепление сухое для механической КПП", price: 12500, category: "transmission", stock: 11, sku: "TRANS-CLUTCH-DRY", catalogNumber: "TRANS-CD-014", brand: "Transmission" },
-  { id: 16, name: "Сцепление мокрое", desc: "Сцепление мокрое для автоматической КПП", price: 18500, category: "transmission", stock: 8, sku: "TRANS-CLUTCH-WET", catalogNumber: "TRANS-CW-015", brand: "Transmission" },
-  { id: 17, name: "Карданный вал", desc: "Карданный вал приводной", price: 22000, category: "transmission", stock: 5, sku: "TRANS-CARDAN", catalogNumber: "TRANS-CRD-016", brand: "Transmission" },
-  { id: 18, name: "Редуктор заднего моста", desc: "Редуктор заднего моста с дифференциалом", price: 45000, category: "transmission", stock: 3, sku: "TRANS-REAR-DIFF", catalogNumber: "TRANS-RD-017", brand: "Transmission" },
-  { id: 19, name: "Шестерня главной пары", desc: "Шестерня главной пары редуктора", price: 8500, category: "transmission", stock: 15, sku: "TRANS-MAIN-GEAR", catalogNumber: "TRANS-MG-018", brand: "Transmission" },
-  
-  // Тормозная система
-  { id: 20, name: "Тормозная колодка передняя", desc: "Колодка тормозная переднего колеса", price: 2800, category: "brakes", stock: 25, sku: "BRAKE-FRONT-PAD", catalogNumber: "BRAKE-FP-019", brand: "Brake" },
-  { id: 21, name: "Тормозной диск", desc: "Диск тормозной вентилируемый", price: 4500, category: "brakes", stock: 18, sku: "BRAKE-DISC", catalogNumber: "BRAKE-DISC-020", brand: "Brake" },
-  { id: 22, name: "Тормозной цилиндр", desc: "Цилиндр тормозной рабочий", price: 3200, category: "brakes", stock: 22, sku: "BRAKE-CYLINDER", catalogNumber: "BRAKE-CYL-021", brand: "Brake" },
-  { id: 23, name: "Тормозная жидкость", desc: "Жидкость тормозная DOT-4", price: 450, category: "brakes", stock: 50, sku: "BRAKE-FLUID", catalogNumber: "BRAKE-FL-022", brand: "Brake" },
-  
-  // Электрика
-  { id: 24, name: "Стартер Mitsubishi", desc: "Стартер электрический для двигателей Mitsubishi", price: 18500, category: "electrical", stock: 7, sku: "ELEC-STARTER-MIT", catalogNumber: "ELEC-SM-023", brand: "Electrical" },
-  { id: 25, name: "Генератор Toyota", desc: "Генератор электрический 14V 80A", price: 22000, category: "electrical", stock: 6, sku: "ELEC-GEN-TOY", catalogNumber: "ELEC-GT-024", brand: "Electrical" },
-  { id: 26, name: "Аккумулятор 12V 100Ah", desc: "Аккумуляторная батарея 12V 100Ah", price: 8500, category: "electrical", stock: 12, sku: "ELEC-BATTERY", catalogNumber: "ELEC-BAT-025", brand: "Electrical" },
-  { id: 27, name: "Фара передняя", desc: "Фара передняя светодиодная", price: 3200, category: "electrical", stock: 20, sku: "ELEC-FRONT-LIGHT", catalogNumber: "ELEC-FL-026", brand: "Electrical" },
-  { id: 28, name: "Поворотник", desc: "Указатель поворота передний", price: 850, category: "electrical", stock: 35, sku: "ELEC-TURN-SIGNAL", catalogNumber: "ELEC-TS-027", brand: "Electrical" },
-  
-  // Рулевое управление
-  { id: 30, name: "Рулевая рейка", desc: "Рулевая рейка с гидроусилителем", price: 35000, category: "steering", stock: 4, sku: "STEER-RACK", catalogNumber: "STEER-RACK-029", brand: "Steering" },
-  { id: 31, name: "Рулевой наконечник", desc: "Наконечник рулевой тяги", price: 1800, category: "steering", stock: 25, sku: "STEER-TIE-ROD", catalogNumber: "STEER-TR-030", brand: "Steering" },
-  { id: 32, name: "Рулевое колесо", desc: "Рулевое колесо с подушкой безопасности", price: 8500, category: "steering", stock: 8, sku: "STEER-WHEEL", catalogNumber: "STEER-WH-031", brand: "Steering" },
-  
-  // Подвеска
-  { id: 33, name: "Амортизатор передний", desc: "Амортизатор передней подвески", price: 4500, category: "suspension", stock: 15, sku: "SUSP-FRONT-SHOCK", catalogNumber: "SUSP-FS-032", brand: "Suspension" },
-  { id: 34, name: "Пружина подвески", desc: "Пружина подвески задняя", price: 2800, category: "suspension", stock: 20, sku: "SUSP-SPRING", catalogNumber: "SUSP-SPR-033", brand: "Suspension" },
-  { id: 35, name: "Рычаг подвески", desc: "Рычаг передней подвески", price: 6500, category: "suspension", stock: 10, sku: "SUSP-ARM", catalogNumber: "SUSP-ARM-034", brand: "Suspension" },
-  
-  // Колеса и шины
-  { id: 36, name: "Колесо 16x6.5", desc: "Колесо стальное 16x6.5 дюймов", price: 8500, category: "wheels", stock: 8, sku: "WHEEL-16x6.5", catalogNumber: "WHEEL-16-035", brand: "Wheels" },
-  { id: 37, name: "Шина 16x6.5", desc: "Шина 16x6.5 дюймов", price: 12500, category: "wheels", stock: 12, sku: "TIRE-16x6.5", catalogNumber: "TIRE-16-036", brand: "Wheels" },
-  { id: 38, name: "Камера 16x6.5", desc: "Камера 16x6.5 дюймов", price: 2800, category: "wheels", stock: 25, sku: "TUBE-16x6.5", catalogNumber: "TUBE-16-037", brand: "Wheels" },
-  
-  // Кузов и кабина
-  { id: 39, name: "Кабина погрузчика", desc: "Кабина погрузчика с остеклением", price: 85000, category: "body", stock: 2, sku: "BODY-CABIN", catalogNumber: "BODY-CAB-038", brand: "Body" },
-  { id: 40, name: "Дверь кабины", desc: "Дверь кабины левая", price: 18500, category: "body", stock: 5, sku: "BODY-DOOR", catalogNumber: "BODY-DR-039", brand: "Body" },
-  { id: 41, name: "Стекло лобовое", desc: "Стекло лобовое кабины", price: 8500, category: "body", stock: 8, sku: "BODY-WINDSHIELD", catalogNumber: "BODY-WS-040", brand: "Body" },
-  
-  // Вилы и грузозахват
-  { id: 42, name: "Вилы стандартные", desc: "Вилы стандартные 1200x150x40", price: 12500, category: "forks", stock: 15, sku: "FORKS-STANDARD", catalogNumber: "FORKS-ST-041", brand: "Forks" },
-  { id: 43, name: "Вилы длинные", desc: "Вилы длинные 1500x150x40", price: 18500, category: "forks", stock: 8, sku: "FORKS-LONG", catalogNumber: "FORKS-LG-042", brand: "Forks" },
-  { id: 44, name: "Грузозахват", desc: "Грузозахват для бочек", price: 45000, category: "forks", stock: 3, sku: "FORKS-DRUM-CLAMP", catalogNumber: "FORKS-DC-043", brand: "Forks" },
-  
-  // Расходные материалы
-  { id: 45, name: "Масло моторное 15W-40", desc: "Масло моторное 15W-40 4л", price: 850, category: "consumables", stock: 50, sku: "CONS-MOTOR-OIL", catalogNumber: "CONS-MO-044", brand: "Consumables" },
-  { id: 46, name: "Масло гидравлическое", desc: "Масло гидравлическое 20л", price: 2800, category: "consumables", stock: 25, sku: "CONS-HYD-OIL", catalogNumber: "CONS-HO-045", brand: "Consumables" },
-  { id: 47, name: "Тормозная жидкость DOT-4", desc: "Тормозная жидкость DOT-4 1л", price: 450, category: "consumables", stock: 40, sku: "CONS-BRAKE-FLUID", catalogNumber: "CONS-BF-046", brand: "Consumables" },
-  { id: 48, name: "Охлаждающая жидкость", desc: "Охлаждающая жидкость 5л", price: 850, category: "consumables", stock: 30, sku: "CONS-COOLANT", catalogNumber: "CONS-COOL-047", brand: "Consumables" }
-];
+import { useCart } from '../../components/CartProvider';
 
 export default function CatalogPageWrapper() {
   return (
-    <Suspense fallback={<div>Yüklənir...</div>}>
+    <Suspense fallback={<div>Загрузка...</div>}>
       <CatalogPage />
     </Suspense>
   );
@@ -89,7 +18,9 @@ export default function CatalogPageWrapper() {
 function CatalogPage() {
   const searchParams = useSearchParams();
   const { isApproved, isAdmin, calculateDiscountedPrice, getDiscountPercentage } = useAuth();
-  
+  const { addToCart } = useCart();
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [filter, setFilter] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
   const [priceFilter, setPriceFilter] = useState("");
@@ -97,6 +28,66 @@ function CatalogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [wishlist, setWishlist] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      return JSON.parse(localStorage.getItem('wishlist') || '[]');
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    function updateWishlist() {
+      if (typeof window !== 'undefined') {
+        const stored = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        setWishlist(stored);
+      }
+    }
+    window.addEventListener('storage', updateWishlist);
+    window.addEventListener('wishlistChanged', updateWishlist);
+    updateWishlist(); // İlk renderdə bir dəfə çağır
+    return () => {
+      window.removeEventListener('storage', updateWishlist);
+      window.removeEventListener('wishlistChanged', updateWishlist);
+    };
+  }, []);
+
+  const handleWishlist = (id: string) => {
+    setWishlist(prev => {
+      let updated;
+      if (prev.includes(id)) {
+        updated = prev.filter(i => i !== id);
+      } else {
+        updated = [...prev, id];
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('wishlist', JSON.stringify(updated));
+        window.dispatchEvent(new Event('wishlistChanged'));
+      }
+      return updated;
+    });
+  };
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const productsRes = await fetch('/api/products');
+        const productsData = await productsRes.json();
+        setProducts(Array.isArray(productsData) ? productsData : []);
+
+        const categoriesRes = await fetch('/api/categories');
+        const categoriesData = await categoriesRes.json();
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      } catch (error) {
+        console.error('Ошибка получения данных:', error);
+        setProducts([]);
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const cat = searchParams.get("category");
@@ -107,13 +98,12 @@ function CatalogPage() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product: any) => {
-      const matchesCategory = !filter || product.category === filter;
+      const matchesCategory = !filter || product.category?.id === filter || product.category?.name === filter;
       const matchesBrand = !brandFilter || product.brand === brandFilter;
       const matchesSearch = !searchQuery || 
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchQuery.toLowerCase());
-      
+        (product.desc && product.desc.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
       let matchesPrice = true;
       if (priceFilter) {
         const [min, max] = priceFilter.split('-').map(Number);
@@ -123,7 +113,6 @@ function CatalogPage() {
           matchesPrice = product.price >= min;
         }
       }
-      
       let matchesStock = true;
       if (stockFilter) {
         const [min, max] = stockFilter.split('-').map(Number);
@@ -133,31 +122,28 @@ function CatalogPage() {
           matchesStock = product.stock >= min;
         }
       }
-      
       return matchesCategory && matchesBrand && matchesSearch && matchesPrice && matchesStock;
     });
-  }, [filter, brandFilter, searchQuery, priceFilter, stockFilter]);
+  }, [products, filter, brandFilter, searchQuery, priceFilter, stockFilter]);
 
   const totalPages = Math.ceil(filteredProducts.length / perPage);
   const startIndex = (currentPage - 1) * perPage;
   const endIndex = startIndex + perPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
-  const categories = [
-    { id: "engine", name: "Двигатели" },
-    { id: "hydraulic", name: "Гидравлика" },
-    { id: "transmission", name: "Трансмиссия" },
-    { id: "brakes", name: "Тормозная система" },
-    { id: "electrical", name: "Электрика" },
-    { id: "steering", name: "Рулевое управление" },
-    { id: "suspension", name: "Подвеска" },
-    { id: "wheels", name: "Колеса и шины" },
-    { id: "body", name: "Кузов и кабина" },
-    { id: "forks", name: "Вилы и грузозахват" },
-    { id: "consumables", name: "Расходные материалы" }
-  ];
+  const brands = [...new Set(products.map((p: any) => p.brand))];
 
-  const brands = [...new Set(products.map(p => p.brand))];
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-xl">Загрузка...</div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-6">
@@ -206,7 +192,7 @@ function CatalogPage() {
                   onChange={(e) => setFilter(e.target.value)}
                   className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
                 >
-                  <option value="">Все категории</option>
+                  <option value="" key="all">Все категории</option>
                   {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
@@ -221,9 +207,9 @@ function CatalogPage() {
                   onChange={(e) => setBrandFilter(e.target.value)}
                   className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
                 >
-                  <option value="">Все бренды</option>
-                  {brands.map(brand => (
-                    <option key={brand} value={brand}>{brand}</option>
+                  <option value="" key="all">Все бренды</option>
+                  {brands.map((brand, idx) => (
+                    <option key={brand || idx} value={brand}>{brand || ""}</option>
                   ))}
                 </select>
               </div>
@@ -307,15 +293,25 @@ function CatalogPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {currentProducts.map(product => (
-                <div key={product.id} className="bg-[#1e293b] rounded-xl p-6 shadow-lg hover:scale-105 transition">
-                  <div className="w-full h-48 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg mb-4 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">{product.brand}</span>
+                <div key={product.id} className="bg-[#1e293b] rounded-xl p-6 shadow-lg hover:scale-105 transition relative group cursor-pointer">
+                  <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" />
+                  <div className="w-full h-48 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative z-20">
+                    {product.images && product.images.length > 0 && product.images[0] ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                    <span className="text-white font-bold text-lg" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>
+                      {product.brand || product.name}
+                    </span>
                   </div>
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
-                  <p className="text-gray-300 text-sm mb-2 line-clamp-2">{product.desc}</p>
-                  <p className="text-cyan-300 text-sm mb-2">Артикул: {product.sku}</p>
-                  <p className="text-cyan-300 text-sm mb-4">Каталог: {product.catalogNumber}</p>
-                  
+                  <p className="text-gray-300 text-sm mb-2 line-clamp-2">{product.description}</p>
+                  <p className="text-cyan-300 text-sm mb-2">Артикул: {product.artikul || product.sku || '-'}</p>
+                  <p className="text-cyan-300 text-sm mb-2">Категория: {product.category?.name || '-'}</p>
+                  <p className="text-cyan-300 text-sm mb-4">Каталог: {product.catalogNumber || '-'}</p>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex flex-col">
                       {isApproved && !isAdmin ? (
@@ -334,10 +330,31 @@ function CatalogPage() {
                       {product.stock > 0 ? `${product.stock} шт` : 'Нет в наличии'}
                     </span>
                   </div>
-                  
+                  <div className="flex gap-2 mt-2 z-20 relative justify-center">
+                    <button
+                      onClick={e => { e.stopPropagation(); e.preventDefault(); addToCart({
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        sku: product.artikul || product.sku || '',
+                        stock: product.stock || 99
+                      }); }}
+                      className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition text-sm"
+                    >
+                      Добавить в корзину
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); e.preventDefault(); handleWishlist(product.id); }}
+                      className={`px-4 py-2 rounded-lg text-white font-semibold text-center transition text-sm ${wishlist.includes(product.id) ? 'bg-red-500' : 'bg-white/10 hover:bg-red-500'}`}
+                      title={wishlist.includes(product.id) ? 'Удалить из избранного' : 'Добавить в избранное'}
+                    >
+                      ♥
+                    </button>
+                  </div>
                   <Link
                     href={`/product/${product.id}`}
-                    className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition block"
+                    className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition block mt-3 z-20 relative"
                   >
                     Подробнее
                   </Link>

@@ -36,17 +36,12 @@ export async function PUT(
   const { params } = context;
   try {
     const body = await request.json()
-    const { status, totalAmount, shippingAddress, billingAddress, paymentMethod, paymentStatus, notes } = body
+    const { status, totalAmount } = body
     const order = await prisma.order.update({
       where: { id: params.id },
       data: {
         status,
-        totalAmount: totalAmount ? parseFloat(totalAmount) : undefined,
-        shippingAddress,
-        billingAddress,
-        paymentMethod,
-        paymentStatus,
-        notes
+        totalAmount: totalAmount ? parseFloat(totalAmount) : undefined
       },
       include: { user: true, orderItems: true }
     })

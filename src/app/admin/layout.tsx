@@ -53,6 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Главная', href: '/admin', icon: FaHome },
     { name: 'Пользователи', href: '/admin/users', icon: FaUsers },
     { name: 'Товары', href: '/admin/products', icon: FaBox },
+    { name: 'Категории', href: '/admin/categories', icon: FaBox },
     { name: 'Заказы', href: '/admin/orders', icon: FaShoppingCart },
     { name: 'Платежи', href: '/admin/payments', icon: FaCreditCard },
     { name: 'Отзывы', href: '/admin/reviews', icon: FaStar },

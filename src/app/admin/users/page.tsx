@@ -29,119 +29,99 @@ export default function UsersManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Countries and cities data
+  const countries = [
+    { name: 'Azerbaijan', cities: ['Baku', 'Ganja', 'Sumgayit', 'Mingachevir', 'Lankaran', 'Shaki', 'Yevlakh', 'Nakhchivan'] },
+    { name: 'Russia', cities: ['Moscow', 'Saint Petersburg', 'Novosibirsk', 'Yekaterinburg', 'Kazan', 'Nizhny Novgorod'] },
+    { name: 'Turkey', cities: ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana'] },
+    { name: 'Georgia', cities: ['Tbilisi', 'Batumi', 'Kutaisi', 'Rustavi', 'Gori'] },
+    { name: 'Ukraine', cities: ['Kyiv', 'Kharkiv', 'Odesa', 'Dnipro', 'Donetsk', 'Lviv'] },
+    { name: 'Kazakhstan', cities: ['Almaty', 'Nur-Sultan', 'Shymkent', 'Aktobe', 'Karaganda'] },
+    { name: 'Uzbekistan', cities: ['Tashkent', 'Samarkand', 'Bukhara', 'Andijan', 'Namangan'] },
+    { name: 'Kyrgyzstan', cities: ['Bishkek', 'Osh', 'Jalal-Abad', 'Karakol'] },
+    { name: 'Tajikistan', cities: ['Dushanbe', 'Khujand', 'Kulob', 'Qurghonteppa'] },
+    { name: 'Turkmenistan', cities: ['Ashgabat', 'Türkmenabat', 'Dasoguz', 'Mary'] }
+  ];
+
+  const getCitiesForCountry = (countryName: string) => {
+    const country = countries.find(c => c.name === countryName);
+    return country ? country.cities : [];
+  };
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock data
-  useEffect(() => {
-    const mockUsers = [
-      {
-        id: 1,
-        name: 'Иван Петров',
-        email: 'ivan@example.com',
-        role: 'admin',
-        status: 'approved',
-        isApproved: true,
-        discountPercentage: 15,
-        registrationDate: '2024-01-15',
-        lastLogin: '2024-07-20',
-        ordersCount: 25,
-        totalSpent: 125000,
-        phone: '+7 (999) 123-45-67',
-        address: 'г. Москва, ул. Примерная, д. 1'
-      },
-      {
-        id: 2,
-        name: 'Мария Сидорова',
-        email: 'maria@example.com',
-        role: 'customer',
-        status: 'pending',
-        isApproved: false,
-        discountPercentage: 0,
-        registrationDate: '2024-07-19',
-        lastLogin: '2024-07-19',
-        ordersCount: 0,
-        totalSpent: 0,
-        phone: '+7 (999) 234-56-78',
-        address: 'г. Санкт-Петербург, ул. Тестовая, д. 2'
-      },
-      {
-        id: 3,
-        name: 'Алексей Козлов',
-        email: 'alex@example.com',
-        role: 'moderator',
-        status: 'approved',
-        isApproved: true,
-        discountPercentage: 10,
-        registrationDate: '2024-03-10',
-        lastLogin: '2024-07-20',
-        ordersCount: 12,
-        totalSpent: 45000,
-        phone: '+7 (999) 345-67-89',
-        address: 'г. Екатеринбург, ул. Новая, д. 3'
-      },
-      {
-        id: 4,
-        name: 'Елена Воробьева',
-        email: 'elena@example.com',
-        role: 'customer',
-        status: 'blocked',
-        isApproved: true,
-        discountPercentage: 5,
-        registrationDate: '2024-02-20',
-        lastLogin: '2024-07-15',
-        ordersCount: 8,
-        totalSpent: 32000,
-        phone: '+7 (999) 456-78-90',
-        address: 'г. Новосибирск, ул. Центральная, д. 4'
-      },
-      {
-        id: 5,
-        name: 'Дмитрий Соколов',
-        email: 'dmitry@example.com',
-        role: 'operator',
-        status: 'approved',
-        isApproved: true,
-        discountPercentage: 0,
-        registrationDate: '2024-05-05',
-        lastLogin: '2024-07-20',
-        ordersCount: 0,
-        totalSpent: 0,
-        phone: '+7 (999) 567-89-01',
-        address: 'г. Казань, ул. Рабочая, д. 5'
+  // Fetch users function
+  const fetchUsers = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter !== 'all') params.append('isApproved', statusFilter === 'approved' ? 'true' : 'false');
+      if (roleFilter !== 'all') params.append('role', roleFilter.toUpperCase());
+      if (countryFilter) params.append('country', countryFilter);
+      if (cityFilter) params.append('city', cityFilter);
+
+      const res = await fetch(`/api/users?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
-    ];
-    setUsers(mockUsers);
-    setFilteredUsers(mockUsers);
+      
+      const data = await res.json();
+      
+      if (data && data.users && Array.isArray(data.users)) {
+        const processedUsers = data.users.map((user: any) => ({
+          ...user,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'İstifadəçi',
+          role: user.role?.toLowerCase() || 'customer',
+          discountPercentage: user.discountPercentage || 0,
+          ordersCount: 0,
+          totalSpent: 0,
+          lastLogin: user.updatedAt || user.createdAt,
+          registrationDate: user.createdAt,
+          phone: user.phone || '—',
+          country: user.country || '—',
+          city: user.city || '—',
+          inn: user.inn || '—',
+          address: user.address || '—'
+        }));
+        setUsers(processedUsers);
+        setFilteredUsers(processedUsers);
+      } else {
+        console.error('Invalid data format received:', data);
+        setUsers([]);
+        setFilteredUsers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setUsers([]);
+      setFilteredUsers([]);
+    }
+  };
+
+  // Fetch users with filters
+  useEffect(() => {
+    fetchUsers();
+  }, [searchTerm, statusFilter, roleFilter, countryFilter, cityFilter]);
+
+  // Auto-refresh users list every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchUsers();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    let filtered = users;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(user => user.status === statusFilter);
-    }
-
-    // Role filter
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter(user => user.role === roleFilter);
-    }
-
-    setFilteredUsers(filtered);
-  }, [users, searchTerm, statusFilter, roleFilter]);
+  // No need for client-side filtering since we're filtering on the server
 
   const getRoleIcon = (role: string) => {
-    switch (role) {
+    const roleLower = role?.toLowerCase();
+    switch (roleLower) {
       case 'admin': return <FaCrown className="text-yellow-500" />;
       case 'moderator': return <FaUserShield className="text-blue-500" />;
       case 'operator': return <FaUserTie className="text-green-500" />;
@@ -150,7 +130,8 @@ export default function UsersManagement() {
   };
 
   const getRoleText = (role: string) => {
-    switch (role) {
+    const roleLower = role?.toLowerCase();
+    switch (roleLower) {
       case 'admin': return 'Администратор';
       case 'moderator': return 'Модератор';
       case 'operator': return 'Оператор';
@@ -164,56 +145,201 @@ export default function UsersManagement() {
       case 'approved': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
       case 'blocked': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'approved': return 'Одобрен';
-      case 'pending': return 'Ожидает';
-      case 'blocked': return 'Заблокирован';
-      default: return 'Неизвестно';
+      case 'approved': return 'Təsdiqlənmiş';
+      case 'pending': return 'Gözləyir';
+      case 'blocked': return 'Bloklanmış';
+      case 'inactive': return 'Deaktiv';
+      default: return 'Naməlum';
     }
   };
 
-  const handleApproveUser = async (userId: number) => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, status: 'approved', isApproved: true }
-        : user
-    ));
-    setIsLoading(false);
+  const getUserStatus = (user: any) => {
+    if (!user.isActive) return 'blocked';
+    if (user.isApproved) return 'approved';
+    return 'pending';
   };
 
-  const handleBlockUser = async (userId: number) => {
+  const handleApproveUser = async (userId: string) => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, status: 'blocked' }
-        : user
-    ));
-    setIsLoading(false);
+    try {
+      const response = await fetch(`/api/users/${userId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'approve'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === userId 
+            ? { ...user, isApproved: true, isActive: true }
+            : user
+        ));
+        alert(data.message || 'İstifadəçi uğurla təsdiqləndi!');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'İstifadəçi təsdiqləmə zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Error approving user:', error);
+      alert('İstifadəçi təsdiqləmə zamanı xəta baş verdi');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleUnblockUser = async (userId: number) => {
+  const handleBlockUser = async (userId: string) => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, status: 'approved' }
-        : user
-    ));
-    setIsLoading(false);
+    try {
+      const response = await fetch(`/api/users/${userId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'block'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === userId 
+            ? { ...user, isApproved: false, isActive: false }
+            : user
+        ));
+        alert(data.message || 'İstifadəçi uğurla bloklandı!');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'İstifadəçi bloklama zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      alert('İstifadəçi bloklama zamanı xəta baş verdi');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditUser = (user: any) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
+  const handleUnblockUser = async (userId: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/users/${userId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'unblock'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === userId 
+            ? { ...user, isApproved: true, isActive: true }
+            : user
+        ));
+        alert(data.message || 'İstifadəçi blokdan uğurla çıxarıldı!');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'İstifadəçi blokdan çıxarma zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      alert('İstifadəçi blokdan çıxarma zamanı xəta baş verdi');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditUser = async (user: any) => {
+    try {
+      const response = await fetch(`/api/users/${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedUser(data.user);
+        setIsModalOpen(true);
+      } else {
+        alert('İstifadəçi məlumatlarını əldə etmə zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      alert('İstifadəçi məlumatlarını əldə etmə zamanı xəta baş verdi');
+    }
+  };
+
+  const handleSaveUser = async (userData: any) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/users/${userData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === userData.id 
+            ? { ...user, ...userData }
+            : user
+        ));
+        alert('İstifadəçi məlumatları uğurla yeniləndi!');
+        setIsEditModalOpen(false);
+        setIsModalOpen(false);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'İstifadəçi məlumatlarını yeniləmə zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('İstifadəçi məlumatlarını yeniləmə zamanı xəta baş verdi');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditUserModal = async (user: any) => {
+    try {
+      // Fetch fresh user data from API
+      const response = await fetch(`/api/users/${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const userData = {
+          ...data.user,
+          status: data.user.isApproved ? 'approved' : 'pending',
+          registrationDate: data.user.createdAt,
+          lastLogin: data.user.updatedAt
+        };
+        setEditingUser(userData);
+      } else {
+        setEditingUser({ ...user });
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      setEditingUser({ ...user });
+    }
+    setIsEditModalOpen(true);
+    setIsModalOpen(false);
   };
 
   if (!isAuthenticated || !isAdmin) {
@@ -242,7 +368,7 @@ export default function UsersManagement() {
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Поиск
@@ -268,10 +394,10 @@ export default function UsersManagement() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">Все статусы</option>
-              <option value="approved">Одобренные</option>
-              <option value="pending">Ожидающие</option>
-              <option value="blocked">Заблокированные</option>
+              <option value="all">Bütün statuslar</option>
+              <option value="approved">Təsdiqlənmiş</option>
+              <option value="pending">Gözləyən</option>
+              <option value="blocked">Bloklanmış</option>
             </select>
           </div>
 
@@ -292,8 +418,54 @@ export default function UsersManagement() {
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Страна
+            </label>
+            <select
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Все страны</option>
+              {countries.map((country) => (
+                <option key={country.name} value={country.name}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Город
+            </label>
+            <select
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              disabled={!countryFilter}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">Все города</option>
+              {countryFilter && getCitiesForCountry(countryFilter).map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="flex items-end">
-            <button className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition flex items-center justify-center">
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setRoleFilter('all');
+                setCountryFilter('');
+                setCityFilter('');
+              }}
+              className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition flex items-center justify-center"
+            >
               <FaFilter className="mr-2" />
               Сбросить
             </button>
@@ -305,7 +477,7 @@ export default function UsersManagement() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            Пользователи ({filteredUsers.length})
+            Пользователи ({Array.isArray(filteredUsers) ? filteredUsers.length : 0})
           </h3>
         </div>
         <div className="overflow-x-auto">
@@ -316,19 +488,25 @@ export default function UsersManagement() {
                   Пользователь
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  ИНН
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Контакты
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Страна
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Город
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Скидка %
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Роль
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Статус
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Скидка
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Заказы
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Последний вход
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Действия
@@ -336,88 +514,123 @@ export default function UsersManagement() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
-                          <span className="text-white font-medium">
-                            {user.name.charAt(0)}
-                          </span>
+              {(Array.isArray(filteredUsers) ? filteredUsers : []).map((user) => {
+                // Adı düzgün göstərmək üçün təhlükəsiz funksiya
+                const getDisplayName = (user: any) => {
+                  if (user.name && typeof user.name === 'string' && user.name.length > 0 && user.name !== 'İstifadəçi') return user.name;
+                  if (user.firstName || user.lastName) {
+                    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+                    if (fullName.length > 0) return fullName;
+                  }
+                  return 'İstifadəçi';
+                };
+                const displayName = getDisplayName(user);
+                return (
+                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
+                            <span className="text-white font-medium">
+                              {displayName.charAt(0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {displayName}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {user.email}
+                          </div>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {user.name}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {user.email}
-                        </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {user.inn || '—'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        <div>{user.phone || '—'}</div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {getRoleIcon(user.role)}
-                      <span className="ml-2 text-sm text-gray-900 dark:text-white">
-                        {getRoleText(user.role)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {user.country || '—'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {user.city || '—'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.discountPercentage > 0 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>
+                          {user.discountPercentage || 0}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {getRoleIcon(user.role)}
+                        <span className="ml-2 text-sm text-gray-900 dark:text-white">
+                          {getRoleText(user.role)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(getUserStatus(user))}`}>
+                        {getStatusText(getUserStatus(user))}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status)}`}>
-                      {getStatusText(user.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {user.discountPercentage}%
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {user.ordersCount} ({user.totalSpent.toLocaleString()} ₽)
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(user.lastLogin).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button
-                        onClick={() => handleEditUser(user)}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                      >
-                        <FaEye className="h-4 w-4" />
-                      </button>
-                      {user.status === 'pending' && (
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-2">
                         <button
-                          onClick={() => handleApproveUser(user.id)}
-                          disabled={isLoading}
-                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 disabled:opacity-50"
+                          onClick={() => handleEditUser(user)}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                         >
-                          <FaCheck className="h-4 w-4" />
+                          <FaEye className="h-4 w-4" />
                         </button>
-                      )}
-                      {user.status === 'approved' && (
-                        <button
-                          onClick={() => handleBlockUser(user.id)}
-                          disabled={isLoading}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
-                        >
-                          <FaBan className="h-4 w-4" />
-                        </button>
-                      )}
-                      {user.status === 'blocked' && (
-                        <button
-                          onClick={() => handleUnblockUser(user.id)}
-                          disabled={isLoading}
-                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 disabled:opacity-50"
-                        >
-                          <FaUnlock className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {getUserStatus(user) === 'pending' && (
+                          <button
+                            onClick={() => handleApproveUser(user.id)}
+                            disabled={isLoading}
+                            className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 disabled:opacity-50"
+                            title="Təsdiqlə"
+                          >
+                            <FaCheck className="h-4 w-4" />
+                          </button>
+                        )}
+                        {getUserStatus(user) === 'approved' && (
+                          <button
+                            onClick={() => handleBlockUser(user.id)}
+                            disabled={isLoading}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                            title="Blokla"
+                          >
+                            <FaBan className="h-4 w-4" />
+                          </button>
+                        )}
+                        {getUserStatus(user) === 'blocked' && (
+                          <button
+                            onClick={() => handleUnblockUser(user.id)}
+                            disabled={isLoading}
+                            className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 disabled:opacity-50"
+                            title="Blokdan çıxar"
+                          >
+                            <FaUnlock className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -447,7 +660,7 @@ export default function UsersManagement() {
                   <div className="space-y-3">
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Имя</label>
-                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.name}</p>
+                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.firstName} {selectedUser.lastName}</p>
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Email</label>
@@ -455,11 +668,23 @@ export default function UsersManagement() {
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Телефон</label>
-                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.phone}</p>
+                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.phone || '—'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 dark:text-gray-400">Страна</label>
+                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.country || '—'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 dark:text-gray-400">Город</label>
+                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.city || '—'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 dark:text-gray-400">ИНН</label>
+                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.inn || '—'}</p>
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Адрес</label>
-                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.address}</p>
+                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.address || '—'}</p>
                     </div>
                   </div>
                 </div>
@@ -472,7 +697,7 @@ export default function UsersManagement() {
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Статус</label>
-                      <p className="text-sm text-gray-900 dark:text-white">{getStatusText(selectedUser.status)}</p>
+                      <p className="text-sm text-gray-900 dark:text-white">{getStatusText(selectedUser.isApproved ? 'approved' : 'pending')}</p>
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Скидка</label>
@@ -484,18 +709,18 @@ export default function UsersManagement() {
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Общая сумма</label>
-                      <p className="text-sm text-gray-900 dark:text-white">{selectedUser.totalSpent.toLocaleString()} ₽</p>
+                      <p className="text-sm text-gray-900 dark:text-white">{(selectedUser.totalSpent || 0).toLocaleString()} ₽</p>
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Дата регистрации</label>
                       <p className="text-sm text-gray-900 dark:text-white">
-                        {new Date(selectedUser.registrationDate).toLocaleDateString()}
+                        {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('ru-RU') : '—'}
                       </p>
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 dark:text-gray-400">Последний вход</label>
                       <p className="text-sm text-gray-900 dark:text-white">
-                        {new Date(selectedUser.lastLogin).toLocaleDateString()}
+                        {selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleDateString('ru-RU') : '—'}
                       </p>
                     </div>
                   </div>
@@ -510,10 +735,209 @@ export default function UsersManagement() {
                 >
                   Закрыть
                 </button>
-                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                <button 
+                  onClick={() => handleEditUserModal(selectedUser)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                >
                   Редактировать
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {isEditModalOpen && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                İstifadəçi məlumatlarını redaktə et
+              </h3>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <FaTimes className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Ad
+                </label>
+                <input
+                  type="text"
+                  value={editingUser.firstName || ''}
+                  onChange={(e) => setEditingUser({...editingUser, firstName: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Soyad
+                </label>
+                <input
+                  type="text"
+                  value={editingUser.lastName || ''}
+                  onChange={(e) => setEditingUser({...editingUser, lastName: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editingUser.email || ''}
+                  onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Telefon
+                </label>
+                <input
+                  type="text"
+                  value={editingUser.phone || ''}
+                  onChange={(e) => setEditingUser({...editingUser, phone: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Ölkə
+                </label>
+                <select
+                  value={editingUser.country || ''}
+                  onChange={(e) => {
+                    const selectedCountry = e.target.value;
+                    setEditingUser({
+                      ...editingUser, 
+                      country: selectedCountry,
+                      city: '' // Reset city when country changes
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Ölkə seçin</option>
+                  {countries.map((country) => (
+                    <option key={country.name} value={country.name}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Şəhər
+                </label>
+                <select
+                  value={editingUser.city || ''}
+                  onChange={(e) => setEditingUser({...editingUser, city: e.target.value})}
+                  disabled={!editingUser.country}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">Şəhər seçin</option>
+                  {editingUser.country && getCitiesForCountry(editingUser.country).map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  VÖEN (İNN)
+                </label>
+                <input
+                  type="text"
+                  value={editingUser.inn || ''}
+                  onChange={(e) => setEditingUser({...editingUser, inn: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Ünvan
+                </label>
+                <textarea
+                  value={editingUser.address || ''}
+                  onChange={(e) => setEditingUser({...editingUser, address: e.target.value})}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Rol
+                </label>
+                <select
+                  value={editingUser.role || 'CUSTOMER'}
+                  onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="CUSTOMER">Müştəri</option>
+                  <option value="ADMIN">Administrator</option>
+                  <option value="MODERATOR">Moderator</option>
+                  <option value="OPERATOR">Operator</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Status
+                </label>
+                <select
+                  value={editingUser.isApproved ? 'approved' : 'pending'}
+                  onChange={(e) => setEditingUser({...editingUser, isApproved: e.target.value === 'approved'})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="approved">Təsdiqlənmiş</option>
+                  <option value="pending">Gözləyir</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Endirim faizi (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={editingUser.discountPercentage || 0}
+                  onChange={(e) => setEditingUser({...editingUser, discountPercentage: parseInt(e.target.value) || 0})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Müştərinin məhsullardan alacağı endirim faizi (0-100%)
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3 flex-shrink-0">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              >
+                Ləğv et
+              </button>
+              <button
+                onClick={() => handleSaveUser(editingUser)}
+                disabled={isLoading}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+              >
+                {isLoading ? 'Yenilənir...' : 'Yadda saxla'}
+              </button>
             </div>
           </div>
         </div>

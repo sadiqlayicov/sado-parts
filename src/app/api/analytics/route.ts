@@ -1,26 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server';
 
-// GET - Get analytics summary
-export async function GET(request: NextRequest) {
-  try {
-    const [productCount, userCount, orderCount, totalSales] = await Promise.all([
-      prisma.product.count(),
-      prisma.user.count(),
-      prisma.order.count(),
-      prisma.order.aggregate({ _sum: { totalAmount: true } })
-    ])
-    return NextResponse.json({
-      productCount,
-      userCount,
-      orderCount,
-      totalSales: totalSales._sum.totalAmount || 0
-    })
-  } catch (error) {
-    console.error('Get analytics error:', error)
-    return NextResponse.json(
-      { error: 'Analytics məlumatlarını əldə etmə xətası' },
-      { status: 500 }
-    )
-  }
+export async function GET() {
+  return NextResponse.json({
+    users: 0,
+    products: 0,
+    orders: 0,
+    revenue: 0
+  });
 } 

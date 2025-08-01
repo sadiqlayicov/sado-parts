@@ -5,6 +5,7 @@ import Head from "next/head";
 import { CartProvider } from "../components/CartProvider";
 import { AuthProvider } from "../components/AuthProvider";
 import Header from "../components/Header";
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,13 +42,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru">
+    <html lang="az">
       <head>
         <link rel="icon" href="/favicon.ico" />
         <meta name="yandex-verification" content="" />
         <meta name="google-site-verification" content="" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <LanguageSwitcher />
         <AuthProvider>
           <CartProvider>
             <Header />

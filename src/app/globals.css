@@ -39,3 +39,225 @@ main, header, nav, section, footer {
 html {
   scroll-behavior: smooth;
 }
+
+/* Custom dropdown styles */
+select {
+  direction: ltr;
+}
+
+select option {
+  direction: ltr;
+}
+
+/* Ensure dropdowns open downward */
+select:focus {
+  outline: none;
+}
+
+/* Force dropdowns to open downward */
+select {
+  transform: none !important;
+}
+
+/* Custom scrollbar for dropdowns */
+select::-webkit-scrollbar {
+  width: 8px;
+}
+
+select::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+select::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+select::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Override browser default dropdown behavior */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Ensure dropdown opens downward on all browsers */
+select:focus {
+  transform: none !important;
+}
+
+/* Additional styles to force downward opening */
+select option {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Force dropdown to open downward - stronger approach */
+select {
+  position: relative;
+}
+
+select:focus {
+  position: relative;
+}
+
+/* Override any browser-specific dropdown behavior */
+select {
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  transform: none !important;
+}
+
+/* Ensure dropdown list opens downward */
+select:focus {
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  transform: none !important;
+}
+
+/* Additional browser-specific overrides */
+select {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
+/* For Firefox */
+select {
+  -moz-appearance: none;
+}
+
+/* For IE/Edge */
+select::-ms-expand {
+  display: none;
+}
+
+/* Force dropdown to open downward - ULTIMATE SOLUTION */
+select {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+select:focus {
+  position: relative !important;
+  z-index: 9999 !important;
+}
+
+/* Override all possible browser behaviors */
+select {
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  -o-transform: none !important;
+  transform: none !important;
+  direction: ltr !important;
+  text-align: left !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+/* Force dropdown list to open downward */
+select option {
+  direction: ltr !important;
+  text-align: left !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+/* Additional browser-specific fixes */
+select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* For Chrome/Safari */
+select {
+  -webkit-text-orientation: mixed !important;
+  -webkit-writing-mode: horizontal-tb !important;
+}
+
+/* For Firefox */
+select {
+  -moz-text-orientation: mixed !important;
+  -moz-writing-mode: horizontal-tb !important;
+}
+
+/* Force dropdown to render below the select */
+select:focus {
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  -o-transform: none !important;
+  transform: none !important;
+  direction: ltr !important;
+  text-align: left !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+/* ULTIMATE DROPDOWN FIX - Force downward opening */
+select {
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: visible !important;
+}
+
+select:focus {
+  position: relative !important;
+  z-index: 9999 !important;
+  overflow: visible !important;
+}
+
+/* Override any possible browser default */
+select {
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  -o-transform: none !important;
+  transform: none !important;
+  direction: ltr !important;
+  text-align: left !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  unicode-bidi: normal !important;
+}
+
+/* Force all options to be left-to-right */
+select option {
+  direction: ltr !important;
+  text-align: left !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  unicode-bidi: normal !important;
+}
+
+/* Additional fixes for specific browsers */
+select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  -webkit-text-orientation: mixed !important;
+  -webkit-writing-mode: horizontal-tb !important;
+  -moz-text-orientation: mixed !important;
+  -moz-writing-mode: horizontal-tb !important;
+}
+
+/* Force dropdown to open downward on all browsers */
+select:focus {
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  -o-transform: none !important;
+  transform: none !important;
+  direction: ltr !important;
+  text-align: left !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  unicode-bidi: normal !important;
+}

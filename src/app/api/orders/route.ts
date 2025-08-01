@@ -25,19 +25,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, items, status, totalAmount, shippingAddress, billingAddress, paymentMethod, paymentStatus, notes } = body
+    const { userId, items, status, totalAmount } = body
 
     const order = await prisma.order.create({
       data: {
-        orderNumber: generateOrderNumber(),
         userId,
         status: status || 'PENDING',
         totalAmount: parseFloat(totalAmount),
-        shippingAddress,
-        billingAddress,
-        paymentMethod,
-        paymentStatus: paymentStatus || 'PENDING',
-        notes,
         orderItems: {
           create: items.map((item: any) => ({
             productId: item.productId,
