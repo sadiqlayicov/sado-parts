@@ -5,6 +5,6 @@
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "env": {
-    "DATABASE_URL": "@database_url"
+    "DATABASE_URL": "process.env.DATABASE_URL"
   }
 } 
