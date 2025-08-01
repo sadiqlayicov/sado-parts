@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     try {
       // Check if admin exists
       const checkResult = await client.query(
-        'SELECT id, email, "firstName", "lastName", role FROM users WHERE role = $1 LIMIT 1',
+        'SELECT id, email, "firstName", "lastName", role FROM "User" WHERE role = $1 LIMIT 1',
         ['ADMIN']
       )
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
       // Create admin user
       const insertResult = await client.query(
-        `INSERT INTO users (id, email, password, "firstName", "lastName", role, "isApproved", "isActive", "createdAt", "updatedAt")
+        `INSERT INTO "User" (id, email, password, "firstName", "lastName", role, "isApproved", "isActive", "createdAt", "updatedAt")
          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
          RETURNING id, email, "firstName", "lastName", role`,
         ['admin@sado-parts.ru', hashedPassword, 'Admin', 'User', 'ADMIN', true, true]
