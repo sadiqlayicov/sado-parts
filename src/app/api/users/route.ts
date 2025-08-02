@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-
-// Prisma Client-i yenidən başlatmaq üçün funksiya
-async function resetPrismaClient() {
-  try {
-    await prisma.$disconnect();
-    const { PrismaClient } = await import('@prisma/client');
-    const newPrisma = new PrismaClient();
-    return newPrisma;
-  } catch (error) {
-    console.error('Prisma Client reset error:', error);
-    return prisma;
-  }
-}
+import { Client } from 'pg';
 
 export async function GET(request: NextRequest) {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+
   try {
+    await client.connect();
+    
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
@@ -25,43 +19,53 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    const where: any = {}
+    let whereConditions = [];
+    let queryParams = [];
+    let paramIndex = 1;
 
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } }
-      ]
+      whereConditions.push(`(email ILIKE $${paramIndex} OR name ILIKE $${paramIndex} OR phone ILIKE $${paramIndex})`);
+      queryParams.push(`%${search}%`);
+      paramIndex++;
     }
 
     if (isAdmin !== null) {
-      where.isAdmin = isAdmin === 'true'
+      whereConditions.push(`"isAdmin" = $${paramIndex}`);
+      queryParams.push(isAdmin === 'true');
+      paramIndex++;
     }
 
     if (isApproved !== null) {
-      where.isApproved = isApproved === 'true'
+      whereConditions.push(`"isApproved" = $${paramIndex}`);
+      queryParams.push(isApproved === 'true');
+      paramIndex++;
     }
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          phone: true,
-          isApproved: true,
-          isAdmin: true,
-          createdAt: true,
-          updatedAt: true
-        },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.user.count({ where })
-    ])
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // Get users
+    const usersQuery = `
+      SELECT id, email, name, phone, "isApproved", "isAdmin", "createdAt", "updatedAt"
+      FROM users 
+      ${whereClause}
+      ORDER BY "createdAt" DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+    
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM users 
+      ${whereClause}
+    `;
+
+    const [usersResult, countResult] = await Promise.all([
+      client.query(usersQuery, [...queryParams, limit, skip]),
+      client.query(countQuery, queryParams)
+    ]);
+
+    const users = usersResult.rows;
+    const total = parseInt(countResult.rows[0].total);
 
     return NextResponse.json({
       users,
@@ -74,96 +78,25 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Get users error:', error)
-    
-    // PostgreSQL prepared statement xətası üçün xüsusi handling
-    if (error && typeof error === 'object' && 'message' in error) {
-      const errorMessage = (error as any).message;
-      if (errorMessage.includes('prepared statement') || errorMessage.includes('42P05') || errorMessage.includes('26000')) {
-        console.log('PostgreSQL prepared statement xətası aşkarlandı, Prisma Client yenidən başladılır...');
-        try {
-          // Prisma Client-i yenidən başlat
-          const newPrisma = await resetPrismaClient();
-          
-          // Qısa müddət gözlə
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Yenidən cəhd et
-          const { searchParams } = new URL(request.url)
-          const page = parseInt(searchParams.get('page') || '1')
-          const limit = parseInt(searchParams.get('limit') || '10')
-          const search = searchParams.get('search') || ''
-          const isAdmin = searchParams.get('isAdmin')
-          const isApproved = searchParams.get('isApproved')
-
-          const skip = (page - 1) * limit
-
-          const where: any = {}
-
-          if (search) {
-            where.OR = [
-              { email: { contains: search, mode: 'insensitive' } },
-              { name: { contains: search, mode: 'insensitive' } },
-              { phone: { contains: search, mode: 'insensitive' } }
-            ]
-          }
-
-          if (isAdmin !== null) {
-            where.isAdmin = isAdmin === 'true'
-          }
-
-          if (isApproved !== null) {
-            where.isApproved = isApproved === 'true'
-          }
-
-          const [users, total] = await Promise.all([
-            newPrisma.user.findMany({
-              where,
-              select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                isApproved: true,
-                isAdmin: true,
-                createdAt: true,
-                updatedAt: true
-              },
-              skip,
-              take: limit,
-              orderBy: { createdAt: 'desc' }
-            }),
-            newPrisma.user.count({ where })
-          ])
-
-          return NextResponse.json({
-            users,
-            pagination: {
-              page,
-              limit,
-              total,
-              pages: Math.ceil(total / limit)
-            }
-          })
-        } catch (retryError) {
-          console.error('Retry failed:', retryError);
-          return NextResponse.json(
-            { error: 'Verilənlər bazası xətası' },
-            { status: 500 }
-          );
-        }
-      }
-    }
-    
     return NextResponse.json(
       { error: 'İstifadəçiləri yükləmək mümkün olmadı' },
       { status: 500 }
     );
+  } finally {
+    await client.end();
   }
 }
 
 // POST - Create new user (admin only)
 export async function POST(request: NextRequest) {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+
   try {
+    await client.connect();
+    
     const body = await request.json()
     const { email, password, name, phone, isAdmin } = body
 
@@ -174,30 +107,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    // Check if user exists
+    const existingUser = await client.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
 
-    if (existingUser) {
+    if (existingUser.rows.length > 0) {
       return NextResponse.json(
         { error: 'Bu email artıq istifadə olunub' },
         { status: 400 }
       )
     }
 
-    const { hashPassword } = await import('@/lib/auth')
-    const hashedPassword = await hashPassword(password)
+    // Hash password
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
-      data: {
+    // Create user
+    const result = await client.query(
+      `INSERT INTO users (id, email, password, name, "isAdmin", "isApproved", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+       RETURNING id, email, name, "isAdmin", "isApproved"`,
+      [
+        'user-' + Date.now(),
         email,
-        password: hashedPassword,
-        name,
-        phone,
-        isAdmin: isAdmin || false,
-        isApproved: true
-      }
-    })
+        hashedPassword,
+        name || 'User',
+        isAdmin || false,
+        true
+      ]
+    );
+
+    const user = result.rows[0];
 
     return NextResponse.json({
       message: 'İstifadəçi uğurla yaradıldı',
@@ -215,5 +157,7 @@ export async function POST(request: NextRequest) {
       { error: 'İstifadəçi yaratma xətası' },
       { status: 500 }
     )
+  } finally {
+    await client.end();
   }
 } 

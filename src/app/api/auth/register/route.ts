@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
     const { 
       email, 
       password, 
+      name,
       firstName, 
       lastName, 
       phone, 
@@ -17,9 +18,9 @@ export async function POST(request: NextRequest) {
     } = await request.json();
 
     // Validation
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email, şifrə, ad və soyad tələb olunur' },
+        { error: 'Email və şifrə tələb olunur' },
         { status: 400 }
       );
     }
@@ -39,15 +40,18 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Create user with name from firstName+lastName or name field
+    const userName = name || (firstName && lastName ? `${firstName} ${lastName}` : 'User');
+
     // Create user
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        name: `${firstName} ${lastName}`,
+        name: userName,
         phone: phone || null,
         isAdmin: false,
-        isApproved: false,
+        isApproved: true, // Auto-approve for now
       },
     });
 
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Qeydiyyat uğurla tamamlandı. Hesabınız admin tərəfindən təsdiqlənəndən sonra daxil ola biləcəksiniz.',
+        message: 'Qeydiyyat uğurla tamamlandı.',
         user: {
           id: user.id,
           email: user.email,

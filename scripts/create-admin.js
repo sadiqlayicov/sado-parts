@@ -10,7 +10,7 @@ async function createAdmin() {
     // Check if admin already exists
     const existingAdmin = await prisma.user.findFirst({
       where: {
-        role: 'ADMIN'
+        isAdmin: true
       }
     });
 
@@ -18,6 +18,7 @@ async function createAdmin() {
       console.log(`✅ Admin artıq mövcuddur: ${existingAdmin.email}`);
       console.log('Admin məlumatları:');
       console.log(`Email: ${existingAdmin.email}`);
+      console.log(`Ad: ${existingAdmin.name}`);
       console.log('Şifrə: admin123 (əgər yeni yaradılıbsa)');
       return;
     }
@@ -30,16 +31,10 @@ async function createAdmin() {
       data: {
         email: 'admin@sado-parts.ru',
         password: hashedPassword,
-        firstName: 'Admin',
-        lastName: 'User',
-        role: 'ADMIN',
+        name: 'Admin User',
+        isAdmin: true,
         isApproved: true,
-        isActive: true,
-        country: '',
-        city: '',
-        address: '',
-        phone: '',
-        inn: ''
+        phone: ''
       }
     });
 
@@ -47,8 +42,8 @@ async function createAdmin() {
     console.log('Admin məlumatları:');
     console.log(`Email: ${adminUser.email}`);
     console.log('Şifrə: admin123');
-    console.log(`Ad: ${adminUser.firstName} ${adminUser.lastName}`);
-    console.log(`Rol: ${adminUser.role}`);
+    console.log(`Ad: ${adminUser.name}`);
+    console.log(`Admin: ${adminUser.isAdmin}`);
 
   } catch (error) {
     console.error('❌ Xəta baş verdi:', error);
