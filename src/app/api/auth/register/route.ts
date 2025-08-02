@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
           id: user.id,
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
-          isApproved: user.isApproved,
+          isApproved: false, // Always return false for new users
         },
       },
       { status: 201 }
