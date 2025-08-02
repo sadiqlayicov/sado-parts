@@ -24,14 +24,14 @@ export async function GET(request: NextRequest) {
     let paramIndex = 1;
 
     if (search) {
-      whereConditions.push(`(email ILIKE $${paramIndex} OR name ILIKE $${paramIndex} OR phone ILIKE $${paramIndex})`);
+      whereConditions.push(`(email ILIKE $${paramIndex} OR "firstName" ILIKE $${paramIndex} OR "lastName" ILIKE $${paramIndex} OR phone ILIKE $${paramIndex})`);
       queryParams.push(`%${search}%`);
       paramIndex++;
     }
 
     if (isAdmin !== null) {
-      whereConditions.push(`"isAdmin" = $${paramIndex}`);
-      queryParams.push(isAdmin === 'true');
+      whereConditions.push(`role = $${paramIndex}`);
+      queryParams.push(isAdmin === 'true' ? 'ADMIN' : 'CUSTOMER');
       paramIndex++;
     }
 
@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    // Get users
+    // Get users with actual database schema
     const usersQuery = `
-      SELECT id, email, name, phone, "isApproved", "isAdmin", "createdAt", "updatedAt"
+      SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "isActive", "createdAt", "updatedAt"
       FROM users 
       ${whereClause}
       ORDER BY "createdAt" DESC
@@ -64,7 +64,13 @@ export async function GET(request: NextRequest) {
       client.query(countQuery, queryParams)
     ]);
 
-    const users = usersResult.rows;
+    // Transform users to include name and isAdmin for frontend compatibility
+    const users = usersResult.rows.map(user => ({
+      ...user,
+      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+      isAdmin: user.role === 'ADMIN'
+    }));
+
     const total = parseInt(countResult.rows[0].total);
 
     return NextResponse.json({
@@ -98,7 +104,7 @@ export async function POST(request: NextRequest) {
     await client.connect();
     
     const body = await request.json()
-    const { email, password, name, isAdmin } = body
+    const { email, password, firstName, lastName, isAdmin } = body
 
     if (!email || !password) {
       return NextResponse.json(
@@ -124,17 +130,19 @@ export async function POST(request: NextRequest) {
     const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create user with actual database schema
     const result = await client.query(
-      `INSERT INTO users (id, email, password, name, "isAdmin", "isApproved", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-       RETURNING id, email, name, "isAdmin", "isApproved"`,
+      `INSERT INTO users (id, email, password, "firstName", "lastName", role, "isApproved", "isActive", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+       RETURNING id, email, "firstName", "lastName", role, "isApproved"`,
       [
         'user-' + Date.now(),
         email,
         hashedPassword,
-        name || 'User',
-        isAdmin || false,
+        firstName || 'User',
+        lastName || 'User',
+        isAdmin ? 'ADMIN' : 'CUSTOMER',
+        true,
         true
       ]
     );
@@ -146,8 +154,8 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
-        isAdmin: user.isAdmin,
+        name: `${user.firstName} ${user.lastName}`,
+        isAdmin: user.role === 'ADMIN',
         isApproved: user.isApproved
       }
     })
