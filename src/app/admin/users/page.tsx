@@ -163,8 +163,8 @@ export default function UsersManagement() {
   };
 
   const getUserStatus = (user: any) => {
-    if (!user.isActive) return 'blocked';
-    if (user.isApproved) return 'approved';
+    if (user.isApproved === false) return 'blocked';
+    if (user.isApproved === true) return 'approved';
     return 'pending';
   };
 
@@ -186,7 +186,7 @@ export default function UsersManagement() {
         // Update local state
         setUsers(users.map(user => 
           user.id === userId 
-            ? { ...user, isApproved: true, isActive: true }
+            ? { ...user, isApproved: true }
             : user
         ));
         alert(data.message || 'İstifadəçi uğurla təsdiqləndi!');
@@ -220,7 +220,7 @@ export default function UsersManagement() {
         // Update local state
         setUsers(users.map(user => 
           user.id === userId 
-            ? { ...user, isApproved: false, isActive: false }
+            ? { ...user, isApproved: false }
             : user
         ));
         alert(data.message || 'İstifadəçi uğurla bloklandı!');
@@ -254,7 +254,7 @@ export default function UsersManagement() {
         // Update local state
         setUsers(users.map(user => 
           user.id === userId 
-            ? { ...user, isApproved: true, isActive: true }
+            ? { ...user, isApproved: true }
             : user
         ));
         alert(data.message || 'İstifadəçi blokdan uğurla çıxarıldı!');

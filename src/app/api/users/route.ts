@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
         firstName || 'User',
         lastName || 'User',
         isAdmin ? 'ADMIN' : 'CUSTOMER',
-        true
+        isAdmin ? true : true // Bütün yeni müştərilər təsdiqlənmiş olsun
       ]
     );
 
