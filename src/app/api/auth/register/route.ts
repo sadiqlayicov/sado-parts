@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Validation
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email və şifrə tələb olunur' },
+        { success: false, error: 'Email və şifrə tələb olunur' },
         { status: 400 }
       );
     }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser.rows.length > 0) {
       return NextResponse.json(
-        { error: 'Bu email ünvanı artıq istifadə olunub' },
+        { success: false, error: 'Bu email ünvanı artıq istifadə olunub' },
         { status: 400 }
       );
     }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     console.error('Registration error:', error);
     await client.end();
     return NextResponse.json(
-      { error: 'Qeydiyyat xətası' },
+      { success: false, error: 'Qeydiyyat xətası' },
       { status: 500 }
     );
   }
