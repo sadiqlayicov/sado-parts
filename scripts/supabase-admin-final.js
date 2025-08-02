@@ -1,14 +1,14 @@
 const bcrypt = require('bcryptjs');
 
-async function createSupabaseAdmin() {
+async function createAdminFinal() {
   try {
-    console.log('🔧 Supabase API ilə admin yaradılır...');
+    console.log('🔧 Supabase REST API ilə admin yaradılır...');
 
     // Hash password for admin123
     const hashedPassword = await bcrypt.hash('admin123', 12);
     console.log('✅ Şifrə hash edildi');
 
-    // Supabase API endpoint və headers
+    // Supabase REST API endpoint
     const supabaseUrl = 'https://aws-0-eu-north-1.pooler.supabase.co/rest/v1/users';
     const headers = {
       'apikey': 'sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI',
@@ -33,12 +33,15 @@ async function createSupabaseAdmin() {
     console.log('Email:', adminData.email);
     console.log('Şifrə: admin123');
 
-    // Fetch API ilə admin yarad
+    // Create admin using fetch
     const response = await fetch(supabaseUrl, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(adminData)
     });
+
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
 
     if (response.ok) {
       console.log('✅ Admin uğurla yaradıldı!');
@@ -50,7 +53,7 @@ async function createSupabaseAdmin() {
       const errorText = await response.text();
       console.log('❌ Xəta baş verdi:', response.status, errorText);
       
-      // Əgər admin artıq varsa, şifrəsini yenilə
+      // If admin already exists, update password
       if (response.status === 409) {
         console.log('🔄 Admin artıq mövcuddur, şifrə yenilənir...');
         
@@ -80,4 +83,4 @@ async function createSupabaseAdmin() {
   }
 }
 
-createSupabaseAdmin(); 
+createAdminFinal(); 
