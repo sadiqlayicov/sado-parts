@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     const order = await prisma.order.create({
       data: {
         userId,
+        orderNumber: generateOrderNumber(),
         status: status || 'PENDING',
         totalAmount: parseFloat(totalAmount)
       },
