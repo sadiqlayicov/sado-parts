@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       // Check if admin already exists
       const existingAdmin = await prisma.user.findFirst({
         where: {
-          role: 'ADMIN'
+          email: 'admin@sado-parts.ru'
         }
       })
 
@@ -25,8 +25,7 @@ export async function POST(request: NextRequest) {
           admin: {
             email: existingAdmin.email,
             firstName: existingAdmin.firstName,
-            lastName: existingAdmin.lastName,
-            role: existingAdmin.role
+            lastName: existingAdmin.lastName
           }
         })
       }
@@ -43,7 +42,6 @@ export async function POST(request: NextRequest) {
           password: hashedPassword,
           firstName: 'Admin',
           lastName: 'User',
-          role: 'ADMIN',
           isApproved: true,
           isActive: true
         }
@@ -59,8 +57,7 @@ export async function POST(request: NextRequest) {
         admin: {
           email: adminUser.email,
           firstName: adminUser.firstName,
-          lastName: adminUser.lastName,
-          role: adminUser.role
+          lastName: adminUser.lastName
         }
       })
 
@@ -76,8 +73,8 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await bcrypt.hash('admin123', 12)
         
         await prisma2.$executeRaw`
-          INSERT INTO users (id, email, password, "firstName", "lastName", role, "isApproved", "isActive", "createdAt", "updatedAt")
-          VALUES (gen_random_uuid(), 'admin@sado-parts.ru', ${hashedPassword}, 'Admin', 'User', 'ADMIN', true, true, NOW(), NOW())
+          INSERT INTO users (id, email, password, "firstName", "lastName", "isApproved", "isActive", "createdAt", "updatedAt")
+          VALUES (gen_random_uuid(), 'admin@sado-parts.ru', ${hashedPassword}, 'Admin', 'User', true, true, NOW(), NOW())
           ON CONFLICT (email) DO NOTHING
         `
         
@@ -89,8 +86,7 @@ export async function POST(request: NextRequest) {
           admin: {
             email: 'admin@sado-parts.ru',
             firstName: 'Admin',
-            lastName: 'User',
-            role: 'ADMIN'
+            lastName: 'User'
           }
         })
         
