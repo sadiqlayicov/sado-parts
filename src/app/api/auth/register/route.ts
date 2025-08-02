@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { Client } from 'pg';
 
 export async function POST(request: NextRequest) {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+
   try {
+    await client.connect();
+    
     const { 
       email, 
       password, 
-      name,
       firstName, 
       lastName, 
       phone, 
@@ -26,11 +32,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await client.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
 
-    if (existingUser) {
+    if (existingUser.rows.length > 0) {
       return NextResponse.json(
         { error: 'Bu email ünvanı artıq istifadə olunub' },
         { status: 400 }
@@ -40,35 +47,33 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with name from firstName+lastName or name field
-    const userName = name || (firstName && lastName ? `${firstName} ${lastName}` : 'User');
+    // Create user with actual database schema
+    const result = await client.query(`
+      INSERT INTO users (id, email, password, "firstName", "lastName", phone, role, "isApproved", "isActive", "createdAt", "updatedAt")
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      RETURNING id, email, "firstName", "lastName", "isApproved"
+    `, [
+      email, 
+      hashedPassword, 
+      firstName || 'User', 
+      lastName || 'User', 
+      phone || null, 
+      'CUSTOMER', 
+      true, // Auto-approve for now
+      true  // Active
+    ]);
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name: userName,
-        phone: phone || null,
-        isAdmin: false,
-        isApproved: true, // Auto-approve for now
-      },
-    });
+    const user = result.rows[0];
 
     // Create default address if provided
     if (address && country && city) {
-      await prisma.address.create({
-        data: {
-          street: address,
-          city,
-          country,
-          state: '',
-          postalCode: '',
-          isDefault: true,
-          userId: user.id,
-        },
-      });
+      await client.query(`
+        INSERT INTO addresses (id, street, city, country, state, "postalCode", "isDefault", "userId", "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      `, [address, city, country, '', '', true, user.id]);
     }
+
+    await client.end();
 
     return NextResponse.json(
       {
@@ -77,7 +82,7 @@ export async function POST(request: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          name: `${user.firstName} ${user.lastName}`,
           isApproved: user.isApproved,
         },
       },
@@ -85,6 +90,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Registration error:', error);
+    await client.end();
     return NextResponse.json(
       { error: 'Qeydiyyat xətası' },
       { status: 500 }
