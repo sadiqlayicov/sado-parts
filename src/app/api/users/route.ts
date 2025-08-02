@@ -112,15 +112,11 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Get users error:', error)
+    await closeClient();
     return NextResponse.json(
       { error: 'İstifadəçi məlumatlarını əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
-  } finally {
-    // Vercel-də connection-ı saxlayırıq, yalnız error zamanı bağlayırıq
-    if (error) {
-      await closeClient();
-    }
   }
 }
 
@@ -188,14 +184,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Create user error:', error)
+    await closeClient();
     return NextResponse.json(
       { error: 'İstifadəçi yaratma xətası' },
       { status: 500 }
     )
-  } finally {
-    // Vercel-də connection-ı saxlayırıq, yalnız error zamanı bağlayırıq
-    if (error) {
-      await closeClient();
-    }
   }
 } 
