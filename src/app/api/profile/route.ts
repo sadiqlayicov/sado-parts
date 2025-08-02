@@ -76,9 +76,9 @@ export async function GET(request: NextRequest) {
 
     // Calculate statistics
     const totalOrders = ordersResult.rows.length;
-    const totalSpent = ordersResult.rows.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
-    const completedOrders = ordersResult.rows.filter(order => order.status === 'delivered').length;
-    const pendingOrders = ordersResult.rows.filter(order => ['pending', 'processing'].includes(order.status)).length;
+    const totalSpent = ordersResult.rows.reduce((sum, order: any) => sum + parseFloat(order.totalAmount), 0);
+    const completedOrders = ordersResult.rows.filter((order: any) => order.status === 'delivered').length;
+    const pendingOrders = ordersResult.rows.filter((order: any) => ['pending', 'processing'].includes(order.status)).length;
 
     return NextResponse.json({
       success: true,
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
         pendingOrders,
         discountPercentage: user.discountPercentage || 0
       },
-      orders: ordersResult.rows.map(order => ({
+      orders: ordersResult.rows.map((order: any) => ({
         id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,

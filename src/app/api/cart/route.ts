@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     let totalPrice = 0;
     let totalSalePrice = 0;
 
-    const cartItems = cartResult.rows.map(item => {
+    const cartItems = cartResult.rows.map((item: any) => {
       const quantity = parseInt(item.quantity);
       const price = parseFloat(item.price);
       const salePrice = item.salePrice ? parseFloat(item.salePrice) : price;

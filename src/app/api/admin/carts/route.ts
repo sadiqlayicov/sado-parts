@@ -82,8 +82,8 @@ export async function GET(request: NextRequest) {
     `, queryParams);
 
     // Group cart items by user
-    const userCarts = {};
-    cartsResult.rows.forEach(item => {
+    const userCarts: { [key: string]: any } = {};
+    cartsResult.rows.forEach((item: any) => {
       const userId = item.userId;
       if (!userCarts[userId]) {
         userCarts[userId] = {
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Convert to array and round totals
-    const carts = Object.values(userCarts).map(cart => ({
+    const carts = Object.values(userCarts).map((cart: any) => ({
       ...cart,
       totalPrice: Math.round(cart.totalPrice * 100) / 100,
       totalSalePrice: Math.round(cart.totalSalePrice * 100) / 100,
