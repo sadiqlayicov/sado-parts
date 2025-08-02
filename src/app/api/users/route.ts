@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    // Get users with actual database schema
+    // Get users with actual database schema (without isActive)
     const usersQuery = `
-      SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "isActive", "createdAt", "updatedAt"
+      SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "createdAt", "updatedAt"
       FROM users 
       ${whereClause}
       ORDER BY "createdAt" DESC
@@ -130,10 +130,10 @@ export async function POST(request: NextRequest) {
     const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with actual database schema
+    // Create user with actual database schema (without isActive)
     const result = await client.query(
-      `INSERT INTO users (id, email, password, "firstName", "lastName", role, "isApproved", "isActive", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      `INSERT INTO users (id, email, password, "firstName", "lastName", role, "isApproved", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
        RETURNING id, email, "firstName", "lastName", role, "isApproved"`,
       [
         'user-' + Date.now(),
@@ -142,7 +142,6 @@ export async function POST(request: NextRequest) {
         firstName || 'User',
         lastName || 'User',
         isAdmin ? 'ADMIN' : 'CUSTOMER',
-        true,
         true
       ]
     );
