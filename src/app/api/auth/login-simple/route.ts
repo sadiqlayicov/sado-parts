@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user
+    // Find user without name column
     const result = await client.query(
-      `SELECT id, email, password, name, "isAdmin", "isApproved"
+      `SELECT id, email, password, "isAdmin", "isApproved"
        FROM users 
        WHERE email = $1`,
       [email]

@@ -1,30 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { Client } from 'pg'
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🔧 Admin setup başladılır...')
 
-    // Dynamic import to avoid prepared statement issues
-    const { PrismaClient } = await import('@prisma/client')
-    const prisma = new PrismaClient()
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    })
 
     try {
-      // Check if admin already exists
-      const existingAdmin = await prisma.user.findFirst({
-        where: {
-          email: 'admin@sado-parts.ru'
-        }
-      })
+      await client.connect()
+      console.log('✅ Database-ə qoşuldu')
 
-      if (existingAdmin) {
-        await prisma.$disconnect()
+      // Check if admin already exists
+      const existingAdmin = await client.query(
+        'SELECT id, email FROM users WHERE email = $1',
+        ['admin@sado-parts.ru']
+      )
+
+      if (existingAdmin.rows.length > 0) {
+        await client.end()
         return NextResponse.json({
           success: true,
           message: 'Admin artıq mövcuddur',
           admin: {
-            email: existingAdmin.email,
-            name: existingAdmin.name
+            email: existingAdmin.rows[0].email
           }
         })
       }
@@ -34,18 +37,14 @@ export async function POST(request: NextRequest) {
       // Hash password
       const hashedPassword = await bcrypt.hash('admin123', 12)
 
-      // Create admin user with minimal required fields
-      const adminUser = await prisma.user.create({
-        data: {
-          email: 'admin@sado-parts.ru',
-          password: hashedPassword,
-          name: 'Admin User',
-          isAdmin: true,
-          isApproved: true
-        }
-      })
+      // Create admin user without name column
+      const result = await client.query(`
+        INSERT INTO users (id, email, password, "isAdmin", "isApproved", "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())
+        RETURNING id, email
+      `, ['admin@sado-parts.ru', hashedPassword, true, true])
 
-      await prisma.$disconnect()
+      await client.end()
 
       console.log('✅ Admin uğurla yaradıldı!')
 
@@ -53,46 +52,19 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Admin istifadəçisi uğurla yaradıldı',
         admin: {
-          email: adminUser.email,
-          name: adminUser.name
+          email: result.rows[0].email,
+          id: result.rows[0].id
         }
       })
 
     } catch (dbError) {
       console.error('Database error:', dbError)
-      await prisma.$disconnect()
+      await client.end()
       
-      // Try alternative approach with raw SQL
-      try {
-        console.log('🔄 Raw SQL ilə cəhd edilir...')
-        
-        const prisma2 = new PrismaClient()
-        const hashedPassword = await bcrypt.hash('admin123', 12)
-        
-        await prisma2.$executeRaw`
-          INSERT INTO users (id, email, password, name, "isAdmin", "isApproved", "createdAt", "updatedAt")
-          VALUES (gen_random_uuid(), 'admin@sado-parts.ru', ${hashedPassword}, 'Admin User', true, true, NOW(), NOW())
-          ON CONFLICT (email) DO NOTHING
-        `
-        
-        await prisma2.$disconnect()
-        
-        return NextResponse.json({
-          success: true,
-          message: 'Admin istifadəçisi raw SQL ilə yaradıldı',
-          admin: {
-            email: 'admin@sado-parts.ru',
-            name: 'Admin User'
-          }
-        })
-        
-      } catch (rawSqlError) {
-        console.error('Raw SQL error:', rawSqlError)
-        return NextResponse.json(
-          { error: 'Admin yaratma xətası', details: rawSqlError instanceof Error ? rawSqlError.message : 'Unknown error' },
-          { status: 500 }
-        )
-      }
+      return NextResponse.json(
+        { error: 'Admin yaratma xətası', details: dbError instanceof Error ? dbError.message : 'Unknown error' },
+        { status: 500 }
+      )
     }
 
   } catch (error) {
