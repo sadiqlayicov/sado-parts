@@ -22,10 +22,23 @@ export async function POST(request: NextRequest) {
       )
 
       if (existingAdmin.rows.length > 0) {
+        console.log('🔄 Admin artıq mövcuddur, şifrə yenilənir...')
+        
+        // Hash password
+        const hashedPassword = await bcrypt.hash('admin123', 12)
+        
+        // Update admin password and role
+        await client.query(`
+          UPDATE users 
+          SET password = $1, role = 'ADMIN', "isApproved" = true, "isActive" = true
+          WHERE email = $2
+        `, [hashedPassword, 'admin@sado-parts.ru'])
+        
         await client.end()
+        
         return NextResponse.json({
           success: true,
-          message: 'Admin artıq mövcuddur',
+          message: 'Admin şifrəsi yeniləndi',
           admin: {
             email: existingAdmin.rows[0].email
           }
@@ -37,12 +50,12 @@ export async function POST(request: NextRequest) {
       // Hash password
       const hashedPassword = await bcrypt.hash('admin123', 12)
 
-      // Create admin user without name column
+      // Create admin user with actual database schema
       const result = await client.query(`
-        INSERT INTO users (id, email, password, "isAdmin", "isApproved", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())
+        INSERT INTO users (id, email, password, "firstName", "lastName", role, "isApproved", "isActive", "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
         RETURNING id, email
-      `, ['admin@sado-parts.ru', hashedPassword, true, true])
+      `, ['admin@sado-parts.ru', hashedPassword, 'Admin', 'User', 'ADMIN', true, true])
 
       await client.end()
 
