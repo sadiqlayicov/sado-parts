@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { Client } from 'pg';
 
 export async function POST(request: NextRequest) {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+
   try {
+    await client.connect();
+    
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -14,24 +21,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        name: true,
-        isAdmin: true,
-        isApproved: true,
-      },
-    });
+    const result = await client.query(
+      `SELECT id, email, password, name, "isAdmin", "isApproved"
+       FROM users 
+       WHERE email = $1`,
+      [email]
+    );
 
-    if (!user) {
+    if (result.rows.length === 0) {
       return NextResponse.json(
         { error: 'İstifadəçi tapılmadı' },
         { status: 401 }
       );
     }
+
+    const user = result.rows[0];
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -64,5 +68,7 @@ export async function POST(request: NextRequest) {
       { error: 'Daxil olma xətası' },
       { status: 500 }
     );
+  } finally {
+    await client.end();
   }
 } 
