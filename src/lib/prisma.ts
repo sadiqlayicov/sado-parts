@@ -15,20 +15,7 @@ const createPrismaClient = () => {
       db: {
         url: process.env.DATABASE_URL
       }
-    },
-    // Vercel üçün əlavə konfiqurasiyalar
-    ...(process.env.NODE_ENV === 'production' && {
-      // Connection pooling üçün
-      __internal: {
-        engine: {
-          connectionLimit: 1,
-          pool: {
-            min: 0,
-            max: 1
-          }
-        }
-      }
-    })
+    }
   })
 }
 
