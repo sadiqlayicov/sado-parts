@@ -40,6 +40,44 @@ interface Order {
   updatedAt: string;
 }
 
+interface OrderItem {
+  id: string;
+  productId: string;
+  name: string;
+  description: string;
+  sku: string;
+  images: string[];
+  categoryName: string;
+  quantity: number;
+  price: number;
+  totalPrice: number;
+  createdAt: string;
+}
+
+interface OrderDetails {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  currency: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    inn: string;
+    address: string;
+    country: string;
+    city: string;
+  };
+  items: OrderItem[];
+}
+
 interface Address {
   id: string;
   street: string;
@@ -59,6 +97,9 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [loadingOrder, setLoadingOrder] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -122,6 +163,31 @@ export default function ProfilePage() {
       default:
         return status;
     }
+  };
+
+  const handleOrderClick = async (orderId: string) => {
+    setLoadingOrder(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setSelectedOrder(data.order);
+        setShowOrderModal(true);
+      } else {
+        alert('Sifariş məlumatları alına bilmədi');
+      }
+    } catch (error) {
+      console.error('Sifariş detallarını əldə etmə xətası:', error);
+      alert('Sifariş məlumatları alına bilmədi');
+    } finally {
+      setLoadingOrder(false);
+    }
+  };
+
+  const closeOrderModal = () => {
+    setShowOrderModal(false);
+    setSelectedOrder(null);
   };
 
      const printOrder = (order: Order) => {
@@ -272,99 +338,99 @@ export default function ProfilePage() {
           <p className="text-gray-300">Sifarişləriniz və ödənişləriniz</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex space-x-1 bg-[#1e293b] rounded-lg p-1 mb-8">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
-              activeTab === 'profile'
-                ? 'bg-cyan-500 text-white'
-                : 'text-gray-300 hover:text-white'
-            }`}
-          >
-            Profil Məlumatları
-          </button>
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
-              activeTab === 'orders'
-                ? 'bg-cyan-500 text-white'
-                : 'text-gray-300 hover:text-white'
-            }`}
-          >
-            Sifarişlər ({orders.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('addresses')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
-              activeTab === 'addresses'
-                ? 'bg-cyan-500 text-white'
-                : 'text-gray-300 hover:text-white'
-            }`}
-          >
-            Ünvanlar ({addresses.length})
-          </button>
-        </div>
+                 {/* Tabs */}
+         <div className="flex space-x-1 bg-[#1e293b] rounded-lg p-1 mb-8">
+           <button
+             onClick={() => setActiveTab('profile')}
+             className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
+               activeTab === 'profile'
+                 ? 'bg-cyan-500 text-white'
+                 : 'text-gray-300 hover:text-white'
+             }`}
+           >
+             Şəxsi Məlumatlar
+           </button>
+           <button
+             onClick={() => setActiveTab('orders')}
+             className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
+               activeTab === 'orders'
+                 ? 'bg-cyan-500 text-white'
+                 : 'text-gray-300 hover:text-white'
+             }`}
+           >
+             Sifarişlər ({orders.length})
+           </button>
+           <button
+             onClick={() => setActiveTab('addresses')}
+             className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
+               activeTab === 'addresses'
+                 ? 'bg-cyan-500 text-white'
+                 : 'text-gray-300 hover:text-white'
+             }`}
+           >
+             Ünvanlar ({addresses.length})
+           </button>
+         </div>
 
         {/* Content */}
         <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-          {activeTab === 'profile' && (
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-20 h-20 bg-cyan-500 rounded-full flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {profile?.name?.charAt(0) || user?.name?.charAt(0) || 'U'}
-                  </span>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white">{profile?.name || user?.name}</h2>
-                  <p className="text-gray-300">{profile?.email || user?.email}</p>
-                  {profile?.phone && (
-                    <p className="text-gray-300">📞 {profile.phone}</p>
-                  )}
-                </div>
-              </div>
+                     {activeTab === 'profile' && (
+             <div className="space-y-6">
+               <div className="flex items-center space-x-4">
+                 <div className="w-20 h-20 bg-cyan-500 rounded-full flex items-center justify-center">
+                   <span className="text-2xl font-bold text-white">
+                     {profile?.name?.charAt(0) || user?.name?.charAt(0) || 'U'}
+                   </span>
+                 </div>
+                 <div>
+                   <h2 className="text-2xl font-bold text-white">{profile?.name || user?.name}</h2>
+                   <p className="text-gray-300">{profile?.email || user?.email}</p>
+                   {profile?.phone && (
+                     <p className="text-gray-300">📞 {profile.phone}</p>
+                   )}
+                 </div>
+               </div>
 
-              {/* Profile Details */}
-              {profile && (
-                <div className="bg-[#0f172a] rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-white mb-4">Şəxsi Məlumatlar</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-gray-400 text-sm">Ad</p>
-                      <p className="text-white">{profile.firstName}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">Soyad</p>
-                      <p className="text-white">{profile.lastName}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">INN</p>
-                      <p className="text-white">{profile.inn || 'Təyin edilməyib'}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">Ölkə</p>
-                      <p className="text-white">{profile.country || 'Təyin edilməyib'}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">Şəhər</p>
-                      <p className="text-white">{profile.city || 'Təyin edilməyib'}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">Ünvan</p>
-                      <p className="text-white">{profile.address || 'Təyin edilməyib'}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">Endirim faizi</p>
-                      <p className="text-white">{profile.discountPercentage}%</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">Qeydiyyat tarixi</p>
-                      <p className="text-white">{new Date(profile.registrationDate).toLocaleDateString('az-AZ')}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+               {/* Şəxsi Məlumatlar */}
+               {profile && (
+                 <div className="bg-[#0f172a] rounded-lg p-6">
+                   <h3 className="text-xl font-semibold text-white mb-4">Şəxsi Məlumatlar</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                       <p className="text-gray-400 text-sm">Ad</p>
+                       <p className="text-white">{profile.firstName}</p>
+                     </div>
+                     <div>
+                       <p className="text-gray-400 text-sm">Soyad</p>
+                       <p className="text-white">{profile.lastName}</p>
+                     </div>
+                     <div>
+                       <p className="text-gray-400 text-sm">INN</p>
+                       <p className="text-white">{profile.inn || 'Təyin edilməyib'}</p>
+                     </div>
+                     <div>
+                       <p className="text-gray-400 text-sm">Ölkə</p>
+                       <p className="text-white">{profile.country || 'Təyin edilməyib'}</p>
+                     </div>
+                     <div>
+                       <p className="text-gray-400 text-sm">Şəhər</p>
+                       <p className="text-white">{profile.city || 'Təyin edilməyib'}</p>
+                     </div>
+                     <div>
+                       <p className="text-gray-400 text-sm">Ünvan</p>
+                       <p className="text-white">{profile.address || 'Təyin edilməyib'}</p>
+                     </div>
+                     <div>
+                       <p className="text-gray-400 text-sm">Endirim faizi</p>
+                       <p className="text-white">{profile.discountPercentage}%</p>
+                     </div>
+                     <div>
+                       <p className="text-gray-400 text-sm">Qeydiyyat tarixi</p>
+                       <p className="text-white">{new Date(profile.registrationDate).toLocaleDateString('az-AZ')}</p>
+                     </div>
+                   </div>
+                 </div>
+               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-[#0f172a] rounded-lg p-4">
@@ -387,25 +453,33 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {activeTab === 'orders' && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-white mb-4">Sifarişləriniz</h2>
-              {orders.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-300">Hələ heç bir sifarişiniz yoxdur</p>
-                  <Link href="/catalog" className="text-cyan-500 hover:text-cyan-400 mt-2 inline-block">
-                    Kataloqa baxın
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order.id} className="bg-[#0f172a] rounded-lg p-6">
-                                             <div className="flex justify-between items-start mb-4">
+                     {activeTab === 'orders' && (
+             <div className="space-y-4">
+               <h2 className="text-2xl font-bold text-white mb-4">Sifarişləriniz</h2>
+               {orders.length === 0 ? (
+                 <div className="text-center py-8">
+                   <p className="text-gray-300">Hələ heç bir sifarişiniz yoxdur</p>
+                   <Link href="/catalog" className="text-cyan-500 hover:text-cyan-400 mt-2 inline-block">
+                     Kataloqa baxın
+                   </Link>
+                 </div>
+               ) : (
+                 <div className="space-y-4">
+                   {orders.map((order) => (
+                     <div 
+                       key={order.id} 
+                       className="bg-[#0f172a] rounded-lg p-6 cursor-pointer hover:bg-[#1e293b] transition-all duration-200 border border-transparent hover:border-cyan-500/30"
+                       onClick={() => handleOrderClick(order.id)}
+                       onDoubleClick={() => handleOrderClick(order.id)}
+                     >
+                       <div className="flex justify-between items-start mb-4">
                          <div>
                            <h3 className="text-lg font-semibold text-white">{order.orderNumber}</h3>
                            <p className="text-gray-300 text-sm">
                              {new Date(order.createdAt).toLocaleDateString('az-AZ')}
+                           </p>
+                           <p className="text-gray-400 text-xs">
+                             Məhsul sayı: {order.itemsCount}
                            </p>
                          </div>
                          <div className="text-right">
@@ -415,26 +489,34 @@ export default function ProfilePage() {
                            <p className="text-2xl font-bold text-cyan-500 mt-1">
                              {order.totalAmount.toFixed(2)} ₼
                            </p>
-                           <button
-                             onClick={() => printOrder(order)}
-                             className="mt-2 px-3 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-xs rounded transition"
-                           >
-                             🖨️ Çap et
-                           </button>
+                           <div className="flex gap-2 mt-2">
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 printOrder(order);
+                               }}
+                               className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-xs rounded transition"
+                             >
+                               🖨️ Çap et
+                             </button>
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleOrderClick(order.id);
+                               }}
+                               className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition"
+                             >
+                               👁️ Detallar
+                             </button>
+                           </div>
                          </div>
                        </div>
-                      
-                                             <div className="mt-4">
-                         <p className="text-gray-400 text-sm">
-                           Məhsul sayı: {order.itemsCount}
-                         </p>
-                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                     </div>
+                   ))}
+                 </div>
+               )}
+             </div>
+           )}
 
           {activeTab === 'addresses' && (
             <div className="space-y-4">
@@ -481,8 +563,147 @@ export default function ProfilePage() {
               )}
             </div>
           )}
-        </div>
-      </div>
-    </div>
-  );
-} 
+                 </div>
+       </div>
+
+       {/* Sifariş Detalları Modal */}
+       {showOrderModal && selectedOrder && (
+         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+           <div className="bg-[#1e293b] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+             <div className="p-6">
+               <div className="flex justify-between items-center mb-6">
+                 <h2 className="text-2xl font-bold text-white">
+                   Sifariş Detalları - {selectedOrder.orderNumber}
+                 </h2>
+                 <button
+                   onClick={closeOrderModal}
+                   className="text-gray-400 hover:text-white text-2xl"
+                 >
+                   ✕
+                 </button>
+               </div>
+
+               {loadingOrder ? (
+                 <div className="text-center py-8">
+                   <div className="text-white">Yüklənir...</div>
+                 </div>
+               ) : (
+                 <div className="space-y-6">
+                   {/* Sifariş Məlumatları */}
+                   <div className="bg-[#0f172a] rounded-lg p-4">
+                     <h3 className="text-lg font-semibold text-white mb-3">Sifariş Məlumatları</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div>
+                         <p className="text-gray-400 text-sm">Sifariş Nömrəsi</p>
+                         <p className="text-white font-medium">{selectedOrder.orderNumber}</p>
+                       </div>
+                       <div>
+                         <p className="text-gray-400 text-sm">Status</p>
+                         <span className={`px-2 py-1 rounded text-sm font-medium ${getStatusColor(selectedOrder.status)}`}>
+                           {getStatusText(selectedOrder.status)}
+                         </span>
+                       </div>
+                       <div>
+                         <p className="text-gray-400 text-sm">Tarix</p>
+                         <p className="text-white">{new Date(selectedOrder.createdAt).toLocaleDateString('az-AZ')}</p>
+                       </div>
+                       <div>
+                         <p className="text-gray-400 text-sm">Ümumi Məbləğ</p>
+                         <p className="text-white font-bold text-lg">{selectedOrder.totalAmount.toFixed(2)} {selectedOrder.currency}</p>
+                       </div>
+                       {selectedOrder.notes && (
+                         <div className="md:col-span-2">
+                           <p className="text-gray-400 text-sm">Qeydlər</p>
+                           <p className="text-white">{selectedOrder.notes}</p>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+
+                   {/* Müştəri Məlumatları */}
+                   <div className="bg-[#0f172a] rounded-lg p-4">
+                     <h3 className="text-lg font-semibold text-white mb-3">Müştəri Məlumatları</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div>
+                         <p className="text-gray-400 text-sm">Ad Soyad</p>
+                         <p className="text-white">{selectedOrder.user.name}</p>
+                       </div>
+                       <div>
+                         <p className="text-gray-400 text-sm">Email</p>
+                         <p className="text-white">{selectedOrder.user.email}</p>
+                       </div>
+                       <div>
+                         <p className="text-gray-400 text-sm">Telefon</p>
+                         <p className="text-white">{selectedOrder.user.phone || 'Təyin edilməyib'}</p>
+                       </div>
+                       <div>
+                         <p className="text-gray-400 text-sm">INN</p>
+                         <p className="text-white">{selectedOrder.user.inn || 'Təyin edilməyib'}</p>
+                       </div>
+                       <div>
+                         <p className="text-gray-400 text-sm">Ölkə</p>
+                         <p className="text-white">{selectedOrder.user.country || 'Təyin edilməyib'}</p>
+                       </div>
+                       <div>
+                         <p className="text-gray-400 text-sm">Şəhər</p>
+                         <p className="text-white">{selectedOrder.user.city || 'Təyin edilməyib'}</p>
+                       </div>
+                       <div className="md:col-span-2">
+                         <p className="text-gray-400 text-sm">Ünvan</p>
+                         <p className="text-white">{selectedOrder.user.address || 'Təyin edilməyib'}</p>
+                       </div>
+                     </div>
+                   </div>
+
+                   {/* Məhsullar */}
+                   <div className="bg-[#0f172a] rounded-lg p-4">
+                     <h3 className="text-lg font-semibold text-white mb-3">Məhsullar ({selectedOrder.items.length})</h3>
+                     <div className="space-y-3">
+                       {selectedOrder.items.map((item, index) => (
+                         <div key={item.id} className="flex items-center justify-between p-3 bg-[#1e293b] rounded-lg">
+                           <div className="flex-1">
+                             <div className="flex items-center gap-3">
+                               <span className="text-gray-400 text-sm">#{index + 1}</span>
+                               <div>
+                                 <h4 className="text-white font-medium">{item.name}</h4>
+                                 <p className="text-gray-400 text-sm">SKU: {item.sku}</p>
+                                 {item.categoryName && (
+                                   <p className="text-gray-400 text-sm">Kateqoriya: {item.categoryName}</p>
+                                 )}
+                               </div>
+                             </div>
+                           </div>
+                           <div className="text-right">
+                             <p className="text-white font-medium">{item.quantity} ədəd</p>
+                             <p className="text-gray-400 text-sm">{item.price.toFixed(2)} ₼</p>
+                             <p className="text-cyan-500 font-bold">{item.totalPrice.toFixed(2)} ₼</p>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+
+                   {/* Düymələr */}
+                   <div className="flex justify-end gap-3">
+                     <button
+                       onClick={() => printOrder(selectedOrder)}
+                       className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded transition"
+                     >
+                       🖨️ Çap et
+                     </button>
+                     <button
+                       onClick={closeOrderModal}
+                       className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition"
+                     >
+                       Bağla
+                     </button>
+                   </div>
+                 </div>
+               )}
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   );
+ } 
