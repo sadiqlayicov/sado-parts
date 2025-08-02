@@ -10,7 +10,7 @@ export async function GET(
   try {
     const order = await prisma.order.findUnique({
       where: { id: params.id },
-      include: { user: true, orderItems: true }
+      include: { user: true }
     })
     if (!order) {
       return NextResponse.json(
@@ -43,7 +43,7 @@ export async function PUT(
         status,
         totalAmount: totalAmount ? parseFloat(totalAmount) : undefined
       },
-      include: { user: true, orderItems: true }
+      include: { user: true }
     })
     return NextResponse.json({
       message: 'Sifariş uğurla yeniləndi',
