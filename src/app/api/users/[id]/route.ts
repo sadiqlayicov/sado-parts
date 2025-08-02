@@ -33,11 +33,11 @@ export async function PUT(
     
     const { id } = await params;
     const body = await request.json();
-    const { firstName, lastName, email, phone, isApproved, isAdmin } = body;
+    const { firstName, lastName, email, phone, isApproved, isAdmin, discountPercentage } = body;
 
     // Validate user exists
     const existingUser = await dbClient.query(
-      'SELECT id, email, "firstName", "lastName", phone, role, "isApproved" FROM users WHERE id = $1',
+      'SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "discountPercentage" FROM users WHERE id = $1',
       [id]
     );
 
@@ -59,9 +59,10 @@ export async function PUT(
         phone = $4, 
         "isApproved" = $5, 
         role = $6,
+        "discountPercentage" = $7,
         "updatedAt" = NOW()
-       WHERE id = $7 
-       RETURNING id, email, "firstName", "lastName", phone, role, "isApproved"`,
+       WHERE id = $8 
+       RETURNING id, email, "firstName", "lastName", phone, role, "isApproved", "discountPercentage"`,
       [
         firstName !== undefined ? firstName : user.firstName,
         lastName !== undefined ? lastName : user.lastName,
@@ -69,6 +70,7 @@ export async function PUT(
         phone !== undefined ? phone : user.phone,
         isApproved !== undefined ? isApproved : user.isApproved,
         isAdmin !== undefined ? (isAdmin ? 'ADMIN' : 'CUSTOMER') : user.role,
+        discountPercentage !== undefined ? discountPercentage : (user.discountPercentage || 0),
         id
       ]
     );
@@ -84,7 +86,8 @@ export async function PUT(
         name: `${updated.firstName} ${updated.lastName}`,
         phone: updated.phone,
         isApproved: updated.isApproved,
-        isAdmin: updated.role === 'ADMIN'
+        isAdmin: updated.role === 'ADMIN',
+        discountPercentage: updated.discountPercentage || 0
       }
     });
 
@@ -110,7 +113,7 @@ export async function GET(
     const { id } = await params;
 
     const user = await dbClient.query(
-      `SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "createdAt", "updatedAt"
+      `SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "discountPercentage", "createdAt", "updatedAt"
        FROM users WHERE id = $1`,
       [id]
     );
@@ -128,7 +131,8 @@ export async function GET(
       user: {
         ...userData,
         name: `${userData.firstName} ${userData.lastName}`,
-        isAdmin: userData.role === 'ADMIN'
+        isAdmin: userData.role === 'ADMIN',
+        discountPercentage: userData.discountPercentage || 0
       }
     });
 

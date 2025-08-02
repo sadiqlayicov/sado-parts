@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Get users with actual database schema
     const usersQuery = `
-      SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "createdAt", "updatedAt"
+      SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "discountPercentage", "createdAt", "updatedAt"
       FROM users 
       ${whereClause}
       ORDER BY "createdAt" DESC
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
       isAdmin: user.role === 'ADMIN',
       discount: user.isApproved ? 0 : 0,
-      discountPercentage: 0,
+      discountPercentage: user.discountPercentage || 0,
       ordersCount: 0,
       totalSpent: 0,
       lastLogin: user.updatedAt,
