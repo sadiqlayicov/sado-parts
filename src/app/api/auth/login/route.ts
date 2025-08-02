@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user without name column
+    // Find user with actual database schema
     const result = await client.query(
-      `SELECT id, email, password, "isAdmin", "isApproved"
+      `SELECT id, email, password, "firstName", "lastName", role, "isApproved", "isActive"
        FROM users 
        WHERE email = $1`,
       [email]
@@ -54,13 +54,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return user data (without password)
+    // Check if user is active
+    if (!user.isActive) {
+      return NextResponse.json(
+        { error: 'Hesabınız bloklanıb' },
+        { status: 401 }
+      );
+    }
+
+    // Return user data (without password) and convert role to isAdmin
     const { password: passwordField, ...userWithoutPassword } = user;
+    const isAdmin = user.role === 'ADMIN';
     
     return NextResponse.json({
       success: true,
       message: 'Uğurla daxil oldunuz',
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        isAdmin,
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
+      },
     });
   } catch (error) {
     console.error('Login error:', error);
