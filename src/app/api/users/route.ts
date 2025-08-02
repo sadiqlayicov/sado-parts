@@ -20,10 +20,8 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const search = searchParams.get('search') || ''
-    const role = searchParams.get('role')
+    const isAdmin = searchParams.get('isAdmin')
     const isApproved = searchParams.get('isApproved')
-    const country = searchParams.get('country')
-    const city = searchParams.get('city')
 
     const skip = (page - 1) * limit
 
@@ -32,28 +30,17 @@ export async function GET(request: NextRequest) {
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { country: { contains: search, mode: 'insensitive' } },
-        { city: { contains: search, mode: 'insensitive' } },
-        { inn: { contains: search, mode: 'insensitive' } }
+        { name: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } }
       ]
     }
 
-    if (role) {
-      where.role = role
+    if (isAdmin !== null) {
+      where.isAdmin = isAdmin === 'true'
     }
 
     if (isApproved !== null) {
       where.isApproved = isApproved === 'true'
-    }
-
-    if (country) {
-      where.country = { contains: country, mode: 'insensitive' }
-    }
-
-    if (city) {
-      where.city = { contains: city, mode: 'insensitive' }
     }
 
     const [users, total] = await Promise.all([
@@ -62,17 +49,10 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           email: true,
-          firstName: true,
-          lastName: true,
+          name: true,
           phone: true,
-          country: true,
-          city: true,
-          inn: true,
-          address: true,
-          role: true,
           isApproved: true,
-          isActive: true,
-          discountPercentage: true,
+          isAdmin: true,
           createdAt: true,
           updatedAt: true
         },
@@ -112,7 +92,7 @@ export async function GET(request: NextRequest) {
           const page = parseInt(searchParams.get('page') || '1')
           const limit = parseInt(searchParams.get('limit') || '10')
           const search = searchParams.get('search') || ''
-          const role = searchParams.get('role')
+          const isAdmin = searchParams.get('isAdmin')
           const isApproved = searchParams.get('isApproved')
 
           const skip = (page - 1) * limit
@@ -122,13 +102,13 @@ export async function GET(request: NextRequest) {
           if (search) {
             where.OR = [
               { email: { contains: search, mode: 'insensitive' } },
-              { firstName: { contains: search, mode: 'insensitive' } },
-              { lastName: { contains: search, mode: 'insensitive' } }
+              { name: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } }
             ]
           }
 
-          if (role) {
-            where.role = role
+          if (isAdmin !== null) {
+            where.isAdmin = isAdmin === 'true'
           }
 
           if (isApproved !== null) {
@@ -141,12 +121,10 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 email: true,
-                firstName: true,
-                lastName: true,
+                name: true,
                 phone: true,
-                role: true,
                 isApproved: true,
-                isActive: true,
+                isAdmin: true,
                 createdAt: true,
                 updatedAt: true
               },
@@ -187,7 +165,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, firstName, lastName, phone, role } = body
+    const { email, password, name, phone, isAdmin } = body
 
     if (!email || !password) {
       return NextResponse.json(
@@ -214,10 +192,9 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         password: hashedPassword,
-        firstName,
-        lastName,
+        name,
         phone,
-        role: role || 'CUSTOMER',
+        isAdmin: isAdmin || false,
         isApproved: true
       }
     })
@@ -227,9 +204,8 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
+        name: user.name,
+        isAdmin: user.isAdmin,
         isApproved: user.isApproved
       }
     })
