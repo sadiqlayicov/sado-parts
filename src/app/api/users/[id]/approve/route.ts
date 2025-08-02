@@ -27,13 +27,13 @@ export async function POST(
     let message = '';
 
     if (action === 'approve') {
-      updateData = { isApproved: true, isActive: true };
+      updateData = { isApproved: true };
       message = 'İstifadəçi uğurla təsdiqləndi!';
     } else if (action === 'block') {
-      updateData = { isApproved: false, isActive: false };
+      updateData = { isApproved: false };
       message = 'İstifadəçi uğurla bloklandı!';
     } else if (action === 'unblock') {
-      updateData = { isApproved: true, isActive: true };
+      updateData = { isApproved: true };
       message = 'İstifadəçi blokdan uğurla çıxarıldı!';
     } else {
       // Fallback for backward compatibility
@@ -53,11 +53,9 @@ export async function POST(
       user: {
         id: updatedUser.id,
         email: updatedUser.email,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
+        name: updatedUser.name,
         isApproved: updatedUser.isApproved,
-        isActive: updatedUser.isActive,
-        discountPercentage: updatedUser.discountPercentage || 0
+        isAdmin: updatedUser.isAdmin
       }
     });
 
