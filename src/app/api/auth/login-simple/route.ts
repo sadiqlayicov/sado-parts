@@ -46,16 +46,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is approved
-    if (!user.isApproved) {
-      return NextResponse.json(
-        { error: 'Hesabınız hələ təsdiqlənməyib' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is active
-    if (!user.isActive) {
+    // Check if user is active (if isActive column exists)
+    if (user.isActive === false) {
       return NextResponse.json(
         { error: 'Hesabınız bloklanıb' },
         { status: 401 }
@@ -68,7 +60,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Uğurla daxil oldunuz',
+      message: user.isApproved ? 'Uğurla daxil oldunuz' : 'Daxil oldunuz, amma hesabınız hələ admin tərəfindən təsdiqlənməyib',
       user: {
         ...userWithoutPassword,
         isAdmin,

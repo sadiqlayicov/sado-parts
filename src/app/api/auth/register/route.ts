@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with actual database schema
+    // Create user with actual database schema - NOT APPROVED by default
     const result = await client.query(`
-      INSERT INTO users (id, email, password, "firstName", "lastName", phone, role, "isApproved", "isActive", "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      INSERT INTO users (id, email, password, "firstName", "lastName", phone, role, "isApproved", "createdAt", "updatedAt")
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
       RETURNING id, email, "firstName", "lastName", "isApproved"
     `, [
       email, 
@@ -59,8 +59,7 @@ export async function POST(request: NextRequest) {
       lastName || 'User', 
       phone || null, 
       'CUSTOMER', 
-      true, // Auto-approve for now
-      true  // Active
+      false, // NOT approved by default - admin must approve
     ]);
 
     const user = result.rows[0];
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Qeydiyyat uğurla tamamlandı.',
+        message: 'Qeydiyyat uğurla tamamlandı. Admin tərəfindən təsdiqləndikdən sonra daxil ola bilərsiniz.',
         user: {
           id: user.id,
           email: user.email,

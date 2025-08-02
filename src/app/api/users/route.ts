@@ -64,11 +64,12 @@ export async function GET(request: NextRequest) {
       client.query(countQuery, queryParams)
     ]);
 
-    // Transform users to include name and isAdmin for frontend compatibility
+    // Transform users to include name, isAdmin, and discount for frontend compatibility
     const users = usersResult.rows.map(user => ({
       ...user,
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
-      isAdmin: user.role === 'ADMIN'
+      isAdmin: user.role === 'ADMIN',
+      discount: user.isApproved ? 0 : 0 // Default discount for approved users
     }));
 
     const total = parseInt(countResult.rows[0].total);
