@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     if (!email || !password) {
       return NextResponse.json(
         { success: false, error: 'Email və şifrə tələb olunur' },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (existingUser.rows.length > 0) {
       return NextResponse.json(
         { success: false, error: 'Bu email ünvanı artıq istifadə olunub' },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
