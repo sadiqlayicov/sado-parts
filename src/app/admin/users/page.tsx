@@ -270,16 +270,27 @@ export default function UsersManagement() {
 
   const handleEditUser = async (user: any) => {
     try {
-      const response = await fetch(`/api/users/${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedUser(data.user);
-        setIsModalOpen(true);
-      } else {
-        alert('İstifadəçi məlumatlarını əldə etmə zamanı xəta baş verdi');
-      }
+      // Use the user data we already have instead of making another API call
+      setSelectedUser({
+        ...user,
+        // Ensure all required fields are present
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        country: user.country || '',
+        city: user.city || '',
+        inn: user.inn || '',
+        address: user.address || '',
+        role: user.role || 'CUSTOMER',
+        isApproved: user.isApproved || false,
+        discountPercentage: user.discountPercentage || 0,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      });
+      setIsModalOpen(true);
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('Error setting user data:', error);
       alert('İstifadəçi məlumatlarını əldə etmə zamanı xəta baş verdi');
     }
   };
@@ -320,22 +331,28 @@ export default function UsersManagement() {
 
   const handleEditUserModal = async (user: any) => {
     try {
-      // Fetch fresh user data from API
-      const response = await fetch(`/api/users/${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        const userData = {
-          ...data.user,
-          status: data.user.isApproved ? 'approved' : 'pending',
-          registrationDate: data.user.createdAt,
-          lastLogin: data.user.updatedAt
-        };
-        setEditingUser(userData);
-      } else {
-        setEditingUser({ ...user });
-      }
+      // Use the user data we already have instead of making another API call
+      const userData = {
+        ...user,
+        status: user.isApproved ? 'approved' : 'pending',
+        registrationDate: user.createdAt,
+        lastLogin: user.updatedAt,
+        // Ensure all required fields are present
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        country: user.country || '',
+        city: user.city || '',
+        inn: user.inn || '',
+        address: user.address || '',
+        role: user.role || 'CUSTOMER',
+        isApproved: user.isApproved || false,
+        discountPercentage: user.discountPercentage || 0
+      };
+      setEditingUser(userData);
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error setting user data:', error);
       setEditingUser({ ...user });
     }
     setIsEditModalOpen(true);
