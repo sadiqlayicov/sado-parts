@@ -76,8 +76,10 @@ export default function UsersManagement() {
       if (data && data.users && Array.isArray(data.users)) {
         const processedUsers = data.users.map((user: any) => ({
           ...user,
-          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'İstifadəçi',
-          role: user.role?.toLowerCase() || 'customer',
+          name: user.name || 'İstifadəçi',
+          firstName: user.firstName || user.name?.split(' ')[0] || '',
+          lastName: user.lastName || user.name?.split(' ').slice(1).join(' ') || '',
+          role: user.role?.toLowerCase() || (user.isAdmin ? 'admin' : 'customer'),
           discountPercentage: user.discountPercentage || 0,
           ordersCount: 0,
           totalSpent: 0,

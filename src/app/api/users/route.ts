@@ -1,14 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-export async function GET(request: NextRequest) {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
+// Vercel üçün connection pool
+let client: Client | null = null;
 
-  try {
+async function getClient() {
+  if (!client) {
+    client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
     await client.connect();
+  }
+  return client;
+}
+
+async function closeClient() {
+  if (client) {
+    await client.end();
+    client = null;
+  }
+}
+
+export async function GET(request: NextRequest) {
+  let dbClient: Client | null = null;
+  
+  try {
+    dbClient = await getClient();
     
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -43,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    // Get users with actual database schema (without isActive)
+    // Get users with actual database schema
     const usersQuery = `
       SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "createdAt", "updatedAt"
       FROM users 
@@ -60,8 +78,8 @@ export async function GET(request: NextRequest) {
     `;
 
     const [usersResult, countResult] = await Promise.all([
-      client.query(usersQuery, [...queryParams, limit, skip]),
-      client.query(countQuery, queryParams)
+      dbClient.query(usersQuery, [...queryParams, limit, skip]),
+      dbClient.query(countQuery, queryParams)
     ]);
 
     // Transform users to include name, isAdmin, and discount for frontend compatibility
@@ -69,7 +87,16 @@ export async function GET(request: NextRequest) {
       ...user,
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
       isAdmin: user.role === 'ADMIN',
-      discount: user.isApproved ? 0 : 0 // Default discount for approved users
+      discount: user.isApproved ? 0 : 0,
+      discountPercentage: 0,
+      ordersCount: 0,
+      totalSpent: 0,
+      lastLogin: user.updatedAt,
+      registrationDate: user.createdAt,
+      country: '—',
+      city: '—',
+      inn: '—',
+      address: '—'
     }));
 
     const total = parseInt(countResult.rows[0].total);
@@ -86,23 +113,23 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Get users error:', error)
     return NextResponse.json(
-      { error: 'İstifadəçiləri yükləmək mümkün olmadı' },
+      { error: 'İstifadəçi məlumatlarını əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    await client.end();
+    // Vercel-də connection-ı saxlayırıq, yalnız error zamanı bağlayırıq
+    if (error) {
+      await closeClient();
+    }
   }
 }
 
 // POST - Create new user (admin only)
 export async function POST(request: NextRequest) {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
-
+  let dbClient: Client | null = null;
+  
   try {
-    await client.connect();
+    dbClient = await getClient();
     
     const body = await request.json()
     const { email, password, firstName, lastName, isAdmin } = body
@@ -115,7 +142,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
-    const existingUser = await client.query(
+    const existingUser = await dbClient.query(
       'SELECT id FROM users WHERE email = $1',
       [email]
     );
@@ -131,8 +158,8 @@ export async function POST(request: NextRequest) {
     const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with actual database schema (without isActive)
-    const result = await client.query(
+    // Create user with actual database schema
+    const result = await dbClient.query(
       `INSERT INTO users (id, email, password, "firstName", "lastName", role, "isApproved", "createdAt", "updatedAt")
        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
        RETURNING id, email, "firstName", "lastName", role, "isApproved"`,
@@ -166,6 +193,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   } finally {
-    await client.end();
+    // Vercel-də connection-ı saxlayırıq, yalnız error zamanı bağlayırıq
+    if (error) {
+      await closeClient();
+    }
   }
 } 

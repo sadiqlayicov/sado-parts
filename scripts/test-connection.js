@@ -5,7 +5,7 @@ async function testConnection() {
   
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
   });
 
   try {
@@ -20,11 +20,12 @@ async function testConnection() {
     const users = await client.query('SELECT id, email, name FROM users LIMIT 3');
     console.log('👥 Sample users:');
     users.rows.forEach(user => {
-      console.log(`  - ${user.email} (${user.name})`);
+      console.log(`  - ${user.email} (${user.name || 'No name'})`);
     });
     
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
+    console.error('Full error:', error);
   } finally {
     await client.end();
   }
