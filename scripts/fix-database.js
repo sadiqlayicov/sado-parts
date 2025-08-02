@@ -1,75 +1,103 @@
 const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
-
 async function fixDatabase() {
-  try {
-    console.log('🔧 Verilənlər bazası düzəldilir...');
-
-    // Add missing columns to users table
-    await prisma.$executeRaw`ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(255)`;
-    await prisma.$executeRaw`ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(255)`;
-    await prisma.$executeRaw`ALTER TABLE users ADD COLUMN IF NOT EXISTS inn VARCHAR(255)`;
-    await prisma.$executeRaw`ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT`;
-
-    // Update existing records to have default values
-    await prisma.$executeRaw`UPDATE users SET country = '' WHERE country IS NULL`;
-    await prisma.$executeRaw`UPDATE users SET city = '' WHERE city IS NULL`;
-    await prisma.$executeRaw`UPDATE users SET address = '' WHERE address IS NULL`;
-
-    console.log('✅ Verilənlər bazası uğurla düzəldildi!');
-
-    // Now create admin user
-    const bcrypt = require('bcryptjs');
-    
-    // Check if admin already exists
-    const existingAdmin = await prisma.user.findFirst({
-      where: {
-        role: 'ADMIN'
+  const prisma = new PrismaClient({
+    log: ['error', 'warn', 'info'],
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
       }
-    });
-
-    if (existingAdmin) {
-      console.log(`✅ Admin artıq mövcuddur: ${existingAdmin.email}`);
-      console.log('Admin məlumatları:');
-      console.log(`Email: ${existingAdmin.email}`);
-      console.log('Şifrə: admin123 (əgər yeni yaradılıbsa)');
-      return;
     }
+  });
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash('admin123', 12);
-
-    // Create admin user
-    const adminUser = await prisma.user.create({
-      data: {
-        email: 'admin@sado-parts.ru',
-        password: hashedPassword,
-        firstName: 'Admin',
-        lastName: 'User',
-        role: 'ADMIN',
-        isApproved: true,
-        isActive: true,
-        country: '',
-        city: '',
-        address: '',
-        phone: '',
-        inn: ''
-      }
+  try {
+    console.log('🔧 Fixing database issues...');
+    
+    // 1. Reset Prisma client
+    await prisma.$disconnect();
+    await prisma.$connect();
+    
+    console.log('✅ Database connection reset');
+    
+    // 2. Check if tables exist
+    const tables = await prisma.$queryRaw`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_type = 'BASE TABLE'
+    `;
+    
+    console.log('📋 Existing tables:', tables.map(t => t.table_name));
+    
+    // 3. Check products table structure
+    const productColumns = await prisma.$queryRaw`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns 
+      WHERE table_name = 'products'
+      ORDER BY ordinal_position
+    `;
+    
+    console.log('📦 Products table columns:');
+    productColumns.forEach(col => {
+      console.log(`   ${col.column_name}: ${col.data_type} (${col.is_nullable === 'YES' ? 'nullable' : 'not null'})`);
     });
-
-    console.log('✅ Admin istifadəçisi uğurla yaradıldı!');
-    console.log('Admin məlumatları:');
-    console.log(`Email: ${adminUser.email}`);
-    console.log('Şifrə: admin123');
-    console.log(`Ad: ${adminUser.firstName} ${adminUser.lastName}`);
-    console.log(`Rol: ${adminUser.role}`);
-
+    
+    // 4. Check if products exist
+    const productCount = await prisma.$queryRaw`SELECT COUNT(*) as count FROM products`;
+    console.log(`📊 Total products: ${productCount[0].count}`);
+    
+    const activeProducts = await prisma.$queryRaw`SELECT COUNT(*) as count FROM products WHERE "isActive" = true`;
+    console.log(`✅ Active products: ${activeProducts[0].count}`);
+    
+    // 5. Get sample products
+    const sampleProducts = await prisma.$queryRaw`
+      SELECT id, name, price, "isActive", "categoryId"
+      FROM products 
+      WHERE "isActive" = true 
+      LIMIT 5
+    `;
+    
+    console.log('📦 Sample active products:');
+    sampleProducts.forEach((product, index) => {
+      console.log(`   ${index + 1}. ${product.name} - ${product.price} AZN (ID: ${product.id})`);
+    });
+    
+    // 6. Check categories
+    const categoryCount = await prisma.$queryRaw`SELECT COUNT(*) as count FROM categories`;
+    console.log(`📂 Total categories: ${categoryCount[0].count}`);
+    
+    const categories = await prisma.$queryRaw`
+      SELECT id, name, "isActive"
+      FROM categories 
+      WHERE "isActive" = true
+    `;
+    
+    console.log('📂 Active categories:');
+    categories.forEach(cat => {
+      console.log(`   - ${cat.name} (ID: ${cat.id})`);
+    });
+    
   } catch (error) {
-    console.error('❌ Xəta baş verdi:', error);
+    console.error('❌ Database fix failed:');
+    console.error('Error:', error.message);
+    
+    if (error.message.includes('prepared statement')) {
+      console.log('\n💡 This is a PostgreSQL connection issue. Trying to reset...');
+      
+      // Try to reset connection
+      try {
+        await prisma.$disconnect();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await prisma.$connect();
+        console.log('✅ Connection reset successful');
+      } catch (resetError) {
+        console.error('❌ Connection reset failed:', resetError.message);
+      }
+    }
   } finally {
     await prisma.$disconnect();
   }
 }
 
+// Run the fix
 fixDatabase(); 

@@ -10,7 +10,15 @@
     "lint": "next lint",
     "seed": "tsx prisma/seed.ts",
     "migrate": "DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate dev --schema prisma/schema.prisma --skip-seed",
-    "generate": "DATABASE_URL=\"file:./prisma/dev.db\" npx prisma generate --schema prisma/schema.prisma"
+    "generate": "DATABASE_URL=\"file:./prisma/dev.db\" npx prisma generate --schema prisma/schema.prisma",
+    "check-db": "node scripts/check-vercel-db.js",
+    "direct-check": "node scripts/direct-db-check.js",
+    "fix-db": "node scripts/fix-database.js",
+    "setup-vercel": "node scripts/setup-vercel-db.js",
+    "migrate-deploy": "npx prisma migrate deploy",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "db-push": "npx prisma db push",
+    "db-seed": "npx prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",

@@ -1,50 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { prisma } from '@/lib/prisma';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    // Check if request has JSON content
-    const contentType = req.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      return NextResponse.json(
-        { error: 'Content-Type must be application/json' },
-        { status: 400 }
-      );
-    }
-
-    let body;
-    try {
-      body = await req.json();
-    } catch (parseError) {
-      console.error('JSON parsing error:', parseError);
-      return NextResponse.json(
-        { error: 'Invalid JSON format' },
-        { status: 400 }
-      );
-    }
-
-    const { firstName, lastName, email, phone, inn, country, city, address, password } = body;
+    const { 
+      email, 
+      password, 
+      firstName, 
+      lastName, 
+      phone, 
+      inn, 
+      address, 
+      country, 
+      city 
+    } = await request.json();
 
     // Validation
-    if (!firstName || !lastName || !email || !phone || !password) {
+    if (!email || !password || !firstName || !lastName) {
       return NextResponse.json(
-        { error: 'Bütün sahələr tələb olunur' },
+        { error: 'Email, şifrə, ad və soyad tələb olunur' },
         { status: 400 }
       );
     }
 
     // Check if user already exists
-    let existingUser;
-    try {
-      existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
-    } catch (findError) {
-      console.log('Find user error (likely missing columns):', findError);
-      // If column doesn't exist, assume user doesn't exist
-      existingUser = null;
-    }
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
 
     if (existingUser) {
       return NextResponse.json(
@@ -56,87 +39,50 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with only basic fields that definitely exist
-    let user;
-    let currentPrisma = prisma;
-
-    try {
-      // Try with basic fields only (that definitely exist in current DB)
-      user = await currentPrisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          firstName,
-          lastName,
-          phone,
-          inn: inn || '',
-          country: country || '',
-          city: city || '',
-          address: address || '',
-          role: 'CUSTOMER',
-          isApproved: false
-        }
-      });
-      console.log('User created successfully with basic fields:', user.id);
-    } catch (createError) {
-      console.log('Basic fields creation failed:', createError);
-      
-      // If prepared statement error, reset client and retry
-      if (createError && typeof createError === 'object' && 'message' in createError) {
-        const errorMessage = (createError as any).message;
-        if (errorMessage.includes('prepared statement') || errorMessage.includes('42P05')) {
-          console.log('Prepared statement error detected, retrying with reset client...');
-          
-          // Reset Prisma client
-          const { PrismaClient } = await import('@prisma/client');
-          currentPrisma = new PrismaClient();
-          
-          user = await currentPrisma.user.create({
-            data: {
-              email,
-              password: hashedPassword,
-              firstName,
-              lastName,
-              phone,
-              inn: inn || '',
-              country: country || '',
-              city: city || '',
-              address: address || '',
-              role: 'CUSTOMER',
-              isApproved: false
-            }
-          });
-          console.log('User created successfully on retry:', user.id);
-        } else {
-          throw createError;
-        }
-      } else {
-        throw createError;
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Qeydiyyat uğurla tamamlandı',
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        inn: user.inn,
-        country: user.country,
-        city: user.city,
-        address: user.address,
-        role: user.role,
-        isApproved: user.isApproved
-      }
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: `${firstName} ${lastName}`,
+        phone: phone || null,
+        isAdmin: false,
+        isApproved: false,
+      },
     });
 
+    // Create default address if provided
+    if (address && country && city) {
+      await prisma.address.create({
+        data: {
+          street: address,
+          city,
+          country,
+          state: '',
+          postalCode: '',
+          isDefault: true,
+          userId: user.id,
+        },
+      });
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Qeydiyyat uğurla tamamlandı. Hesabınız admin tərəfindən təsdiqlənəndən sonra daxil ola biləcəksiniz.',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isApproved: user.isApproved,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'Qeydiyyat zamanı xəta baş verdi' },
+      { error: 'Qeydiyyat xətası' },
       { status: 500 }
     );
   }

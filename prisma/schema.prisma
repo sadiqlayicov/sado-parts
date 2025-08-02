@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 /// @seed="tsx prisma/seed.ts"
@@ -16,31 +17,42 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
-  firstName String?
-  lastName  String?
+  name      String?
   phone     String?
-  country   String?
-  city      String?
-  inn       String?  // Tax ID
-  address   String?
-  role      UserRole @default(CUSTOMER)
+  isAdmin   Boolean  @default(false)
   isApproved Boolean @default(false)
-  isActive  Boolean  @default(true)
-  discountPercentage Int @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
+  addresses Address[]
   orders    Order[]
   reviews   Review[]
-  addresses Address[]
 
   @@map("users")
 }
 
+model Address {
+  id          String   @id @default(cuid())
+  street      String
+  city        String
+  state       String
+  postalCode  String
+  country     String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
 model Category {
   id          String   @id @default(cuid())
-  name        String
+  name        String   @unique
   description String?
   image       String?
   isActive    Boolean  @default(true)
@@ -59,9 +71,9 @@ model Product {
   description   String?
   price         Float
   salePrice     Float?   // Endirim qiyməti
-  sku           String?
+  sku           String?  @unique
   stock         Int      @default(0)
-  images        String?  // JSON array as string
+  images        String[] // Array of image URLs
   isActive      Boolean  @default(true)
   isFeatured    Boolean  @default(false)
   artikul       String?
@@ -79,141 +91,52 @@ model Product {
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  userId      String
-  status      OrderStatus @default(PENDING)
+  id          String   @id @default(cuid())
+  orderNumber String   @unique
+  status      String   @default("pending") // pending, processing, shipped, delivered, cancelled
   totalAmount Float
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  currency    String   @default("AZN")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  user       User        @relation(fields: [userId], references: [id])
-  orderItems OrderItem[]
+  userId String
+  user   User        @relation(fields: [userId], references: [id])
+  items  OrderItem[]
 
   @@map("orders")
 }
 
 model OrderItem {
   id        String @id @default(cuid())
-  orderId   String
-  productId String
   quantity  Int
   price     Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }
 
 model Review {
-  id        String @id @default(cuid())
-  userId    String
-  productId String
+  id        String   @id @default(cuid())
   rating    Int
   comment   String?
+  isApproved Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("reviews")
-}
-
-model Address {
-  id          String @id @default(cuid())
-  userId      String
-  type        AddressType @default(SHIPPING)
-  firstName   String
-  lastName    String
-  company     String?
-  address1    String
-  address2    String?
-  city        String
-  state       String?
-  postalCode  String
-  country     String
-  phone       String?
-  isDefault   Boolean @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  user  User  @relation(fields: [userId], references: [id])
-
-  @@map("addresses")
-}
-
-model ImportExport {
-  id          String           @id @default(cuid())
-  type        ImportExportType
-  fileName    String
-  filePath    String
-  status      ImportExportStatus @default(PENDING)
-  progress    Float            @default(0)
-  totalItems  Int?
-  processedItems Int?          @default(0)
-  error       String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-
-  @@map("import_export")
-}
-
-model Marketplace {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  url         String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("marketplaces")
-}
-
-model Setting {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("settings")
-}
-
-enum UserRole {
-  ADMIN
-  CUSTOMER
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
-
-enum AddressType {
-  SHIPPING
-  BILLING
-}
-
-enum ImportExportType {
-  IMPORT
-  EXPORT
-}
-
-enum ImportExportStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
 }

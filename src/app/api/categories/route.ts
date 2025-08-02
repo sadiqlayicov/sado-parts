@@ -1,58 +1,92 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, resetPrismaClient } from '@/lib/prisma'
+import { Client } from 'pg'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  console.log('GET /api/categories called')
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false
+  })
+
   try {
-    const categories = await prisma.category.findMany({
-      orderBy: { name: 'asc' }
-    });
-    
-    return NextResponse.json(categories);
+    await client.connect()
+    console.log('✅ Database connected successfully for categories')
+
+    const categoriesResult = await client.query(`
+      SELECT id, name, description, image, "isActive", "createdAt", "updatedAt"
+      FROM categories
+      WHERE "isActive" = true
+      ORDER BY name ASC
+    `)
+
+    console.log(`Found ${categoriesResult.rows.length} categories`)
+
+    const categories = categoriesResult.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      image: row.image,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt
+    }))
+
+    return NextResponse.json(categories)
   } catch (error) {
     console.error('Get categories error:', error)
     
-    // PostgreSQL prepared statement xətası üçün xüsusi handling
-    if (error && typeof error === 'object' && 'message' in error) {
-      const errorMessage = (error as any).message;
-      if (errorMessage.includes('prepared statement') || errorMessage.includes('42P05') || errorMessage.includes('26000')) {
-        console.log('PostgreSQL prepared statement xətası aşkarlandı, yenidən cəhd edilir...');
-        // Qısa müddət gözlə və yenidən cəhd et
-        await new Promise(resolve => setTimeout(resolve, 100));
-        try {
-          // Prisma Client-i yenidən başlat
-          await resetPrismaClient();
-          
-          // Qısa müddət gözlə
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          const categories = await prisma.category.findMany({
-            orderBy: { name: 'asc' }
-          });
-          return NextResponse.json(categories);
-        } catch (retryError) {
-          console.error('Retry error:', retryError);
-        }
-      }
-    }
-    
-    // Xəta zamanı boş array qaytar
     return NextResponse.json([])
+  } finally {
+    await client.end()
   }
 }
 
-// POST - Create new category
 export async function POST(request: NextRequest) {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false
+  })
+
   try {
-    const body = await request.json();
-    const { name, description, image } = body;
+    const body = await request.json()
+    const { name, description, image, isActive } = body
+
     if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
-    const category = await prisma.category.create({
-      data: { name, description, image }
-    });
-    return NextResponse.json(category, { status: 201 });
+
+    await client.connect()
+
+    const result = await client.query(`
+      INSERT INTO categories (name, description, image, "isActive")
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `, [
+      name,
+      description,
+      image,
+      isActive !== undefined ? isActive : true
+    ])
+
+    const category = result.rows[0]
+
+    return NextResponse.json({
+      message: 'Category created successfully',
+      category
+    }, { status: 201 })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
+    console.error('Create category error:', error)
+    
+    return NextResponse.json(
+      { error: typeof error === 'object' && error && 'message' in error ? (error as any).message : 'Category creation error' },
+      { status: 500 }
+    )
+  } finally {
+    await client.end()
   }
 } 

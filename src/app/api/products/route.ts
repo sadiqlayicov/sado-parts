@@ -1,132 +1,161 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, resetPrismaClient } from '@/lib/prisma'
+import { Client } from 'pg'
 
 // GET - Get all products
 export async function GET(request: NextRequest) {
+  console.log('GET /api/products called')
+  console.log('Environment:', process.env.NODE_ENV)
+  console.log('Database URL exists:', !!process.env.DATABASE_URL)
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false
+  })
+
   try {
-    const products = await prisma.product.findMany({
-      include: { category: true },
-      orderBy: { createdAt: 'desc' }
-    })
-    // images sahəsini array kimi qaytar
-    const productsWithImages = products.map(product => ({
-      ...product,
-      images: product.images ? JSON.parse(product.images) : []
+    await client.connect()
+    console.log('✅ Database connected successfully')
+
+    // Get products with categories
+    const productsResult = await client.query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.description,
+        p.price,
+        p."salePrice",
+        p.sku,
+        p.stock,
+        p.images,
+        p."isActive",
+        p."isFeatured",
+        p.artikul,
+        p."catalogNumber",
+        p."createdAt",
+        p."updatedAt",
+        p."categoryId",
+        c.name as category_name,
+        c.description as category_description
+      FROM products p
+      LEFT JOIN categories c ON p."categoryId" = c.id
+      WHERE p."isActive" = true
+      ORDER BY p."createdAt" DESC
+    `)
+
+    console.log(`Found ${productsResult.rows.length} products`)
+
+    // Transform the data to match the expected format
+    const products = productsResult.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      price: parseFloat(row.price),
+      salePrice: row.salePrice ? parseFloat(row.salePrice) : null,
+      sku: row.sku,
+      stock: parseInt(row.stock),
+      images: row.images || [],
+      isActive: row.isActive,
+      isFeatured: row.isFeatured,
+      artikul: row.artikul,
+      catalogNumber: row.catalogNumber,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      categoryId: row.categoryId,
+      category: row.category_name ? {
+        id: row.categoryId,
+        name: row.category_name,
+        description: row.category_description
+      } : null
     }))
-    return NextResponse.json(productsWithImages)
+
+    console.log('Returning products with categories')
+
+    return NextResponse.json(products)
   } catch (error) {
     console.error('Get products error:', error)
-    
-    // PostgreSQL prepared statement xətası üçün xüsusi handling
-    if (error && typeof error === 'object' && 'message' in error) {
-      const errorMessage = (error as any).message;
-      if (errorMessage.includes('prepared statement') || errorMessage.includes('42P05') || errorMessage.includes('26000')) {
-        console.log('PostgreSQL prepared statement xətası aşkarlandı, yenidən cəhd edilir...');
-        // Qısa müddət gözlə və yenidən cəhd et
-        await new Promise(resolve => setTimeout(resolve, 100));
-        try {
-          // Prisma Client-i yenidən başlat
-          await resetPrismaClient();
-          
-          // Qısa müddət gözlə
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          const products = await prisma.product.findMany({
-            include: { category: true },
-            orderBy: { createdAt: 'desc' }
-          })
-          // images sahəsini array kimi qaytar
-          const productsWithImages = products.map(product => ({
-            ...product,
-            images: product.images ? JSON.parse(product.images) : []
-          }))
-          return NextResponse.json(productsWithImages)
-        } catch (retryError) {
-          console.error('Retry error:', retryError);
-        }
-      }
-    }
-    
-    // Xəta zamanı boş array qaytar
-    return NextResponse.json([])
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown'
+    })
+
+    return NextResponse.json(
+      { error: 'Failed to fetch products' },
+      { status: 500 }
+    )
+  } finally {
+    await client.end()
   }
 }
 
 // POST - Create new product
 export async function POST(request: NextRequest) {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false
+  })
+
   try {
     console.log('POST /api/products called')
     const body = await request.json()
     console.log('Received data:', JSON.stringify(body, null, 2))
-    
-    const { name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured, artikul, catalogNumber } = body
 
-    console.log('Parsed data:', {
-      name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured, artikul, catalogNumber
-    })
+    const { name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured, artikul, catalogNumber } = body
 
     // Validation
     if (!name) {
-      console.error('Name is required')
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
     if (!price) {
-      console.error('Price is required')
       return NextResponse.json({ error: 'Price is required' }, { status: 400 })
     }
 
-    console.log('Creating product with data:', {
+    await client.connect()
+
+    const imagesArray = images ? (Array.isArray(images) ? images : [images]) : []
+    
+    const result = await client.query(`
+      INSERT INTO products (
+        name, description, price, "salePrice", sku, stock, images, 
+        "categoryId", "isActive", "isFeatured", artikul, "catalogNumber"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `, [
       name,
       description,
-      price: parseFloat(price),
-      salePrice: salePrice ? parseFloat(salePrice) : null,
+      parseFloat(price),
+      salePrice ? parseFloat(salePrice) : null,
       sku,
-      stock: parseInt(stock) || 0,
-      images: images ? (Array.isArray(images) ? images : [images]) : [],
+      parseInt(stock) || 0,
+      imagesArray,
       categoryId,
-      isActive,
-      isFeatured,
-      artikul: artikul || null,
-      catalogNumber: catalogNumber || null
-    })
+      isActive !== undefined ? isActive : true,
+      isFeatured !== undefined ? isFeatured : false,
+      artikul || null,
+      catalogNumber || null
+    ])
 
-    const imagesArray = images ? (Array.isArray(images) ? images : [images]) : [];
-    const product = await prisma.product.create({
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        salePrice: salePrice ? parseFloat(salePrice) : null,
-        sku,
-        stock: parseInt(stock) || 0,
-        images: JSON.stringify(imagesArray),
-        categoryId,
-        isActive,
-        isFeatured,
-        artikul: artikul || null,
-        catalogNumber: catalogNumber || null
-      },
-      include: { category: true }
-    })
+    const product = result.rows[0]
 
     console.log('Created product:', JSON.stringify(product, null, 2))
 
-    // images sahəsini array kimi qaytar
     return NextResponse.json({
       message: 'Məhsul uğurla əlavə olundu',
       product: { ...product, images: imagesArray }
     }, { status: 201 })
   } catch (error) {
     console.error('Create product error:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : 'Unknown'
-    })
+    
     return NextResponse.json(
       { error: typeof error === 'object' && error && 'message' in error ? (error as any).message : 'Məhsul əlavə etmə xətası' },
       { status: 500 }
     )
+  } finally {
+    await client.end()
   }
 } 

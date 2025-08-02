@@ -1,114 +1,38 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  FaFileExcel, 
-  FaFileCsv, 
-  FaFileAlt, 
-  FaUpload, 
-  FaDownload, 
-  FaSync,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaExclamationTriangle,
-  FaCog,
-  FaHistory,
-  FaTrash,
-  FaPlay,
-  FaPause,
-  FaStop
-} from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { FaUpload, FaFileAlt } from 'react-icons/fa';
 
-interface ImportJob {
+interface ImportExportJob {
   id: string;
-  name: string;
   type: 'import' | 'export';
-  format: 'excel' | 'csv' | 'json' | 'xml';
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  fileName: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   progress: number;
-  totalItems: number;
-  processedItems: number;
-  createdAt: string;
-  completedAt?: string;
+  totalItems?: number;
+  processedItems?: number;
   error?: string;
+  createdAt: string;
 }
 
 export default function ImportExportPage() {
-  const [activeTab, setActiveTab] = useState<'import' | 'export'>('import');
+  const [jobs, setJobs] = useState<ImportExportJob[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [importJobs, setImportJobs] = useState<ImportJob[]>([
-    {
-      id: '1',
-      name: 'products_import_2024.xlsx',
-      type: 'import',
-      format: 'excel',
-      status: 'completed',
-      progress: 100,
-      totalItems: 150,
-      processedItems: 150,
-      createdAt: '2024-01-15 10:30',
-      completedAt: '2024-01-15 10:35'
-    },
-    {
-      id: '2',
-      name: 'orders_export.csv',
-      type: 'export',
-      format: 'csv',
-      status: 'running',
-      progress: 65,
-      totalItems: 200,
-      processedItems: 130,
-      createdAt: '2024-01-15 11:00'
-    },
-    {
-      id: '3',
-      name: 'users_import.json',
-      type: 'import',
-      format: 'json',
-      status: 'failed',
-      progress: 0,
-      totalItems: 50,
-      processedItems: 0,
-      createdAt: '2024-01-15 09:15',
-      error: 'Invalid JSON format'
-    }
-  ]);
 
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importConfig, setImportConfig] = useState({
-    updateExisting: true,
-    skipDuplicates: false,
-    validateData: true,
-    category: 'all'
-  });
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'running': return 'text-blue-600 bg-blue-100';
-      case 'completed': return 'text-green-600 bg-green-100';
-      case 'failed': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Ожидает';
-      case 'running': return 'Выполняется';
-      case 'completed': return 'Завершено';
-      case 'failed': return 'Ошибка';
-      default: return 'Неизвестно';
-    }
-  };
-
-  const getFormatIcon = (format: string) => {
-    switch (format) {
-      case 'excel': return <FaFileExcel className="h-5 w-5 text-green-600" />;
-      case 'csv': return <FaFileCsv className="h-5 w-5 text-blue-600" />;
-      case 'json': return <FaFileAlt className="h-5 w-5 text-yellow-600" />;
-      case 'xml': return <FaFileAlt className="h-5 w-5 text-purple-600" />;
-      default: return <FaFileAlt className="h-5 w-5 text-gray-600" />;
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch('/api/import-export');
+      if (response.ok) {
+        const data = await response.json();
+        setJobs(data);
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
     }
   };
 
@@ -116,324 +40,153 @@ export default function ImportExportPage() {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setShowImportModal(true); // Modalı aç!
     }
   };
 
-  // For import
-  const handleImport = async (file: File) => {
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
     const formData = new FormData();
-    formData.append('file', file);
-    await fetch('/api/import-export', {
-      method: 'POST',
-      body: formData,
-    });
-    // Optionally, refetch products or show success
-  };
-  // For export
-  const handleExport = async () => {
-    const res = await fetch('/api/products');
-    const products = await res.json();
-    // Convert products to CSV/Excel and trigger download
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch('/api/import-export', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        setSelectedFile(null);
+        fetchJobs();
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleCancelJob = (jobId: string) => {
-    setImportJobs(prev => prev.map(job => 
-      job.id === jobId ? { ...job, status: 'failed' as const } : job
-    ));
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'text-green-600';
+      case 'processing':
+        return 'text-blue-600';
+      case 'failed':
+        return 'text-red-600';
+      default:
+        return 'text-yellow-600';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return '✓';
+      case 'processing':
+        return '⟳';
+      case 'failed':
+        return '✗';
+      default:
+        return '⏳';
+    }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Импорт/Экспорт</h1>
-          <p className="text-gray-600 dark:text-gray-400">Управление импортом и экспортом данных</p>
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Import/Export</h1>
+        <p className="text-gray-600">Manage product imports and exports</p>
+      </div>
+
+      {/* Upload Section */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Import Products</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Excel File
+            </label>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileSelect}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+          <button
+            onClick={handleUpload}
+            disabled={!selectedFile || isUploading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaUpload />
+            {isUploading ? 'Uploading...' : 'Upload File'}
+          </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('import')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'import'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Импорт
-          </button>
-          <button
-            onClick={() => setActiveTab('export')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'export'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Экспорт
-          </button>
-        </nav>
-      </div>
-
-      {activeTab === 'import' ? (
-        /* Import Section */
-        <div className="space-y-6">
-          {/* Import Options */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Импорт данных</h3>
-            
-            {/* Place this at the top of the import section, outside the grid */}
-            <div className="mb-4">
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileSelect}
-                className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition cursor-pointer"
-                style={{ marginTop: '16px' }}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition">
-                <FaFileCsv className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">CSV файл</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Поддерживает .csv файлы
-                </p>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="csv-upload"
-                />
-                <label
-                  htmlFor="csv-upload"
-                  className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition cursor-pointer"
-                >
-                  <FaUpload className="mr-2" />
-                  Выбрать файл
-                </label>
-              </div>
-
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 transition">
-                <FaFileAlt className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">JSON файл</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Поддерживает .json файлы
-                </p>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="json-upload"
-                />
-                <label
-                  htmlFor="json-upload"
-                  className="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition cursor-pointer"
-                >
-                  <FaUpload className="mr-2" />
-                  Выбрать файл
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* Export Section */
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Экспорт данных</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <button
-                onClick={() => handleExport()}
-                className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+      {/* Jobs List */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-4">Import/Export Jobs</h2>
+        <div className="space-y-4">
+          {jobs.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No jobs found</p>
+          ) : (
+            jobs.map((job) => (
+              <div
+                key={job.id}
+                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
               >
-                <FaFileExcel className="h-8 w-8 text-green-600 mr-3" />
-                <div className="text-left">
-                  <h4 className="font-medium text-gray-900 dark:text-white">Товары</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Excel формат</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleExport()}
-                className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              >
-                <FaFileCsv className="h-8 w-8 text-blue-600 mr-3" />
-                <div className="text-left">
-                  <h4 className="font-medium text-gray-900 dark:text-white">Заказы</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">CSV формат</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleExport()}
-                className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              >
-                <FaFileAlt className="h-8 w-8 text-yellow-600 mr-3" />
-                <div className="text-left">
-                  <h4 className="font-medium text-gray-900 dark:text-white">Пользователи</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">JSON формат</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleExport()}
-                className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              >
-                <FaFileAlt className="h-8 w-8 text-purple-600 mr-3" />
-                <div className="text-left">
-                  <h4 className="font-medium text-gray-900 dark:text-white">Аналитика</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">XML формат</p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Jobs History */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">История операций</h3>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            {importJobs.map((job) => (
-              <div key={job.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    {getFormatIcon(job.format)}
-                    <div className="ml-3">
-                      <h4 className="font-medium text-gray-900 dark:text-white">{job.name}</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {job.type === 'import' ? 'Импорт' : 'Экспорт'} • {job.format.toUpperCase()}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <FaFileAlt className="text-gray-400" />
+                    <div>
+                      <h3 className="font-medium">{job.fileName}</h3>
+                      <p className="text-sm text-gray-500">
+                        {new Date(job.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
-                      {getStatusText(job.status)}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`font-medium ${getStatusColor(job.status)}`}
+                    >
+                      {getStatusIcon(job.status)} {job.status}
                     </span>
-                    {job.status === 'running' && (
-                      <button
-                        onClick={() => handleCancelJob(job.id)}
-                        className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                      >
-                        <FaStop className="h-4 w-4" />
-                      </button>
-                    )}
                   </div>
                 </div>
-
-                {job.status === 'running' && (
-                  <div className="mb-3">
-                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      <span>Прогресс</span>
-                      <span>{job.progress.toFixed(1)}%</span>
+                
+                {job.status === 'processing' && (
+                  <div className="mt-3">
+                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                      <span>Progress</span>
+                      <span>{job.progress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${job.progress}%` }}
-                      />
+                      ></div>
                     </div>
-                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      <span>Обработано: {job.processedItems} из {job.totalItems}</span>
-                      <span>{job.createdAt}</span>
-                    </div>
+                    {job.totalItems && job.processedItems && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {job.processedItems} of {job.totalItems} items processed
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {job.status === 'completed' && (
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>Обработано {job.totalItems} элементов</span>
-                    <span>Завершено: {job.completedAt}</span>
-                  </div>
-                )}
-
-                {job.status === 'failed' && job.error && (
-                  <div className="text-sm text-red-600 dark:text-red-400">
-                    Ошибка: {job.error}
+                {job.error && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700">{job.error}</p>
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
       </div>
-
-      {/* Import Configuration Modal */}
-      {showImportModal && selectedFile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Настройки импорта
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Файл: {selectedFile.name}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Размер: {(selectedFile.size / 1024).toFixed(1)} KB</p>
-              </div>
-              
-              <div className="space-y-3">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={importConfig.updateExisting}
-                    onChange={(e) => setImportConfig(prev => ({ ...prev, updateExisting: e.target.checked }))}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Обновлять существующие записи</span>
-                </label>
-                
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={importConfig.skipDuplicates}
-                    onChange={(e) => setImportConfig(prev => ({ ...prev, skipDuplicates: e.target.checked }))}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Пропускать дубликаты</span>
-                </label>
-                
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={importConfig.validateData}
-                    onChange={(e) => setImportConfig(prev => ({ ...prev, validateData: e.target.checked }))}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Валидировать данные</span>
-                </label>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => handleImport(selectedFile)}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-              >
-                Начать импорт
-              </button>
-              <button
-                onClick={() => setShowImportModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition"
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

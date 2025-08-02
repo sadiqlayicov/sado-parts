@@ -1,68 +1,63 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
+import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, firstName, lastName } = await request.json()
+    const { email, password, firstName, lastName, phone } = await request.json();
 
+    // Validation
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email və şifrə tələb olunur' },
+        { error: 'Email and password are required' },
         { status: 400 }
-      )
+      );
     }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+      where: { email },
+    });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Bu email ünvanı artıq istifadə olunub' },
+        { error: 'User with this email already exists' },
         { status: 400 }
-      )
+      );
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create admin user
     const adminUser = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        firstName: firstName || 'Admin',
-        lastName: lastName || 'User',
-        role: 'ADMIN',
+        name: `${firstName || 'Admin'} ${lastName || 'User'}`,
+        phone: phone || null,
+        isAdmin: true,
         isApproved: true,
-        isActive: true,
-        country: '',
-        city: '',
-        inn: '',
-        address: ''
-      }
-    })
+      },
+    });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Admin istifadəçisi uğurla yaradıldı',
-      user: {
-        id: adminUser.id,
-        email: adminUser.email,
-        firstName: adminUser.firstName,
-        lastName: adminUser.lastName,
-        role: adminUser.role,
-        isApproved: adminUser.isApproved
-      }
-    })
-
-  } catch (error) {
-    console.error('Create admin error:', error)
     return NextResponse.json(
-      { error: 'Admin yaratma xətası' },
+      {
+        message: 'Admin user created successfully',
+        user: {
+          id: adminUser.id,
+          email: adminUser.email,
+          name: adminUser.name,
+          isAdmin: adminUser.isAdmin,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 } 

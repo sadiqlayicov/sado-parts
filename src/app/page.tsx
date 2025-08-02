@@ -20,11 +20,18 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        console.log('Fetching products...');
         const productsRes = await fetch('/api/products');
+        console.log('Products response status:', productsRes.status);
+        
         const productsData = await productsRes.json();
+        console.log('Products data:', productsData);
+        
         if (Array.isArray(productsData)) {
           setProducts(productsData);
+          console.log(`Loaded ${productsData.length} products`);
         } else {
+          console.error('Products data is not an array:', productsData);
           setProducts([]);
         }
         
@@ -41,6 +48,8 @@ export default function HomePage() {
         }
       } catch (error) {
         console.error('Error fetching data:', error);
+        setProducts([]);
+        setCategories([]);
       }
       setLoading(false);
     }
@@ -227,6 +236,25 @@ export default function HomePage() {
         <h2 className="text-2xl font-bold mb-4 text-center">{t('latest_products')}</h2>
         {loading ? (
           <div className="text-center text-lg">Loading...</div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-lg text-gray-400 mb-4">No products available</div>
+            <div className="text-sm text-gray-500 mb-4">
+              This might be due to:
+              <ul className="list-disc list-inside mt-2 text-left max-w-md mx-auto">
+                <li>Database connection issues</li>
+                <li>No products in the database</li>
+                <li>Products are not active</li>
+                <li>API endpoint errors</li>
+              </ul>
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white"
+            >
+              Refresh Page
+            </button>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
