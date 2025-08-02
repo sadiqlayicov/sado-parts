@@ -685,12 +685,21 @@ export default function ProfilePage() {
 
                    {/* Düymələr */}
                    <div className="flex justify-end gap-3">
-                     <button
-                       onClick={() => printOrder(selectedOrder)}
-                       className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded transition"
-                     >
-                       🖨️ Çap et
-                     </button>
+                                         <button
+                      onClick={() => printOrder({
+                        id: selectedOrder.id,
+                        orderNumber: selectedOrder.orderNumber,
+                        status: selectedOrder.status,
+                        totalAmount: selectedOrder.totalAmount,
+                        currency: selectedOrder.currency,
+                        itemsCount: selectedOrder.items.length,
+                        createdAt: selectedOrder.createdAt,
+                        updatedAt: selectedOrder.updatedAt
+                      })}
+                      className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded transition"
+                    >
+                      🖨️ Çap et
+                    </button>
                      <button
                        onClick={closeOrderModal}
                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition"
