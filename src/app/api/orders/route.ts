@@ -9,7 +9,7 @@ function generateOrderNumber() {
 export async function GET(request: NextRequest) {
   try {
     const orders = await prisma.order.findMany({
-      include: { user: true, orderItems: true }
+      include: { user: true }
     })
     return NextResponse.json(orders)
   } catch (error) {
@@ -31,16 +31,9 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         status: status || 'PENDING',
-        totalAmount: parseFloat(totalAmount),
-        orderItems: {
-          create: items.map((item: any) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: parseFloat(item.price)
-          }))
-        }
+        totalAmount: parseFloat(totalAmount)
       },
-      include: { user: true, orderItems: true }
+      include: { user: true }
     })
 
     return NextResponse.json({
