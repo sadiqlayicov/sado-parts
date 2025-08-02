@@ -47,42 +47,43 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with actual database schema - NOT APPROVED by default
+    // Create user with all fields including country, city, inn, address
     const result = await client.query(`
-      INSERT INTO users (id, email, password, "firstName", "lastName", phone, role, "isApproved", "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-      RETURNING id, email, "firstName", "lastName", "isApproved"
+      INSERT INTO users (id, email, password, "firstName", "lastName", phone, inn, address, country, city, role, "isApproved", "createdAt", "updatedAt")
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      RETURNING id, email, "firstName", "lastName", phone, inn, address, country, city, "isApproved"
     `, [
       email, 
       hashedPassword, 
       firstName || 'User', 
       lastName || 'User', 
       phone || null, 
+      inn || null,
+      address || null,
+      country || null,
+      city || null,
       'CUSTOMER', 
-      false, // NOT approved by default - admin must approve
+      true, // Approved by default as requested
     ]);
 
     const user = result.rows[0];
-
-    // Create default address if provided
-    if (address && country && city) {
-      await client.query(`
-        INSERT INTO addresses (id, street, city, country, state, "postalCode", "isDefault", "userId", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-      `, [address, city, country, '', '', true, user.id]);
-    }
 
     await client.end();
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Qeydiyyat uğurla tamamlandı. Admin tərəfindən təsdiqləndikdən sonra daxil ola bilərsiniz.',
+        message: 'Qeydiyyat uğurla tamamlandı. İndi daxil ola bilərsiniz.',
         user: {
           id: user.id,
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
-          isApproved: false, // Always return false for new users
+          phone: user.phone,
+          inn: user.inn,
+          address: user.address,
+          country: user.country,
+          city: user.city,
+          isApproved: true,
         },
       },
       { status: 201 }

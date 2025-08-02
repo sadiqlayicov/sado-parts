@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Get users with actual database schema
     const usersQuery = `
-      SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "discountPercentage", "createdAt", "updatedAt"
+      SELECT id, email, "firstName", "lastName", phone, inn, address, country, city, role, "isApproved", "discountPercentage", "createdAt", "updatedAt"
       FROM users 
       ${whereClause}
       ORDER BY "createdAt" DESC
@@ -93,10 +93,10 @@ export async function GET(request: NextRequest) {
       totalSpent: 0,
       lastLogin: user.updatedAt,
       registrationDate: user.createdAt,
-      country: '—',
-      city: '—',
-      inn: '—',
-      address: '—'
+      country: user.country || '—',
+      city: user.city || '—',
+      inn: user.inn || '—',
+      address: user.address || '—'
     }));
 
     const total = parseInt(countResult.rows[0].total);

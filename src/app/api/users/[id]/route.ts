@@ -33,11 +33,11 @@ export async function PUT(
     
     const { id } = await params;
     const body = await request.json();
-    const { firstName, lastName, email, phone, isApproved, isAdmin, discountPercentage } = body;
+    const { firstName, lastName, email, phone, inn, address, country, city, isApproved, isAdmin, discountPercentage } = body;
 
     // Validate user exists
     const existingUser = await dbClient.query(
-      'SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "discountPercentage" FROM users WHERE id = $1',
+      'SELECT id, email, "firstName", "lastName", phone, inn, address, country, city, role, "isApproved", "discountPercentage" FROM users WHERE id = $1',
       [id]
     );
 
@@ -57,17 +57,25 @@ export async function PUT(
         "lastName" = $2, 
         email = $3, 
         phone = $4, 
-        "isApproved" = $5, 
-        role = $6,
-        "discountPercentage" = $7,
+        inn = $5,
+        address = $6,
+        country = $7,
+        city = $8,
+        "isApproved" = $9, 
+        role = $10,
+        "discountPercentage" = $11,
         "updatedAt" = NOW()
-       WHERE id = $8 
-       RETURNING id, email, "firstName", "lastName", phone, role, "isApproved", "discountPercentage"`,
+       WHERE id = $12 
+       RETURNING id, email, "firstName", "lastName", phone, inn, address, country, city, role, "isApproved", "discountPercentage"`,
       [
         firstName !== undefined ? firstName : user.firstName,
         lastName !== undefined ? lastName : user.lastName,
         email !== undefined ? email : user.email,
         phone !== undefined ? phone : user.phone,
+        inn !== undefined ? inn : user.inn,
+        address !== undefined ? address : user.address,
+        country !== undefined ? country : user.country,
+        city !== undefined ? city : user.city,
         isApproved !== undefined ? isApproved : user.isApproved,
         isAdmin !== undefined ? (isAdmin ? 'ADMIN' : 'CUSTOMER') : user.role,
         discountPercentage !== undefined ? discountPercentage : (user.discountPercentage || 0),
@@ -85,6 +93,10 @@ export async function PUT(
         email: updated.email,
         name: `${updated.firstName} ${updated.lastName}`,
         phone: updated.phone,
+        inn: updated.inn,
+        address: updated.address,
+        country: updated.country,
+        city: updated.city,
         isApproved: updated.isApproved,
         isAdmin: updated.role === 'ADMIN',
         discountPercentage: updated.discountPercentage || 0
@@ -113,7 +125,7 @@ export async function GET(
     const { id } = await params;
 
     const user = await dbClient.query(
-      `SELECT id, email, "firstName", "lastName", phone, role, "isApproved", "discountPercentage", "createdAt", "updatedAt"
+      `SELECT id, email, "firstName", "lastName", phone, inn, address, country, city, role, "isApproved", "discountPercentage", "createdAt", "updatedAt"
        FROM users WHERE id = $1`,
       [id]
     );
