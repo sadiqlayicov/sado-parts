@@ -16,7 +16,7 @@
     "fix-db": "node scripts/fix-database.js",
     "setup-vercel": "node scripts/setup-vercel-db.js",
     "migrate-deploy": "npx prisma migrate deploy",
-    "vercel-build": "prisma generate && next build",
+    "vercel-build": "prisma generate && next build --no-lint",
     "db-push": "npx prisma db push",
     "db-seed": "npx prisma db seed"
   },

@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    let whereConditions = [];
-    let queryParams = [];
+    const whereConditions = [];
+    const queryParams = [];
     let paramIndex = 1;
 
     if (search) {
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     await client.connect();
     
     const body = await request.json()
-    const { email, password, name, phone, isAdmin } = body
+    const { email, password, name, isAdmin } = body
 
     if (!email || !password) {
       return NextResponse.json(
