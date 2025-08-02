@@ -10,7 +10,7 @@ async function getClient() {
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     });
-    await client.end();
+    await client.connect();
   }
   return client;
 }
