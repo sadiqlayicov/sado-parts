@@ -24,8 +24,7 @@ export async function POST(request: NextRequest) {
           message: 'Admin artıq mövcuddur',
           admin: {
             email: existingAdmin.email,
-            firstName: existingAdmin.firstName,
-            lastName: existingAdmin.lastName
+            name: existingAdmin.name
           }
         })
       }
@@ -40,10 +39,9 @@ export async function POST(request: NextRequest) {
         data: {
           email: 'admin@sado-parts.ru',
           password: hashedPassword,
-          firstName: 'Admin',
-          lastName: 'User',
-          isApproved: true,
-          isActive: true
+          name: 'Admin User',
+          isAdmin: true,
+          isApproved: true
         }
       })
 
@@ -56,8 +54,7 @@ export async function POST(request: NextRequest) {
         message: 'Admin istifadəçisi uğurla yaradıldı',
         admin: {
           email: adminUser.email,
-          firstName: adminUser.firstName,
-          lastName: adminUser.lastName
+          name: adminUser.name
         }
       })
 
@@ -73,8 +70,8 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await bcrypt.hash('admin123', 12)
         
         await prisma2.$executeRaw`
-          INSERT INTO users (id, email, password, "firstName", "lastName", "isApproved", "isActive", "createdAt", "updatedAt")
-          VALUES (gen_random_uuid(), 'admin@sado-parts.ru', ${hashedPassword}, 'Admin', 'User', true, true, NOW(), NOW())
+          INSERT INTO users (id, email, password, name, "isAdmin", "isApproved", "createdAt", "updatedAt")
+          VALUES (gen_random_uuid(), 'admin@sado-parts.ru', ${hashedPassword}, 'Admin User', true, true, NOW(), NOW())
           ON CONFLICT (email) DO NOTHING
         `
         
@@ -85,8 +82,7 @@ export async function POST(request: NextRequest) {
           message: 'Admin istifadəçisi raw SQL ilə yaradıldı',
           admin: {
             email: 'admin@sado-parts.ru',
-            firstName: 'Admin',
-            lastName: 'User'
+            name: 'Admin User'
           }
         })
         
