@@ -123,54 +123,52 @@ export async function GET(
   }
 }
 
-// PUT - Update order (status və digər sahələr)
+// PUT - Update order status
 export async function PUT(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
+  const { id: orderId } = await params;
+  let dbClient: Client | null = null;
+  
   try {
-    const body = await request.json()
-    const { status, totalAmount } = body
-    const order = await prisma.order.update({
-      where: { id: params.id },
-      data: {
-        status,
-        totalAmount: totalAmount ? parseFloat(totalAmount) : undefined
-      },
-      include: { user: true }
-    })
-    return NextResponse.json({
-      message: 'Sifariş uğurla yeniləndi',
-      order
-    })
-  } catch (error) {
-    console.error('Update order error:', error)
-    return NextResponse.json(
-      { error: 'Sifarişi yeniləmə xətası' },
-      { status: 500 }
-    )
-  }
-}
+    dbClient = await getClient();
+    
+    const { status } = await request.json();
 
-// DELETE - Delete order
-export async function DELETE(
-  request: NextRequest,
-  context: any
-) {
-  const { params } = context;
-  try {
-    await prisma.order.delete({
-      where: { id: params.id }
-    })
+    if (!orderId || !status) {
+      return NextResponse.json(
+        { error: 'Sifariş ID və status tələb olunur' },
+        { status: 400 }
+      );
+    }
+
+    const result = await dbClient.query(`
+      UPDATE orders 
+      SET status = $1, "updatedAt" = NOW()
+      WHERE id = $2
+      RETURNING id, "orderNumber", status
+    `, [status, orderId]);
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Sifariş tapılmadı' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({
-      message: 'Sifariş uğurla silindi'
-    })
+      success: true,
+      message: 'Sifariş statusu yeniləndi',
+      order: result.rows[0]
+    });
+
   } catch (error) {
-    console.error('Delete order error:', error)
+    console.error('Update order error:', error);
+    await closeClient();
     return NextResponse.json(
-      { error: 'Sifarişi silmə xətası' },
+      { error: 'Sifariş yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
-    )
+    );
   }
 } 
