@@ -25,14 +25,15 @@ async function closeClient() {
 // Get order details with items
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: orderId } = await params;
   let dbClient: Client | null = null;
   
   try {
     dbClient = await getClient();
     
-    const orderId = params.id;
+
 
     if (!orderId) {
       return NextResponse.json(
