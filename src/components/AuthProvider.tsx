@@ -157,14 +157,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
   };
 
-  // Check user approval status periodically
+  // Check user approval status periodically - only once when user logs in
   useEffect(() => {
-    if (user && !user.isAdmin) {
-      // Check more frequently if user is not approved yet
-      const interval = setInterval(refreshUserData, user.isApproved ? 30000 : 5000); // 5 seconds if not approved, 30 seconds if approved
-      return () => clearInterval(interval);
+    if (user && !user.isAdmin && !user.isApproved) {
+      // Only check once when user is not approved
+      const timeout = setTimeout(refreshUserData, 5000); // Check once after 5 seconds
+      return () => clearTimeout(timeout);
     }
-  }, [user]);
+  }, [user?.id, user?.isApproved]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
