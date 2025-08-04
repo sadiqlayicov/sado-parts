@@ -154,7 +154,7 @@ export default function HomePage() {
 
   function ProductCard({ product, onAddToCart, onToggleWishlist, isWishlisted }: any) {
     return (
-      <div className="bg-[#1e293b] rounded-lg p-3 hover:bg-cyan-900 transition-all duration-300 hover:scale-105 flex flex-col h-64 cursor-pointer group relative">
+      <div className="bg-[#1e293b] rounded-lg p-3 hover:bg-cyan-900 transition-all duration-300 hover:scale-105 flex flex-col h-72 cursor-pointer group relative">
         <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
         <div className="w-full h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
           {product.images && product.images.length > 0 && product.images[0] ? (
@@ -163,9 +163,9 @@ export default function HomePage() {
           <span className="text-white font-bold text-xs" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>{product.brand || product.name}</span>
         </div>
         <div className="flex-1 flex flex-col justify-between min-h-0">
-          <div className="min-h-0 flex-1">
+          <div className="min-h-0 flex-1 flex flex-col">
             <div className="font-semibold text-sm mb-2 text-center line-clamp-2 leading-tight overflow-hidden">{product.name}</div>
-            <div className="text-center mb-2">
+            <div className="text-center mb-3">
               {isAuthenticated && isApproved && calculateDiscountedPrice(product.price) !== product.price ? (
                 <div>
                   <div className="text-gray-400 line-through text-xs">{product.price?.toLocaleString()}₼</div>
@@ -175,21 +175,21 @@ export default function HomePage() {
                 <div className="text-cyan-400 font-bold text-sm">{product.price?.toLocaleString()}₼</div>
               )}
             </div>
-            <div className="text-xs text-gray-400 text-center space-y-1 mb-2">
+            <div className="text-xs text-gray-400 text-center space-y-1 mb-4">
               <div className="truncate">{product.category?.name || '-'}</div>
               <div className="truncate">SKU: {product.artikul || product.sku || '-'}</div>
             </div>
           </div>
-          <div className="flex gap-2 justify-center mt-auto pt-2 relative z-20">
+          <div className="flex gap-2 justify-center mt-auto pt-3 relative z-20">
             <button
               onClick={e => { e.stopPropagation(); e.preventDefault(); onAddToCart(product.id, 1); }}
-              className="px-2 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition"
+              className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition"
             >
               Add to Cart
             </button>
             <button
               onClick={e => { e.stopPropagation(); e.preventDefault(); onToggleWishlist(product.id); }}
-              className={`px-2 py-2 rounded text-white text-xs transition ${isWishlisted ? 'bg-red-500' : 'bg-white/10 hover:bg-red-500'}`}
+              className={`px-3 py-2 rounded text-white text-xs transition ${isWishlisted ? 'bg-red-500' : 'bg-white/10 hover:bg-red-500'}`}
               title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
             >
               ♥
@@ -214,7 +214,7 @@ export default function HomePage() {
             <div className="col-span-full text-center">No top products available</div>
           ) : (
             topSellers.map((product: any) => (
-              <div key={product.id} className="bg-[#1e293b] rounded-lg p-3 hover:bg-cyan-900 transition-all duration-300 hover:scale-105 flex flex-col h-64 cursor-pointer group relative">
+              <div key={product.id} className="bg-[#1e293b] rounded-lg p-3 hover:bg-cyan-900 transition-all duration-300 hover:scale-105 flex flex-col h-72 cursor-pointer group relative">
                 <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
                 <div className="w-full h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {product.images && product.images.length > 0 && product.images[0] ? (
@@ -223,9 +223,9 @@ export default function HomePage() {
                   <span className="text-white font-bold text-xs" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>{product.brand || product.name}</span>
                 </div>
                 <div className="flex-1 flex flex-col justify-between min-h-0">
-                  <div className="min-h-0 flex-1">
+                  <div className="min-h-0 flex-1 flex flex-col">
                     <div className="font-semibold text-sm mb-2 text-center line-clamp-2 leading-tight overflow-hidden">{product.name}</div>
-                    <div className="text-center mb-2">
+                    <div className="text-center mb-3">
                       {isAuthenticated && isApproved && calculateDiscountedPrice(product.price) !== product.price ? (
                         <div>
                           <div className="text-gray-400 line-through text-xs">{product.price?.toLocaleString()}₼</div>
@@ -235,7 +235,7 @@ export default function HomePage() {
                         <div className="text-cyan-400 font-bold text-sm">{product.price?.toLocaleString()}₼</div>
                       )}
                     </div>
-                    <div className="text-xs text-gray-400 text-center mt-auto">{t('sales_count')}: {product.salesCount}</div>
+                    <div className="text-xs text-gray-400 text-center mt-auto mb-4">{t('sales_count')}: {product.salesCount}</div>
                   </div>
                 </div>
               </div>

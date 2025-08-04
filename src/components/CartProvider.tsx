@@ -50,7 +50,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Load cart from API when user is authenticated
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      refreshCart();
+      // Only refresh cart once when user is authenticated
+      const loadCart = async () => {
+        if (!isRefreshing) {
+          await refreshCart();
+        }
+      };
+      loadCart();
     } else {
       setCartItems([]);
     }
