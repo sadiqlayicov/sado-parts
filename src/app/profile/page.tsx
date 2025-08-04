@@ -107,8 +107,10 @@ export default function ProfilePage() {
       return;
     }
 
-    fetchUserData();
-  }, [isAuthenticated]);
+    if (user?.id) {
+      fetchUserData();
+    }
+  }, [isAuthenticated, user?.id]);
 
   const fetchUserData = async () => {
     try {
