@@ -9,6 +9,24 @@ async function createClient() {
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     });
     await client.connect();
+    
+    // Ensure cart_items table exists
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS cart_items (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          "userId" UUID NOT NULL,
+          "productId" UUID NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 1,
+          "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      `);
+    } catch (tableError) {
+      console.log('Cart table creation error (might already exist):', tableError);
+    }
+    
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
