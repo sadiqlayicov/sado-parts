@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 export default function HomePage() {
   const { t } = useTranslation();
   const { addToCart } = useCart();
-  const { isAuthenticated, isApproved, calculateDiscountedPrice } = useAuth();
+  const { isAuthenticated, isApproved, calculateDiscountedPrice, user } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -165,14 +165,7 @@ export default function HomePage() {
           </div>
           <div className="flex gap-2 justify-center mt-2 relative z-20">
             <button
-              onClick={e => { e.stopPropagation(); e.preventDefault(); onAddToCart({
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                quantity: 1,
-                sku: product.artikul || product.sku || '',
-                stock: product.stock || 99
-              }); }}
+              onClick={e => { e.stopPropagation(); e.preventDefault(); onAddToCart(product.id, 1); }}
               className="px-2 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition"
             >
               Add to Cart

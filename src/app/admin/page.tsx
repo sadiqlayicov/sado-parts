@@ -59,6 +59,8 @@ export default function AdminDashboard() {
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showUserManagementModal, setShowUserManagementModal] = useState(false);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [loadingCart, setLoadingCart] = useState(false);
 
   useEffect(() => {
     async function fetchStats() {
@@ -80,6 +82,25 @@ export default function AdminDashboard() {
       }
     }
     fetchStats();
+  }, []);
+
+  // Fetch cart items
+  useEffect(() => {
+    async function fetchCartItems() {
+      setLoadingCart(true);
+      try {
+        const res = await fetch('/api/cart/all');
+        const data = await res.json();
+        if (data.success) {
+          setCartItems(data.cartItems || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch cart items:', error);
+      } finally {
+        setLoadingCart(false);
+      }
+    }
+    fetchCartItems();
   }, []);
 
   if (!isAuthenticated || !isAdmin) {
@@ -339,6 +360,86 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Cart Items Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Активные корзины пользователей</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Всего пользователей с товарами в корзине: {cartItems.length}
+          </p>
+        </div>
+        <div className="p-6">
+          {loadingCart ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">Загрузка корзин...</p>
+            </div>
+          ) : cartItems.length === 0 ? (
+            <div className="text-center py-8">
+              <FaShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">Нет активных корзин</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {cartItems.map((userCart) => (
+                <div key={userCart.userId} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        {userCart.userName}
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {userCart.userEmail}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        Всего товаров: {userCart.totalItems}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Общая сумма: {userCart.totalSalePrice.toLocaleString()} ₽
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {userCart.items.map((item: any) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          {item.images && item.images[0] && (
+                            <img 
+                              src={item.images[0]} 
+                              alt={item.productName}
+                              className="w-12 h-12 object-cover rounded-lg"
+                            />
+                          )}
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {item.productName}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {item.categoryName} • SKU: {item.sku}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {item.quantity} шт.
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {item.salePrice.toLocaleString()} ₽
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

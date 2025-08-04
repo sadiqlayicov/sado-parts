@@ -62,14 +62,7 @@ export default function WishlistPage() {
                 <div className="text-cyan-400 font-bold text-md mb-2 z-20">{product.price?.toLocaleString()}₼</div>
                 <div className="flex gap-2 mt-2 z-20">
                   <button
-                    onClick={e => { e.stopPropagation(); e.preventDefault(); addToCart({
-                      id: product.id,
-                      name: product.name,
-                      price: product.price,
-                      quantity: 1,
-                      sku: product.artikul || product.sku || '',
-                      stock: product.stock || 99
-                    }); }}
+                    onClick={e => { e.stopPropagation(); e.preventDefault(); addToCart(product.id, 1); }}
                     className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition"
                   >
                     Добавить в корзину

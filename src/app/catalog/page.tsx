@@ -332,14 +332,7 @@ function CatalogPage() {
                   </div>
                   <div className="flex gap-2 mt-2 z-20 relative justify-center">
                     <button
-                      onClick={e => { e.stopPropagation(); e.preventDefault(); addToCart({
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        quantity: 1,
-                        sku: product.artikul || product.sku || '',
-                        stock: product.stock || 99
-                      }); }}
+                      onClick={e => { e.stopPropagation(); e.preventDefault(); addToCart(product.id, 1); }}
                       className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition text-sm"
                     >
                       Добавить в корзину

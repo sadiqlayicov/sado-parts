@@ -53,14 +53,7 @@ export default function ProductPage() {
   }
 
   const handleAddToCart = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: isApproved && !isAdmin ? calculateDiscountedPrice(product.price) : product.price,
-      quantity,
-      sku: product.sku,
-      stock: product.stock
-    });
+    addToCart(product.id, quantity);
   };
 
   const discountedPrice = isApproved && !isAdmin ? calculateDiscountedPrice(product.price) : product.price;
