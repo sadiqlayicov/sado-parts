@@ -37,6 +37,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const hasLoadedCart = useRef(false);
 
@@ -52,15 +53,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isAuthenticated && user?.id && !hasLoadedCart.current) {
       hasLoadedCart.current = true;
-      refreshCart();
+      const loadCart = async () => {
+        if (!user?.id || isRefreshing) return;
+        
+        setIsRefreshing(true);
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/cart?userId=${user.id}`);
+          const data = await response.json();
+          
+          if (data.success) {
+            setCartItems(data.cart.items || []);
+          }
+        } catch (error) {
+          console.error('Cart refresh error:', error);
+        } finally {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
+      };
+      loadCart();
     } else if (!isAuthenticated) {
       hasLoadedCart.current = false;
       setCartItems([]);
     }
-  }, [isAuthenticated, user?.id]);
-
-  // Prevent multiple simultaneous requests
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  }, [isAuthenticated, user?.id, isRefreshing]);
 
   const refreshCart = async () => {
     if (!user?.id || isRefreshing) return;

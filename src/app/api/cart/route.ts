@@ -96,11 +96,17 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Get cart error:', error);
-    await closeClient();
+    if (dbClient) {
+      await dbClient.end();
+    }
     return NextResponse.json(
       { error: 'Səbət məlumatlarını əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await dbClient.end();
+    }
   }
 }
 
@@ -258,11 +264,17 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('Update cart error:', error);
-    await closeClient();
+    if (dbClient) {
+      await dbClient.end();
+    }
     return NextResponse.json(
       { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await dbClient.end();
+    }
   }
 }
 
@@ -295,10 +307,16 @@ export async function DELETE(request: NextRequest) {
 
   } catch (error) {
     console.error('Remove from cart error:', error);
-    await closeClient();
+    if (dbClient) {
+      await dbClient.end();
+    }
     return NextResponse.json(
       { error: 'Səbətdən silmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await dbClient.end();
+    }
   }
 } 
