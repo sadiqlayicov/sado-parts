@@ -37,7 +37,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const hasLoadedCart = useRef(false);
 
@@ -54,9 +53,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (isAuthenticated && user?.id && !hasLoadedCart.current) {
       hasLoadedCart.current = true;
       const loadCart = async () => {
-        if (!user?.id || isRefreshing) return;
+        if (!user?.id) return;
         
-        setIsRefreshing(true);
         setIsLoading(true);
         try {
           const response = await fetch(`/api/cart?userId=${user.id}`);
@@ -69,7 +67,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           console.error('Cart refresh error:', error);
         } finally {
           setIsLoading(false);
-          setIsRefreshing(false);
         }
       };
       loadCart();
@@ -80,9 +77,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, user?.id]);
 
   const refreshCart = async () => {
-    if (!user?.id || isRefreshing) return;
+    if (!user?.id || isLoading) return;
     
-    setIsRefreshing(true);
     setIsLoading(true);
     try {
       const response = await fetch(`/api/cart?userId=${user.id}`);
@@ -95,7 +91,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       console.error('Cart refresh error:', error);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -159,7 +154,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok) {
-        await refreshCart(); // Refresh cart after removing
+        // Remove item from local state instead of refreshing
+        setCartItems(prevItems => prevItems.filter(item => item.id !== cartItemId));
       }
     } catch (error) {
       console.error('Remove from cart error:', error);
@@ -180,7 +176,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok) {
-        await refreshCart(); // Refresh cart after updating
+        // Update item in local state instead of refreshing
+        setCartItems(prevItems => 
+          prevItems.map(item => 
+            item.id === cartItemId 
+              ? { ...item, quantity, totalPrice: item.price * quantity, totalSalePrice: item.salePrice * quantity }
+              : item
+          )
+        );
       }
     } catch (error) {
       console.error('Update quantity error:', error);
