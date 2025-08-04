@@ -103,44 +103,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  // Real API functions
-  const refreshUserData = async () => {
-    if (!user) return;
-    
-    try {
-      const response = await fetch(`/api/users/${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Extract user data from the response
-        const userData = data.user || data;
-        const updatedUser = {
-          ...user,
-          isApproved: userData.isApproved,
-          discountPercentage: userData.discountPercentage || 0
-        };
-        
-        // Check if approval status changed
-        const wasApproved = user.isApproved;
-        const isNowApproved = userData.isApproved;
-        
-        setUser(updatedUser);
-        setIsApproved(userData.isApproved);
-        localStorage.setItem('sado-parts-user', JSON.stringify(updatedUser));
-        
-        // Show notification if approval status changed
-        if (!wasApproved && isNowApproved) {
-          alert('🎉 Поздравляем! Ваш аккаунт был одобрен администратором!');
-        }
-      }
-    } catch (error) {
-      console.error('Error refreshing user data:', error);
-    }
-  };
+  // Real API functions - DISABLED to prevent infinite loops
+  // const refreshUserData = async () => {
+  //   // Function disabled to prevent infinite request loops
+  // };
 
   // Manual refresh function that can be called from components
   const refreshUserStatus = async () => {
-    await refreshUserData();
+    // Disabled to prevent infinite loops
+    console.log('refreshUserStatus called but disabled to prevent loops');
   };
 
   // Clear cached data and force fresh login
@@ -276,7 +247,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         // If the approved user is the current user, refresh their data immediately
         if (user && user.id === userId) {
-          await refreshUserData();
+          // Disabled to prevent infinite loops
+          console.log('User approved, but refreshUserData disabled to prevent loops');
         }
         return true;
       } else {
