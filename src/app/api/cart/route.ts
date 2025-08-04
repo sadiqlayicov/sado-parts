@@ -1,39 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-// Create a new client for each request to avoid connection issues
+// Simple client creation without table creation
 async function createClient() {
-  try {
-    const client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    await client.connect();
-    
-    // Ensure cart_items table exists - simplified approach
-    try {
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS cart_items (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          "userId" TEXT NOT NULL,
-          "productId" TEXT NOT NULL,
-          quantity INTEGER NOT NULL DEFAULT 1,
-          "isActive" BOOLEAN NOT NULL DEFAULT true,
-          "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-      `);
-      console.log('✅ cart_items table ensured');
-    } catch (tableError) {
-      console.error('Cart table creation error:', tableError);
-      // Continue anyway - table might already exist
-    }
-    
-    return client;
-  } catch (error) {
-    console.error('Database connection error:', error);
-    throw new Error('Database connection failed');
-  }
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  await client.connect();
+  return client;
 }
 
 // Get user cart
@@ -53,60 +28,70 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user cart items with product details
-    const cartResult = await client.query(`
-      SELECT ci.id, ci.quantity, ci."createdAt",
-             p.id as "productId", p.name, p.description, p.price, p."salePrice", p.images, p.stock, p.sku,
-             c.name as "categoryName"
-      FROM cart_items ci
-      JOIN products p ON ci."productId" = p.id
-      LEFT JOIN categories c ON p."categoryId" = c.id
-      WHERE ci."userId" = $1 AND ci."isActive" = true
-      ORDER BY ci."createdAt" DESC
-    `, [userId]);
+    // Try to get cart items, if table doesn't exist return empty cart
+    try {
+      const cartResult = await client.query(`
+        SELECT ci.id, ci.quantity, ci."createdAt",
+               p.id as "productId", p.name, p.description, p.price, p."salePrice", p.images, p.stock, p.sku,
+               c.name as "categoryName"
+        FROM cart_items ci
+        JOIN products p ON ci."productId" = p.id
+        LEFT JOIN categories c ON p."categoryId" = c.id
+        WHERE ci."userId" = $1 AND ci."isActive" = true
+        ORDER BY ci."createdAt" DESC
+      `, [userId]);
 
-    // Calculate totals
-    let totalItems = 0;
-    let totalPrice = 0;
-    let totalSalePrice = 0;
+      const cartItems = cartResult.rows.map((item: any) => {
+        const quantity = parseInt(item.quantity);
+        const price = parseFloat(item.price);
+        const salePrice = item.salePrice ? parseFloat(item.salePrice) : price;
 
-    const cartItems = cartResult.rows.map((item: any) => {
-      const quantity = parseInt(item.quantity);
-      const price = parseFloat(item.price);
-      const salePrice = item.salePrice ? parseFloat(item.salePrice) : price;
-      
-      totalItems += quantity;
-      totalPrice += price * quantity;
-      totalSalePrice += salePrice * quantity;
+        return {
+          id: item.id,
+          productId: item.productId,
+          name: item.name,
+          description: item.description,
+          price: price,
+          salePrice: salePrice,
+          images: item.images,
+          stock: parseInt(item.stock),
+          sku: item.sku,
+          categoryName: item.categoryName,
+          quantity: quantity,
+          totalPrice: price * quantity,
+          totalSalePrice: salePrice * quantity,
+          createdAt: item.createdAt
+        };
+      });
 
-      return {
-        id: item.id,
-        productId: item.productId,
-        name: item.name,
-        description: item.description,
-        price: price,
-        salePrice: salePrice,
-        images: item.images,
-        stock: parseInt(item.stock),
-        sku: item.sku,
-        categoryName: item.categoryName,
-        quantity: quantity,
-        totalPrice: price * quantity,
-        totalSalePrice: salePrice * quantity,
-        createdAt: item.createdAt
-      };
-    });
+      const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      const totalPrice = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      const totalSalePrice = cartItems.reduce((sum, item) => sum + item.totalSalePrice, 0);
 
-    return NextResponse.json({
-      success: true,
-      cart: {
-        items: cartItems,
-        totalItems,
-        totalPrice: Math.round(totalPrice * 100) / 100,
-        totalSalePrice: Math.round(totalSalePrice * 100) / 100,
-        savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
-      }
-    });
+      return NextResponse.json({
+        success: true,
+        cart: {
+          items: cartItems,
+          totalItems,
+          totalPrice: Math.round(totalPrice * 100) / 100,
+          totalSalePrice: Math.round(totalSalePrice * 100) / 100,
+          savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
+        }
+      });
+    } catch (tableError) {
+      // If table doesn't exist, return empty cart
+      console.log('Cart table not found, returning empty cart');
+      return NextResponse.json({
+        success: true,
+        cart: {
+          items: [],
+          totalItems: 0,
+          totalPrice: 0,
+          totalSalePrice: 0,
+          savings: 0
+        }
+      });
+    }
 
   } catch (error) {
     console.error('Get cart error:', error);
@@ -137,7 +122,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if product exists and has stock
+    // Check if product exists
     const productResult = await client.query(`
       SELECT id, name, price, stock FROM products WHERE id = $1 AND "isActive" = true
     `, [productId]);
@@ -154,6 +139,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Kifayət qədər stok yoxdur' },
         { status: 400 }
+      );
+    }
+
+    // Try to create cart_items table if it doesn't exist
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS cart_items (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          "userId" TEXT NOT NULL,
+          "productId" TEXT NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 1,
+          "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      `);
+    } catch (tableError) {
+      console.error('Failed to create cart_items table:', tableError);
+      return NextResponse.json(
+        { error: 'Səbət sistemi hazır deyil' },
+        { status: 500 }
       );
     }
 
