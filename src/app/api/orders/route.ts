@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate total amount
     let totalAmount = 0;
-    userCart.forEach(item => {
+    userCart.forEach((item: any) => {
       const price = item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price);
       totalAmount += price * parseInt(item.quantity);
     });
