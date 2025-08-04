@@ -37,31 +37,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user cart items from in-memory cart storage
-    // Since we're using in-memory storage in cart API, we'll simulate cart data here
-    const userCart = [
-      {
-        id: 'cart-item-1',
-        productId: 'product-1',
-        name: 'Product cmdsinv7',
-        price: 100,
-        salePrice: 80,
-        quantity: 2
-      },
-      {
-        id: 'cart-item-2', 
-        productId: 'product-2',
-        name: 'Product cmdsinv8',
-        price: 100,
-        salePrice: 80,
-        quantity: 1
+    // Get user cart items from cart API
+    let userCart;
+    try {
+      const cartResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart?userId=${userId}`);
+      const cartData = await cartResponse.json();
+      
+      if (!cartData.success || !cartData.cart || cartData.cart.items.length === 0) {
+        return NextResponse.json(
+          { error: 'Səbətdə məhsul yoxdur' },
+          { status: 400 }
+        );
       }
-    ];
-    
-    if (userCart.length === 0) {
+      
+      userCart = cartData.cart.items;
+    } catch (error) {
+      console.error('Error fetching cart:', error);
       return NextResponse.json(
-        { error: 'Səbətdə məhsul yoxdur' },
-        { status: 400 }
+        { error: 'Səbət məlumatları alınmadı' },
+        { status: 500 }
       );
     }
 
@@ -101,8 +95,21 @@ export async function POST(request: NextRequest) {
     userOrders.push(order);
     orderStorage.set(userId, userOrders);
 
-    // Clear cart (in a real implementation, this would clear the cart_items table)
-    // For now, we'll just return success since we're using in-memory storage
+    // Clear cart by removing all items
+    try {
+      for (const item of userCart) {
+        await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ cartItemId: item.id })
+        });
+      }
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      // Continue with order creation even if cart clearing fails
+    }
 
     return NextResponse.json({
       success: true,
