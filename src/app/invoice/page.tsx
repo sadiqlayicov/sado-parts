@@ -91,6 +91,35 @@ function InvoiceContent() {
     window.print();
   };
 
+  const completeOrder = async () => {
+    if (!order) return;
+    
+    try {
+      const response = await fetch('/api/orders/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          userId: user?.id
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Sifariş uğurla tamamlandı! Admin təsdiqi gözləyir.');
+        window.location.href = '/profile';
+      } else {
+        alert('Sifariş tamamlama zamanı xəta baş verdi.');
+      }
+    } catch (error) {
+      console.error('Error completing order:', error);
+      alert('Sifariş tamamlama zamanı xəta baş verdi.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] flex items-center justify-center">
@@ -213,6 +242,12 @@ function InvoiceContent() {
             className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg transition"
           >
             🖨️ Çap et
+          </button>
+          <button
+            onClick={completeOrder}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+          >
+            ✅ Sifarişi tamamla
           </button>
           <Link
             href="/profile"
