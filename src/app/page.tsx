@@ -182,7 +182,7 @@ export default function HomePage() {
           </div>
           <div className="flex gap-2 justify-center mt-auto pt-6 relative z-20">
             <button
-              onClick={e => { e.stopPropagation(); e.preventDefault(); onAddToCart(product.id, 1); }}
+              onClick={e => { e.stopPropagation(); e.preventDefault(); onAddToCart(product.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''), 1); }}
               className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition"
             >
               Add to Cart

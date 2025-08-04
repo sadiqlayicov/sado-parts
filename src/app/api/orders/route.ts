@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       }
       
       userCart = cartData.cart.items;
+      console.log('Cart items for order:', userCart); // Debug log
     } catch (error) {
       console.error('Error fetching cart:', error);
       return NextResponse.json(

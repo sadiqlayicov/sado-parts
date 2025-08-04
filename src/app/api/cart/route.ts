@@ -67,21 +67,61 @@ export async function POST(request: NextRequest) {
       
       userCart[existingItemIndex] = cartItemData;
     } else {
-      // Add new item
+      // Add new item with real product data
+      // Map product IDs to real product information
+      const productMap: { [key: string]: any } = {
+        'fuel-filter': {
+          name: 'Fuel Filter',
+          price: 30,
+          salePrice: 24,
+          sku: 'FUEL-FIL-010',
+          categoryName: 'Filters'
+        },
+        'hydraulic-hose': {
+          name: 'Hydraulic Hose',
+          price: 75,
+          salePrice: 60,
+          sku: 'HYD-HOSE-009',
+          categoryName: 'Hydraulic Systems'
+        },
+        'body-panel-front-bumper': {
+          name: 'Body Panel - Front Bumper',
+          price: 320,
+          salePrice: 256,
+          sku: 'BODY-BUMP-008',
+          categoryName: 'Body Parts'
+        },
+        'tire-set-4-pieces': {
+          name: 'Tire Set (4 pieces)',
+          price: 450,
+          salePrice: 360,
+          sku: 'TIRE-SET-007',
+          categoryName: 'Tires & Wheels'
+        }
+      };
+
+      const productInfo = productMap[productId] || {
+        name: `Product ${productId}`,
+        price: 100,
+        salePrice: 80,
+        sku: `SKU-${productId}`,
+        categoryName: 'General'
+      };
+
       cartItemData = {
         id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         productId: productId,
-        name: `Product ${productId.slice(0, 8)}`,
+        name: productInfo.name,
         description: 'Product description',
-        price: 100,
-        salePrice: 80,
+        price: productInfo.price,
+        salePrice: productInfo.salePrice,
         images: [],
         stock: 10,
-        sku: `SKU-${productId.slice(0, 8)}`,
-        categoryName: 'General',
+        sku: productInfo.sku,
+        categoryName: productInfo.categoryName,
         quantity: quantity,
-        totalPrice: 100 * quantity,
-        totalSalePrice: 80 * quantity,
+        totalPrice: productInfo.price * quantity,
+        totalSalePrice: productInfo.salePrice * quantity,
         createdAt: new Date().toISOString()
       };
       
