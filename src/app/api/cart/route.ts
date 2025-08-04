@@ -30,32 +30,29 @@ async function getProductInfo(productId: string) {
   try {
     const dbClient = await getClient();
     
-    // First try to find by productId (if it's a UUID)
-    let result = await dbClient.query(
-      'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = $1',
+    console.log('Looking up product with ID:', productId); // Debug log
+    
+    // Try to find by productId (UUID)
+    const result = await dbClient.query(
+      'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
       [productId]
     );
     
-    if (result.rows.length === 0) {
-      // If not found by UUID, try to find by name (for legacy support)
-      const productName = productId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      result = await dbClient.query(
-        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER($1)',
-        [productName]
-      );
-    }
+    console.log('Database lookup result:', result.rows.length, 'rows found'); // Debug log
     
     if (result.rows.length > 0) {
       const product = result.rows[0];
+      console.log('Found product:', product.name, 'with price:', product.price, 'salePrice:', product.salePrice); // Debug log
       return {
         name: product.name,
         price: parseFloat(product.price) || 100,
-        salePrice: parseFloat(product.sale_price) || parseFloat(product.price) || 80,
+        salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
         sku: product.sku || product.artikul || `SKU-${productId}`,
         categoryName: product.category_name || 'General'
       };
     }
     
+    console.log('No product found for ID:', productId); // Debug log
     return null;
   } catch (error) {
     console.error('Error getting product info from database:', error);
@@ -140,7 +137,30 @@ export async function POST(request: NextRequest) {
         console.error('Error getting product from database:', error);
       }
       
-      // Fallback to hardcoded mapping if database lookup fails
+      // If database lookup fails, try to get from products API
+      if (!productInfo) {
+        try {
+          const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
+          if (productsResponse.ok) {
+            const products = await productsResponse.json();
+            const foundProduct = products.find((p: any) => p.id === productId);
+            if (foundProduct) {
+              productInfo = {
+                name: foundProduct.name,
+                price: parseFloat(foundProduct.price) || 100,
+                salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
+                sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
+                categoryName: foundProduct.category?.name || 'General'
+              };
+              console.log('Found product from products API:', productInfo);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching from products API:', error);
+        }
+      }
+      
+      // Fallback to hardcoded mapping if all lookups fail
       if (!productInfo) {
         const productMap: { [key: string]: any } = {
           'fuel-filter': {
