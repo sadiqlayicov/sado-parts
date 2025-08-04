@@ -327,26 +327,11 @@ export default function CartPage() {
       const data = await response.json();
       
       if (data.success) {
-        // Sifariş məlumatlarını hazırla
-        const orderData = {
-          orderNumber: data.order.orderNumber,
-          items: cart.items,
-          totalAmount: cart.totalSalePrice,
-          customer: user
-        };
+        // Sifariş uğurla yaradıldı
+        setIsLoading(false);
         
-        // Hesab-faktura yarat və çap et
-        generateInvoice(orderData);
-        
-        // Səbəti yenilə
-        fetchCart();
-        
-        // Uğurlu mesaj göstər
-        setTimeout(() => {
-          setIsLoading(false);
-          alert('Sifariş uğurla yaradıldı! Hesab-faktura çap edildi.');
-          router.push('/profile'); // Profil səhifəsinə yönləndir
-        }, 1000);
+        // Hesab-faktura səhifəsinə yönləndir
+        router.push(`/invoice?orderId=${data.order.id}`);
         
       } else {
         throw new Error(data.error || 'Sifariş yaratma xətası');
