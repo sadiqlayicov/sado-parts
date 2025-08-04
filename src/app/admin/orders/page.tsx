@@ -35,7 +35,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'ADMIN') {
+    if (!isAuthenticated || !user?.isAdmin) {
       router.push('/login');
       return;
     }
