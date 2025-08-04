@@ -10,34 +10,20 @@ async function createClient() {
     });
     await client.connect();
     
-    // Ensure cart_items table exists
+    // Ensure cart_items table exists - simplified approach
     try {
-      // First check if table exists
-      const tableExists = await client.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'cart_items'
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS cart_items (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          "userId" TEXT NOT NULL,
+          "productId" TEXT NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 1,
+          "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
       `);
-      
-      if (!tableExists.rows[0].exists) {
-        console.log('Creating cart_items table...');
-        await client.query(`
-          CREATE TABLE cart_items (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            "userId" UUID NOT NULL,
-            "productId" UUID NOT NULL,
-            quantity INTEGER NOT NULL DEFAULT 1,
-            "isActive" BOOLEAN NOT NULL DEFAULT true,
-            "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-          );
-        `);
-        console.log('✅ cart_items table created successfully');
-      } else {
-        console.log('✅ cart_items table already exists');
-      }
+      console.log('✅ cart_items table ensured');
     } catch (tableError) {
       console.error('Cart table creation error:', tableError);
       // Continue anyway - table might already exist
