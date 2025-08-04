@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -26,7 +26,7 @@ interface Order {
   items: OrderItem[];
 }
 
-export default function InvoicePage() {
+function InvoiceContent() {
   const { user, isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
@@ -229,5 +229,17 @@ export default function InvoicePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function InvoicePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] flex items-center justify-center">
+        <div className="text-white text-xl">Yüklənir...</div>
+      </div>
+    }>
+      <InvoiceContent />
+    </Suspense>
   );
 } 
