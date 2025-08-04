@@ -111,7 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`/api/users/${user.id}`);
       if (response.ok) {
         const data = await response.json();
-        console.log('API response for user refresh:', data);
         
         // Extract user data from the response
         const userData = data.user || data;
@@ -125,12 +124,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const wasApproved = user.isApproved;
         const isNowApproved = userData.isApproved;
         
-        console.log('Approval status check:', { wasApproved, isNowApproved, userData });
-        
         setUser(updatedUser);
         setIsApproved(userData.isApproved);
         localStorage.setItem('sado-parts-user', JSON.stringify(updatedUser));
-        console.log('User data refreshed:', updatedUser);
         
         // Show notification if approval status changed
         if (!wasApproved && isNowApproved) {
@@ -157,14 +153,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
   };
 
-  // Check user approval status periodically - only once when user logs in
-  useEffect(() => {
-    if (user && !user.isAdmin && !user.isApproved) {
-      // Only check once when user is not approved
-      const timeout = setTimeout(refreshUserData, 5000); // Check once after 5 seconds
-      return () => clearTimeout(timeout);
-    }
-  }, [user?.id, user?.isApproved]);
+  // Disable automatic user data refresh to prevent infinite loops
+  // useEffect(() => {
+  //   if (user && !user.isAdmin && !user.isApproved) {
+  //     const timeout = setTimeout(refreshUserData, 5000);
+  //     return () => clearTimeout(timeout);
+  //   }
+  // }, [user?.id, user?.isApproved]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {

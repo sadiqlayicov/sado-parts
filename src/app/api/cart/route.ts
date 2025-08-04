@@ -3,12 +3,17 @@ import { Client } from 'pg';
 
 // Create a new client for each request to avoid connection issues
 async function createClient() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
-  await client.connect();
-  return client;
+  try {
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+    await client.connect();
+    return client;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw new Error('Database connection failed');
+  }
 }
 
 // Get user cart

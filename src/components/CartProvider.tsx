@@ -101,7 +101,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     if (isLoading) {
-      console.log('Cart operation in progress, please wait...');
       return;
     }
 
