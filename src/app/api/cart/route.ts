@@ -146,24 +146,63 @@ export async function POST(request: NextRequest) {
       WHERE "userId" = $1 AND "productId" = $2 AND "isActive" = true
     `, [userId, productId]);
 
+    let cartItemId: string;
+    
     if (existingItem.rows.length > 0) {
       // Update existing item
+      cartItemId = existingItem.rows[0].id;
       const newQuantity = parseInt(existingItem.rows[0].quantity) + quantity;
       await dbClient.query(`
         UPDATE cart_items SET quantity = $1, "updatedAt" = NOW()
         WHERE id = $2
-      `, [newQuantity, existingItem.rows[0].id]);
+      `, [newQuantity, cartItemId]);
     } else {
       // Add new item
-      await dbClient.query(`
+      const insertResult = await dbClient.query(`
         INSERT INTO cart_items (id, "userId", "productId", quantity, "isActive", "createdAt", "updatedAt")
         VALUES (gen_random_uuid(), $1, $2, $3, true, NOW(), NOW())
+        RETURNING id
       `, [userId, productId, quantity]);
+      cartItemId = insertResult.rows[0].id;
     }
+
+    // Get the updated cart item with product details
+    const cartItemResult = await dbClient.query(`
+      SELECT ci.id, ci.quantity, ci."createdAt",
+             p.id as "productId", p.name, p.description, p.price, p."salePrice", p.images, p.stock, p.sku,
+             c.name as "categoryName"
+      FROM cart_items ci
+      JOIN products p ON ci."productId" = p.id
+      LEFT JOIN categories c ON p."categoryId" = c.id
+      WHERE ci.id = $1
+    `, [cartItemId]);
+
+    const cartItem = cartItemResult.rows[0];
+    const itemQuantity = parseInt(cartItem.quantity);
+    const itemPrice = parseFloat(cartItem.price);
+    const itemSalePrice = cartItem.salePrice ? parseFloat(cartItem.salePrice) : itemPrice;
+
+    const cartItemData = {
+      id: cartItem.id,
+      productId: cartItem.productId,
+      name: cartItem.name,
+      description: cartItem.description,
+      price: itemPrice,
+      salePrice: itemSalePrice,
+      images: cartItem.images,
+      stock: parseInt(cartItem.stock),
+      sku: cartItem.sku,
+      categoryName: cartItem.categoryName,
+      quantity: itemQuantity,
+      totalPrice: itemPrice * itemQuantity,
+      totalSalePrice: itemSalePrice * itemQuantity,
+      createdAt: cartItem.createdAt
+    };
 
     return NextResponse.json({
       success: true,
-      message: 'Məhsul səbətə əlavə edildi'
+      message: 'Məhsul səbətə əlavə edildi',
+      cartItem: cartItemData
     });
 
   } catch (error) {

@@ -58,37 +58,54 @@ export default function HomePage() {
 
   // Top satılanlar üçün orderItems-ları yığ
   useEffect(() => {
+    let isMounted = true;
+    
     async function fetchTopSellers() {
-      const ordersRes = await fetch('/api/orders');
-      const ordersData = await ordersRes.json();
-      if (!Array.isArray(ordersData)) return;
-      const allOrderItems = ordersData.flatMap((order: any) => order.orderItems || []);
-      // Məhsul üzrə satış miqdarını hesabla
-      const salesMap: Record<string, { productId: string, quantity: number }> = {};
-      for (const item of allOrderItems) {
-        if (!item.productId) continue;
-        if (!salesMap[item.productId]) {
-          salesMap[item.productId] = { productId: item.productId, quantity: 0 };
+      if (!isMounted) return;
+      
+      try {
+        const ordersRes = await fetch('/api/orders');
+        const ordersData = await ordersRes.json();
+        if (!Array.isArray(ordersData) || !isMounted) return;
+        
+        const allOrderItems = ordersData.flatMap((order: any) => order.orderItems || []);
+        // Məhsul üzrə satış miqdarını hesabla
+        const salesMap: Record<string, { productId: string, quantity: number }> = {};
+        for (const item of allOrderItems) {
+          if (!item.productId) continue;
+          if (!salesMap[item.productId]) {
+            salesMap[item.productId] = { productId: item.productId, quantity: 0 };
+          }
+          salesMap[item.productId].quantity += item.quantity || 1;
         }
-        salesMap[item.productId].quantity += item.quantity || 1;
+        // Ən çox satılan 10 məhsulun id-lərini tap
+        const topProductIds = Object.values(salesMap)
+          .sort((a, b) => b.quantity - a.quantity)
+          .slice(0, 10)
+          .map(x => x.productId);
+        // Məhsul məlumatlarını uyğunlaşdır
+        const topProducts = products.filter(p => topProductIds.includes(p.id));
+        // Satış sayını əlavə et
+        const topProductsWithSales = topProducts.map(p => ({
+          ...p,
+          salesCount: salesMap[p.id]?.quantity || 0
+        })).sort((a, b) => b.salesCount - a.salesCount);
+        
+        if (isMounted) {
+          setTopSellers(topProductsWithSales);
+        }
+      } catch (error) {
+        console.error('Error fetching top sellers:', error);
       }
-      // Ən çox satılan 10 məhsulun id-lərini tap
-      const topProductIds = Object.values(salesMap)
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 10)
-        .map(x => x.productId);
-      // Məhsul məlumatlarını uyğunlaşdır
-      const topProducts = products.filter(p => topProductIds.includes(p.id));
-      // Satış sayını əlavə et
-      const topProductsWithSales = topProducts.map(p => ({
-        ...p,
-        salesCount: salesMap[p.id]?.quantity || 0
-      })).sort((a, b) => b.salesCount - a.salesCount);
-      setTopSellers(topProductsWithSales);
     }
+    
     if (products.length > 0) {
       fetchTopSellers();
     }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [products]);
 
   useEffect(() => {

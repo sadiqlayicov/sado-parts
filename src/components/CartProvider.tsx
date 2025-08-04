@@ -56,9 +56,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, user?.id]);
 
+  // Prevent multiple simultaneous requests
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const refreshCart = async () => {
-    if (!user?.id) return;
+    if (!user?.id || isRefreshing) return;
     
+    setIsRefreshing(true);
     setIsLoading(true);
     try {
       const response = await fetch(`/api/cart?userId=${user.id}`);
@@ -71,12 +75,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       console.error('Cart refresh error:', error);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   const addToCart = async (productId: string, quantity: number = 1) => {
     if (!user?.id) {
       alert('Səbətə əlavə etmək üçün daxil olmalısınız');
+      return;
+    }
+
+    if (isLoading) {
+      console.log('Cart operation in progress, please wait...');
       return;
     }
 
@@ -91,13 +101,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       
       if (data.success) {
-        await refreshCart(); // Refresh cart after adding
+        // Update cart items directly instead of refreshing
+        const newItem = data.cartItem;
+        if (newItem) {
+          setCartItems(prevItems => {
+            const existingItemIndex = prevItems.findIndex(item => item.productId === productId);
+            if (existingItemIndex >= 0) {
+              // Update existing item
+              const updatedItems = [...prevItems];
+              updatedItems[existingItemIndex] = newItem;
+              return updatedItems;
+            } else {
+              // Add new item
+              return [...prevItems, newItem];
+            }
+          });
+        }
       } else {
-        alert(data.error || 'Məhsul əlavə edilə bilmədi');
+        console.error('Add to cart failed:', data.error);
+        alert(data.error || 'Səbətə əlavə etmə zamanı xəta baş verdi');
       }
     } catch (error) {
       console.error('Add to cart error:', error);
-      alert('Məhsul əlavə edilə bilmədi');
+      alert('Səbətə əlavə etmə zamanı xəta baş verdi');
     } finally {
       setIsLoading(false);
     }
