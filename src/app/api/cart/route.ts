@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Simple cart API without database operations for now
+// In-memory cart storage (in production, this should be in database)
+const cartStorage = new Map<string, any[]>();
+
+// Simple cart API with in-memory storage
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
@@ -12,15 +15,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Return empty cart for now
+  // Get cart items from memory storage
+  const userCart = cartStorage.get(userId) || [];
+  
+  const totalItems = userCart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = userCart.reduce((sum, item) => sum + item.totalPrice, 0);
+  const totalSalePrice = userCart.reduce((sum, item) => sum + item.totalSalePrice, 0);
+
   return NextResponse.json({
     success: true,
     cart: {
-      items: [],
-      totalItems: 0,
-      totalPrice: 0,
-      totalSalePrice: 0,
-      savings: 0
+      items: userCart,
+      totalItems,
+      totalPrice: Math.round(totalPrice * 100) / 100,
+      totalSalePrice: Math.round(totalSalePrice * 100) / 100,
+      savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
     }
   });
 }
@@ -36,24 +45,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, return a mock response with the actual productId
-    // This will be replaced with real database operations later
-    const cartItemData = {
-      id: `cart-${Date.now()}`,
-      productId: productId,
-      name: `Product ${productId.slice(0, 8)}`, // Use part of productId as name
-      description: 'Product description',
-      price: 100,
-      salePrice: 80,
-      images: [],
-      stock: 10,
-      sku: `SKU-${productId.slice(0, 8)}`,
-      categoryName: 'General',
-      quantity: quantity,
-      totalPrice: 100 * quantity,
-      totalSalePrice: 80 * quantity,
-      createdAt: new Date().toISOString()
-    };
+    // Get current user cart
+    const userCart = cartStorage.get(userId) || [];
+    
+    // Check if product already exists in cart
+    const existingItemIndex = userCart.findIndex(item => item.productId === productId);
+    
+    let cartItemData;
+    
+    if (existingItemIndex >= 0) {
+      // Update existing item
+      const existingItem = userCart[existingItemIndex];
+      const newQuantity = existingItem.quantity + quantity;
+      
+      cartItemData = {
+        ...existingItem,
+        quantity: newQuantity,
+        totalPrice: existingItem.price * newQuantity,
+        totalSalePrice: existingItem.salePrice * newQuantity
+      };
+      
+      userCart[existingItemIndex] = cartItemData;
+    } else {
+      // Add new item
+      cartItemData = {
+        id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        productId: productId,
+        name: `Product ${productId.slice(0, 8)}`,
+        description: 'Product description',
+        price: 100,
+        salePrice: 80,
+        images: [],
+        stock: 10,
+        sku: `SKU-${productId.slice(0, 8)}`,
+        categoryName: 'General',
+        quantity: quantity,
+        totalPrice: 100 * quantity,
+        totalSalePrice: 80 * quantity,
+        createdAt: new Date().toISOString()
+      };
+      
+      userCart.push(cartItemData);
+    }
+    
+    // Save updated cart
+    cartStorage.set(userId, userCart);
 
     return NextResponse.json({
       success: true,
@@ -81,6 +117,28 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Find and update cart item in all user carts
+    for (const [userId, userCart] of cartStorage.entries()) {
+      const itemIndex = userCart.findIndex(item => item.id === cartItemId);
+      if (itemIndex >= 0) {
+        if (quantity <= 0) {
+          // Remove item
+          userCart.splice(itemIndex, 1);
+        } else {
+          // Update quantity
+          const item = userCart[itemIndex];
+          userCart[itemIndex] = {
+            ...item,
+            quantity: quantity,
+            totalPrice: item.price * quantity,
+            totalSalePrice: item.salePrice * quantity
+          };
+        }
+        cartStorage.set(userId, userCart);
+        break;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Səbət yeniləndi'
@@ -105,6 +163,16 @@ export async function DELETE(request: NextRequest) {
         { error: 'Səbət elementi ID tələb olunur' },
         { status: 400 }
       );
+    }
+
+    // Find and remove cart item from all user carts
+    for (const [userId, userCart] of cartStorage.entries()) {
+      const itemIndex = userCart.findIndex(item => item.id === cartItemId);
+      if (itemIndex >= 0) {
+        userCart.splice(itemIndex, 1);
+        cartStorage.set(userId, userCart);
+        break;
+      }
     }
 
     return NextResponse.json({
