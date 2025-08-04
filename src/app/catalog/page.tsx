@@ -295,7 +295,7 @@ function CatalogPage() {
               {currentProducts.map(product => (
                 <div key={product.id} className="bg-[#1e293b] rounded-xl p-6 shadow-lg hover:scale-105 transition relative group cursor-pointer">
                   <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" />
-                  <div className="w-full h-48 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative z-20">
+                  <div className="w-full h-56 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative z-20">
                     {product.images && product.images.length > 0 && product.images[0] ? (
                       <img
                         src={product.images[0]}
@@ -303,25 +303,24 @@ function CatalogPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : null}
-                    <span className="text-white font-bold text-lg" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>
+                    <span className="text-white font-bold text-xl" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>
                       {product.brand || product.name}
                     </span>
                   </div>
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
                   <p className="text-gray-300 text-sm mb-2 line-clamp-2">{product.description}</p>
-                  <p className="text-cyan-300 text-sm mb-2">Артикул: {product.artikul || product.sku || '-'}</p>
-                  <p className="text-cyan-300 text-sm mb-2">Категория: {product.category?.name || '-'}</p>
-                  <p className="text-cyan-300 text-sm mb-4">Каталог: {product.catalogNumber || '-'}</p>
+                  <p className="text-cyan-300 text-sm mb-2">Artikul: {product.artikul || product.sku || '-'}</p>
+                  <p className="text-cyan-300 text-sm mb-2">Kateqoriya: {product.category?.name || '-'}</p>
+                  <p className="text-cyan-300 text-sm mb-4">Kataloq: {product.catalogNumber || '-'}</p>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex flex-col">
                       {isApproved && !isAdmin ? (
                         <>
-                          <span className="text-lg text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
-                          <span className="text-2xl font-bold text-green-400">{calculateDiscountedPrice(product.price).toLocaleString()} ₽</span>
-                          <span className="text-green-400 text-sm">-{getDiscountPercentage()}% endirim</span>
+                          <span className="text-xl text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
+                          <span className="text-3xl font-bold text-green-400">{calculateDiscountedPrice(product.price).toLocaleString()} ₽</span>
                         </>
                       ) : (
-                        <span className="text-2xl font-bold text-cyan-400">{product.price.toLocaleString()} ₽</span>
+                        <span className="text-3xl font-bold text-cyan-400">{product.price.toLocaleString()} ₽</span>
                       )}
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${

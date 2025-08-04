@@ -156,29 +156,28 @@ export default function HomePage() {
     return (
       <div className="bg-[#1e293b] rounded-lg p-3 hover:bg-cyan-900 transition-all duration-300 hover:scale-105 flex flex-col h-96 cursor-pointer group relative">
         <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
-        <div className="w-full h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
+        <div className="w-full h-32 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
           {product.images && product.images.length > 0 && product.images[0] ? (
             <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
           ) : null}
-          <span className="text-white font-bold text-xs" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>{product.brand || product.name}</span>
+          <span className="text-white font-bold text-sm" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>{product.brand || product.name}</span>
         </div>
         <div className="flex-1 flex flex-col justify-between min-h-0">
           <div className="min-h-0 flex-1 flex flex-col">
-            <div className="font-semibold text-sm mb-4 text-center line-clamp-2 leading-tight overflow-hidden">{product.name}</div>
-            <div className="text-center mb-5">
+            <div className="font-semibold text-sm mb-3 text-center line-clamp-2 leading-tight overflow-hidden">{product.name}</div>
+            <div className="text-center mb-4">
               {isAuthenticated && isApproved && calculateDiscountedPrice(product.price) !== product.price ? (
                 <div>
-                  <div className="text-gray-400 line-through text-xs">{product.price?.toLocaleString()}₼</div>
-                  <div className="text-cyan-400 font-bold text-sm">{calculateDiscountedPrice(product.price)?.toFixed(2)}₼</div>
-                  <div className="text-green-400 text-xs mt-1">-{user?.discountPercentage || 0}% endirim</div>
+                  <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
+                  <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price)?.toFixed(2)}₼</div>
                 </div>
               ) : (
-                <div className="text-cyan-400 font-bold text-sm">{product.price?.toLocaleString()}₼</div>
+                <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString()}₼</div>
               )}
             </div>
-            <div className="text-xs text-gray-400 text-center space-y-1 mb-8">
+            <div className="text-xs text-gray-400 text-center space-y-1 mb-6">
               <div className="truncate">{product.category?.name || '-'}</div>
-              <div className="truncate">SKU: {product.artikul || product.sku || '-'}</div>
+              <div className="truncate">Artikul: {product.artikul || product.sku || '-'}</div>
             </div>
           </div>
           <div className="flex gap-2 justify-center mt-auto pt-6 relative z-20">
@@ -217,27 +216,26 @@ export default function HomePage() {
             topSellers.map((product: any) => (
               <div key={product.id} className="bg-[#1e293b] rounded-lg p-3 hover:bg-cyan-900 transition-all duration-300 hover:scale-105 flex flex-col h-96 cursor-pointer group relative">
                 <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
-                <div className="w-full h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div className="w-full h-32 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {product.images && product.images.length > 0 && product.images[0] ? (
                     <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                   ) : null}
-                  <span className="text-white font-bold text-xs" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>{product.brand || product.name}</span>
+                  <span className="text-white font-bold text-sm" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>{product.brand || product.name}</span>
                 </div>
                 <div className="flex-1 flex flex-col justify-between min-h-0">
                   <div className="min-h-0 flex-1 flex flex-col">
-                    <div className="font-semibold text-sm mb-4 text-center line-clamp-2 leading-tight overflow-hidden">{product.name}</div>
-                    <div className="text-center mb-5">
+                    <div className="font-semibold text-sm mb-3 text-center line-clamp-2 leading-tight overflow-hidden">{product.name}</div>
+                    <div className="text-center mb-4">
                       {isAuthenticated && isApproved && calculateDiscountedPrice(product.price) !== product.price ? (
                         <div>
-                          <div className="text-gray-400 line-through text-xs">{product.price?.toLocaleString()}₼</div>
-                          <div className="text-cyan-400 font-bold text-sm">{calculateDiscountedPrice(product.price)?.toFixed(2)}₼</div>
-                          <div className="text-green-400 text-xs mt-1">-{user?.discountPercentage || 0}% endirim</div>
+                          <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
+                          <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price)?.toFixed(2)}₼</div>
                         </div>
                       ) : (
-                        <div className="text-cyan-400 font-bold text-sm">{product.price?.toLocaleString()}₼</div>
+                        <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString()}₼</div>
                       )}
                     </div>
-                    <div className="text-xs text-gray-400 text-center mt-auto mb-8">{t('sales_count')}: {product.salesCount}</div>
+                    <div className="text-xs text-gray-400 text-center mt-auto mb-6">{t('sales_count')}: {product.salesCount}</div>
                   </div>
                 </div>
               </div>
