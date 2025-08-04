@@ -83,6 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const savedUser = localStorage.getItem('sado-parts-user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
+        // Check if user data is old (missing discountPercentage)
+        if (userData.discountPercentage === undefined) {
+          // Clear old data and force re-login
+          localStorage.removeItem('sado-parts-user');
+          return;
+        }
         setUser(userData);
         setIsAuthenticated(true);
         setIsRegistered(userData.isRegistered);

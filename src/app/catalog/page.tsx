@@ -318,6 +318,7 @@ function CatalogPage() {
                         <>
                           <span className="text-lg text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
                           <span className="text-2xl font-bold text-green-400">{calculateDiscountedPrice(product.price).toLocaleString()} ₽</span>
+                          <span className="text-green-400 text-sm">-{getDiscountPercentage()}% endirim</span>
                         </>
                       ) : (
                         <span className="text-2xl font-bold text-cyan-400">{product.price.toLocaleString()} ₽</span>

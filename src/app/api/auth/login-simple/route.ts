@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
       user: {
         ...userWithoutPassword,
         isAdmin,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+        discountPercentage: user.discountPercentage || 0
       },
     });
   } catch (error) {
