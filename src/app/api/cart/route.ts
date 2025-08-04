@@ -207,11 +207,17 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Add to cart error:', error);
-    await closeClient();
+    if (dbClient) {
+      await dbClient.end();
+    }
     return NextResponse.json(
       { error: 'Səbətə əlavə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await dbClient.end();
+    }
   }
 }
 

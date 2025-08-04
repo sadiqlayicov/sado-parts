@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { useAuth } from './AuthProvider';
 
 interface CartItem {
@@ -38,6 +38,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { user, isAuthenticated } = useAuth();
+  const hasLoadedCart = useRef(false);
 
   // Cart items count
   const cartItemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -49,15 +50,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Load cart from API when user is authenticated
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      // Only refresh cart once when user is authenticated
-      const loadCart = async () => {
-        if (!isRefreshing) {
-          await refreshCart();
-        }
-      };
-      loadCart();
-    } else {
+    if (isAuthenticated && user?.id && !hasLoadedCart.current) {
+      hasLoadedCart.current = true;
+      refreshCart();
+    } else if (!isAuthenticated) {
+      hasLoadedCart.current = false;
       setCartItems([]);
     }
   }, [isAuthenticated, user?.id]);
