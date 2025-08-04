@@ -1,7 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Client } from 'pg';
 
 // In-memory cart storage (in production, this should be in database)
 const cartStorage = new Map<string, any[]>();
+
+// Database connection
+let client: Client | null = null;
+
+async function getClient() {
+  if (!client) {
+    client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+    await client.connect();
+  }
+  return client;
+}
+
+async function closeClient() {
+  if (client) {
+    await client.end();
+    client = null;
+  }
+}
+
+// Get product info from database by productId
+async function getProductInfo(productId: string) {
+  try {
+    const dbClient = await getClient();
+    
+    // First try to find by productId (if it's a UUID)
+    let result = await dbClient.query(
+      'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = $1',
+      [productId]
+    );
+    
+    if (result.rows.length === 0) {
+      // If not found by UUID, try to find by name (for legacy support)
+      const productName = productId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      result = await dbClient.query(
+        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER($1)',
+        [productName]
+      );
+    }
+    
+    if (result.rows.length > 0) {
+      const product = result.rows[0];
+      return {
+        name: product.name,
+        price: parseFloat(product.price) || 100,
+        salePrice: parseFloat(product.sale_price) || parseFloat(product.price) || 80,
+        sku: product.sku || product.artikul || `SKU-${productId}`,
+        categoryName: product.category_name || 'General'
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting product info from database:', error);
+    return null;
+  }
+}
 
 // Simple cart API with in-memory storage
 export async function GET(request: NextRequest) {
@@ -69,48 +129,60 @@ export async function POST(request: NextRequest) {
       
       userCart[existingItemIndex] = cartItemData;
     } else {
-      // Add new item with real product data
-      // Map product IDs to real product information
-      const productMap: { [key: string]: any } = {
-        'fuel-filter': {
-          name: 'Fuel Filter',
-          price: 30,
-          salePrice: 24,
-          sku: 'FUEL-FIL-010',
-          categoryName: 'Filters'
-        },
-        'hydraulic-hose': {
-          name: 'Hydraulic Hose',
-          price: 75,
-          salePrice: 60,
-          sku: 'HYD-HOSE-009',
-          categoryName: 'Hydraulic Systems'
-        },
-        'body-panel-front-bumper': {
-          name: 'Body Panel - Front Bumper',
-          price: 320,
-          salePrice: 256,
-          sku: 'BODY-BUMP-008',
-          categoryName: 'Body Parts'
-        },
-        'tire-set-4-pieces': {
-          name: 'Tire Set (4 pieces)',
-          price: 450,
-          salePrice: 360,
-          sku: 'TIRE-SET-007',
-          categoryName: 'Tires & Wheels'
-        }
-      };
-
-      const productInfo = productMap[productId] || {
-        name: `Product ${productId}`,
-        price: 100,
-        salePrice: 80,
-        sku: `SKU-${productId}`,
-        categoryName: 'General'
-      };
+      // Add new item with real product data from database
+      let productInfo = null;
       
-      console.log('Product mapping result:', { productId, productInfo }); // Debug log
+      // Try to get product info from database first
+      try {
+        productInfo = await getProductInfo(productId);
+        console.log('Product info from database:', { productId, productInfo });
+      } catch (error) {
+        console.error('Error getting product from database:', error);
+      }
+      
+      // Fallback to hardcoded mapping if database lookup fails
+      if (!productInfo) {
+        const productMap: { [key: string]: any } = {
+          'fuel-filter': {
+            name: 'Fuel Filter',
+            price: 30,
+            salePrice: 24,
+            sku: 'FUEL-FIL-010',
+            categoryName: 'Filters'
+          },
+          'hydraulic-hose': {
+            name: 'Hydraulic Hose',
+            price: 75,
+            salePrice: 60,
+            sku: 'HYD-HOSE-009',
+            categoryName: 'Hydraulic Systems'
+          },
+          'body-panel-front-bumper': {
+            name: 'Body Panel - Front Bumper',
+            price: 320,
+            salePrice: 256,
+            sku: 'BODY-BUMP-008',
+            categoryName: 'Body Parts'
+          },
+          'tire-set-4-pieces': {
+            name: 'Tire Set (4 pieces)',
+            price: 450,
+            salePrice: 360,
+            sku: 'TIRE-SET-007',
+            categoryName: 'Tires & Wheels'
+          }
+        };
+        
+        productInfo = productMap[productId] || {
+          name: `Product ${productId}`,
+          price: 100,
+          salePrice: 80,
+          sku: `SKU-${productId}`,
+          categoryName: 'General'
+        };
+        
+        console.log('Using fallback product mapping:', { productId, productInfo });
+      }
 
       cartItemData = {
         id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -147,6 +219,9 @@ export async function POST(request: NextRequest) {
       { error: 'Səbətə əlavə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    // Close database connection
+    await closeClient();
   }
 }
 

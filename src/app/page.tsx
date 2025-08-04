@@ -185,14 +185,8 @@ export default function HomePage() {
               onClick={e => { 
                 e.stopPropagation(); 
                 e.preventDefault(); 
-                // Create proper productId mapping
-                const productIdMap: { [key: string]: string } = {
-                  'Fuel Filter': 'fuel-filter',
-                  'Hydraulic Hose': 'hydraulic-hose',
-                  'Body Panel - Front Bumper': 'body-panel-front-bumper',
-                  'Tire Set (4 pieces)': 'tire-set-4-pieces'
-                };
-                const productId = productIdMap[product.name] || product.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                // Use product.id directly for database lookup, fallback to name-based mapping
+                const productId = product.id || product.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
                 onAddToCart(productId, 1); 
               }}
               className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition"
