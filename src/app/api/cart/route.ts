@@ -1,33 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-// Vercel üçün connection pool
-let client: Client | null = null;
-
-async function getClient() {
-  if (!client) {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    await client.connect();
-  }
+// Create a new client for each request to avoid connection issues
+async function createClient() {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  await client.connect();
   return client;
-}
-
-async function closeClient() {
-  if (client) {
-    await client.end();
-    client = null;
-  }
 }
 
 // Get user cart
 export async function GET(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let client: Client | null = null;
   
   try {
-    dbClient = await getClient();
+    client = await createClient();
     
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -40,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user cart items with product details
-    const cartResult = await dbClient.query(`
+    const cartResult = await client.query(`
       SELECT ci.id, ci.quantity, ci."createdAt",
              p.id as "productId", p.name, p.description, p.price, p."salePrice", p.images, p.stock, p.sku,
              c.name as "categoryName"
@@ -96,26 +85,23 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Get cart error:', error);
-    if (dbClient) {
-      await dbClient.end();
-    }
     return NextResponse.json(
       { error: 'Səbət məlumatlarını əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    if (dbClient) {
-      await dbClient.end();
+    if (client) {
+      await client.end();
     }
   }
 }
 
 // Add item to cart
 export async function POST(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let client: Client | null = null;
   
   try {
-    dbClient = await getClient();
+    client = await createClient();
     
     const { userId, productId, quantity = 1 } = await request.json();
 
@@ -127,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if product exists and has stock
-    const productResult = await dbClient.query(`
+    const productResult = await client.query(`
       SELECT id, name, price, stock FROM products WHERE id = $1 AND "isActive" = true
     `, [productId]);
 
@@ -147,7 +133,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if item already exists in cart
-    const existingItem = await dbClient.query(`
+    const existingItem = await client.query(`
       SELECT id, quantity FROM cart_items 
       WHERE "userId" = $1 AND "productId" = $2 AND "isActive" = true
     `, [userId, productId]);
@@ -158,13 +144,13 @@ export async function POST(request: NextRequest) {
       // Update existing item
       cartItemId = existingItem.rows[0].id;
       const newQuantity = parseInt(existingItem.rows[0].quantity) + quantity;
-      await dbClient.query(`
+      await client.query(`
         UPDATE cart_items SET quantity = $1, "updatedAt" = NOW()
         WHERE id = $2
       `, [newQuantity, cartItemId]);
     } else {
       // Add new item
-      const insertResult = await dbClient.query(`
+      const insertResult = await client.query(`
         INSERT INTO cart_items (id, "userId", "productId", quantity, "isActive", "createdAt", "updatedAt")
         VALUES (gen_random_uuid(), $1, $2, $3, true, NOW(), NOW())
         RETURNING id
@@ -173,7 +159,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the updated cart item with product details
-    const cartItemResult = await dbClient.query(`
+    const cartItemResult = await client.query(`
       SELECT ci.id, ci.quantity, ci."createdAt",
              p.id as "productId", p.name, p.description, p.price, p."salePrice", p.images, p.stock, p.sku,
              c.name as "categoryName"
@@ -213,26 +199,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Add to cart error:', error);
-    if (dbClient) {
-      await dbClient.end();
-    }
     return NextResponse.json(
       { error: 'Səbətə əlavə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    if (dbClient) {
-      await dbClient.end();
+    if (client) {
+      await client.end();
     }
   }
 }
 
 // Update cart item
 export async function PUT(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let client: Client | null = null;
   
   try {
-    dbClient = await getClient();
+    client = await createClient();
     
     const { cartItemId, quantity } = await request.json();
 
@@ -245,13 +228,13 @@ export async function PUT(request: NextRequest) {
 
     if (quantity <= 0) {
       // Remove item if quantity is 0 or negative
-      await dbClient.query(`
+      await client.query(`
         UPDATE cart_items SET "isActive" = false, "updatedAt" = NOW()
         WHERE id = $1
       `, [cartItemId]);
     } else {
       // Update quantity
-      await dbClient.query(`
+      await client.query(`
         UPDATE cart_items SET quantity = $1, "updatedAt" = NOW()
         WHERE id = $1
       `, [quantity, cartItemId]);
@@ -264,26 +247,23 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('Update cart error:', error);
-    if (dbClient) {
-      await dbClient.end();
-    }
     return NextResponse.json(
       { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    if (dbClient) {
-      await dbClient.end();
+    if (client) {
+      await client.end();
     }
   }
 }
 
 // Remove item from cart
 export async function DELETE(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let client: Client | null = null;
   
   try {
-    dbClient = await getClient();
+    client = await createClient();
     
     const { searchParams } = new URL(request.url);
     const cartItemId = searchParams.get('cartItemId');
@@ -295,7 +275,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await dbClient.query(`
+    await client.query(`
       UPDATE cart_items SET "isActive" = false, "updatedAt" = NOW()
       WHERE id = $1
     `, [cartItemId]);
@@ -307,16 +287,13 @@ export async function DELETE(request: NextRequest) {
 
   } catch (error) {
     console.error('Remove from cart error:', error);
-    if (dbClient) {
-      await dbClient.end();
-    }
     return NextResponse.json(
       { error: 'Səbətdən silmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    if (dbClient) {
-      await dbClient.end();
+    if (client) {
+      await client.end();
     }
   }
 } 

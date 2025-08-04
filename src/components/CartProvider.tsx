@@ -77,7 +77,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       hasLoadedCart.current = false;
       setCartItems([]);
     }
-  }, [isAuthenticated, user?.id, isRefreshing]);
+  }, [isAuthenticated, user?.id]);
 
   const refreshCart = async () => {
     if (!user?.id || isRefreshing) return;
