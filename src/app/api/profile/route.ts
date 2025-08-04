@@ -54,25 +54,37 @@ export async function GET(request: NextRequest) {
 
     const user = userResult.rows[0];
 
-    // Get user orders
-    const ordersResult = await dbClient.query(`
-      SELECT o.id, o."orderNumber", o.status, o."totalAmount", o.currency, o.notes, 
-             o."createdAt", o."updatedAt",
-             COUNT(oi.id) as "itemsCount"
-      FROM orders o
-      LEFT JOIN order_items oi ON o.id = oi."orderId"
-      WHERE o."userId" = $1
-      GROUP BY o.id, o."orderNumber", o.status, o."totalAmount", o.currency, o.notes, o."createdAt", o."updatedAt"
-      ORDER BY o."createdAt" DESC
-    `, [userId]);
+    // Get user orders (with error handling for missing table)
+    let ordersResult;
+    try {
+      ordersResult = await dbClient.query(`
+        SELECT o.id, o."orderNumber", o.status, o."totalAmount", o.currency, o.notes, 
+               o."createdAt", o."updatedAt",
+               COUNT(oi.id) as "itemsCount"
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi."orderId"
+        WHERE o."userId" = $1
+        GROUP BY o.id, o."orderNumber", o.status, o."totalAmount", o.currency, o.notes, o."createdAt", o."updatedAt"
+        ORDER BY o."createdAt" DESC
+      `, [userId]);
+    } catch (error) {
+      console.log('Orders table not found, using empty array');
+      ordersResult = { rows: [] };
+    }
 
-    // Get user addresses
-    const addressesResult = await dbClient.query(`
-      SELECT id, street, city, state, "postalCode", country, "isDefault", "createdAt"
-      FROM addresses
-      WHERE "userId" = $1
-      ORDER BY "isDefault" DESC, "createdAt" DESC
-    `, [userId]);
+    // Get user addresses (with error handling for missing table)
+    let addressesResult;
+    try {
+      addressesResult = await dbClient.query(`
+        SELECT id, street, city, state, "postalCode", country, "isDefault", "createdAt"
+        FROM addresses
+        WHERE "userId" = $1
+        ORDER BY "isDefault" DESC, "createdAt" DESC
+      `, [userId]);
+    } catch (error) {
+      console.log('Addresses table not found, using empty array');
+      addressesResult = { rows: [] };
+    }
 
     // Calculate statistics
     const totalOrders = ordersResult.rows.length;
@@ -120,7 +132,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Get profile error:', error);
-    await closeClient();
     return NextResponse.json(
       { error: 'Profil məlumatlarını əldə etmə zamanı xəta baş verdi' },
       { status: 500 }

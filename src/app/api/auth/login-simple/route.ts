@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Find user with actual database schema
     const result = await client.query(
-      `SELECT id, email, password, "firstName", "lastName", role, "isApproved", "isActive"
+      `SELECT id, email, password, "firstName", "lastName", role, "isApproved", "isActive", "discountPercentage"
        FROM users 
        WHERE email = $1`,
       [email]
