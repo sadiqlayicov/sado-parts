@@ -50,8 +50,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Load cart from API when user is authenticated
   useEffect(() => {
-    if (isAuthenticated && user?.id && !hasLoadedCart.current) {
-      hasLoadedCart.current = true;
+    if (isAuthenticated && user?.id) {
       const loadCart = async () => {
         if (!user?.id) return;
         
@@ -71,7 +70,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       };
       loadCart();
     } else if (!isAuthenticated) {
-      hasLoadedCart.current = false;
       setCartItems([]);
     }
   }, [isAuthenticated, user?.id]);
@@ -153,8 +151,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok) {
-        // Remove item from local state instead of refreshing
+        // Remove item from local state
         setCartItems(prevItems => prevItems.filter(item => item.id !== cartItemId));
+        console.log('Cart item removed from local state:', cartItemId);
       }
     } catch (error) {
       console.error('Remove from cart error:', error);
@@ -202,7 +201,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           method: 'DELETE'
         });
       }
+      // Clear local state immediately
       setCartItems([]);
+      console.log('Cart cleared from local state');
     } catch (error) {
       console.error('Clear cart error:', error);
     } finally {
