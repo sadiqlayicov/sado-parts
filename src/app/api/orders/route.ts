@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       notes: notes || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      items: userCart.map(item => ({
+      items: userCart.map((item: any) => ({
         id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         productId: item.productId,
         name: item.name,
