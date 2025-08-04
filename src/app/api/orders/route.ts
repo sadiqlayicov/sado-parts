@@ -96,21 +96,23 @@ export async function POST(request: NextRequest) {
     userOrders.push(order);
     orderStorage.set(userId, userOrders);
 
-    // Clear cart by removing all items
-    try {
-      for (const item of userCart) {
-        await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ cartItemId: item.id })
-        });
-      }
-    } catch (error) {
-      console.error('Error clearing cart:', error);
-      // Continue with order creation even if cart clearing fails
-    }
+         // Clear cart by removing all items
+     try {
+       for (const item of userCart) {
+         console.log('Clearing cart item:', item.id); // Debug log
+         await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart`, {
+           method: 'DELETE',
+           headers: {
+             'Content-Type': 'application/json',
+           },
+           body: JSON.stringify({ cartItemId: item.id })
+         });
+       }
+       console.log('Cart cleared successfully'); // Debug log
+     } catch (error) {
+       console.error('Error clearing cart:', error);
+       // Continue with order creation even if cart clearing fails
+     }
 
     return NextResponse.json({
       success: true,

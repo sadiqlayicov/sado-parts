@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
     // Get current user cart
     const userCart = cartStorage.get(userId) || [];
     
+    console.log('Adding to cart - productId:', productId); // Debug log
+    
     // Check if product already exists in cart
     const existingItemIndex = userCart.findIndex(item => item.productId === productId);
     
@@ -107,6 +109,8 @@ export async function POST(request: NextRequest) {
         sku: `SKU-${productId}`,
         categoryName: 'General'
       };
+      
+      console.log('Product mapping result:', { productId, productInfo }); // Debug log
 
       cartItemData = {
         id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -197,20 +201,34 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const cartItemId = searchParams.get('cartItemId');
+    
+    // Also check for cartItemId in request body for orders API
+    let bodyCartItemId = null;
+    try {
+      const body = await request.json();
+      bodyCartItemId = body.cartItemId;
+    } catch (e) {
+      // No body or invalid JSON
+    }
 
-    if (!cartItemId) {
+    const finalCartItemId = cartItemId || bodyCartItemId;
+
+    if (!finalCartItemId) {
       return NextResponse.json(
         { error: 'Səbət elementi ID tələb olunur' },
         { status: 400 }
       );
     }
 
+    console.log('Deleting cart item:', finalCartItemId); // Debug log
+
     // Find and remove cart item from all user carts
     for (const [userId, userCart] of cartStorage.entries()) {
-      const itemIndex = userCart.findIndex(item => item.id === cartItemId);
+      const itemIndex = userCart.findIndex(item => item.id === finalCartItemId);
       if (itemIndex >= 0) {
         userCart.splice(itemIndex, 1);
         cartStorage.set(userId, userCart);
+        console.log('Cart item deleted successfully'); // Debug log
         break;
       }
     }
