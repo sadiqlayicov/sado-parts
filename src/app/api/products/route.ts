@@ -121,9 +121,9 @@ export async function POST(request: NextRequest) {
     
     const result = await client.query(`
       INSERT INTO products (
-        name, description, price, "salePrice", sku, stock, images, 
+        id, name, description, price, "salePrice", sku, stock, images, 
         "categoryId", "isActive", "isFeatured", artikul, "catalogNumber"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [
       name,

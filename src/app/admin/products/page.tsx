@@ -86,30 +86,30 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
         <h3>{initial.id ? t('edit_product', 'Məhsulu redaktə et') : t('add_product', 'Yeni məhsul əlavə et')}</h3>
         <div style={{margin:'12px 0'}}>
           <label>{t('name', 'Ad')}:</label><br/>
-          <input name="name" value={form.name} onChange={handleChange} required style={{width:'100%',padding:6}} />
+          <input name="name" value={form.name} onChange={handleChange} required style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}} />
         </div>
         <div style={{margin:'12px 0'}}>
           <label>{t('category', 'Kateqoriya')}:</label><br/>
-          <select name="category" value={typeof form.category === 'object' ? form.category?.name : form.category} onChange={handleChange} required style={{width:'100%',padding:6,background:'#232b3b',color:'#fff',border:'1px solid #333'}}>
+          <select name="category" value={typeof form.category === 'object' ? form.category?.name : form.category} onChange={handleChange} required style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}}>
             <option value="">{t('select', 'Seçin')}</option>
             {Array.from(new Set(categoryList)).map((cat, idx) => <option key={cat.trim() + '-' + idx} value={cat}>{cat}</option>)}
           </select>
         </div>
         <div style={{margin:'12px 0'}}>
           <label>{t('artikul', 'Artikul')}:</label><br/>
-          <input name="artikul" value={form.artikul} onChange={handleChange} style={{width:'100%',padding:6}} />
+          <input name="artikul" value={form.artikul} onChange={handleChange} style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}} />
         </div>
         <div style={{margin:'12px 0'}}>
           <label>{t('catalog_number', 'Kataloq №')}:</label><br/>
-          <input name="catalogNumber" value={form.catalogNumber} onChange={handleChange} style={{width:'100%',padding:6}} />
+          <input name="catalogNumber" value={form.catalogNumber} onChange={handleChange} style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}} />
         </div>
         <div style={{margin:'12px 0'}}>
           <label>{t('description', 'Təsvir')}:</label><br/>
-          <textarea name="description" value={form.description} onChange={handleChange} style={{width:'100%',padding:6}} />
+          <textarea name="description" value={form.description} onChange={handleChange} style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4,minHeight:80}} />
         </div>
         <div style={{margin:'12px 0'}}>
           <label>{t('price', 'Qiymət')}:</label><br/>
-          <input name="price" type="number" value={form.price} onChange={handleChange} required style={{width:'100%',padding:6}} />
+          <input name="price" type="number" value={form.price} onChange={handleChange} required style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}} />
         </div>
         {/* Şəkil yükləmə inputu və preview */}
         <div style={{margin:'12px 0'}}>
