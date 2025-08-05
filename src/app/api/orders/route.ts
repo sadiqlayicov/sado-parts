@@ -28,63 +28,88 @@ const orderStorage = new Map<string, any[]>();
 // Get product info from database by productId
 async function getProductInfo(productId: string) {
   try {
-    // First try to get from products API (this is more reliable)
-    try {
-      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
-      const productsResponse = await fetch(`${baseUrl}/api/products`);
-      if (productsResponse.ok) {
-        const products = await productsResponse.json();
-        const foundProduct = products.find((p: any) => p.id === productId);
-        if (foundProduct) {
-          return {
-            name: foundProduct.name,
-            price: parseFloat(foundProduct.price) || 100,
-            salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
-            sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
-            categoryName: foundProduct.category?.name || 'General'
-          };
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching from products API:', error);
-    }
+    const dbClient = await getClient();
     
-    // If API fails, try database
-    try {
-      const dbClient = await getClient();
-      
-      // Try to find by productId (UUID) first
-      let result = await dbClient.query(
-        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
+    // Try to find by productId (UUID) first
+    let result = await dbClient.query(
+      'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
+      [productId]
+    );
+    
+    // If not found by ID, try to find by SKU
+    if (result.rows.length === 0) {
+      result = await dbClient.query(
+        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
         [productId]
       );
-      
-      // If not found by ID, try to find by SKU
-      if (result.rows.length === 0) {
-        result = await dbClient.query(
-          'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
-          [productId]
-        );
-      }
-      
-      if (result.rows.length > 0) {
-        const product = result.rows[0];
-        return {
-          name: product.name,
-          price: parseFloat(product.price) || 100,
-          salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
-          sku: product.sku || product.artikul || `SKU-${productId}`,
-          categoryName: product.category_name || 'General'
-        };
-      }
-    } catch (dbError) {
-      console.error('Error getting product info from database:', dbError);
+    }
+    
+    if (result.rows.length > 0) {
+      const product = result.rows[0];
+      return {
+        name: product.name,
+        price: parseFloat(product.price) || 100,
+        salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
+        sku: product.sku || product.artikul || `SKU-${productId}`,
+        categoryName: product.category_name || 'General'
+      };
     }
     
     return null;
-  } catch (error) {
-    console.error('Error in getProductInfo:', error);
+  } catch (dbError) {
+    console.error('Error getting product info from database:', dbError);
     return null;
+  }
+}
+
+// Get cart items directly from database
+async function getCartItems(userId: string) {
+  try {
+    const dbClient = await getClient();
+    
+    // Check if cart_items table exists
+    const tableCheck = await dbClient.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'cart_items'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.log('Cart items table does not exist, returning empty cart');
+      return [];
+    }
+    
+    // Get cart items with product info
+    const result = await dbClient.query(`
+      SELECT ci.*, p.name, p.price, p."salePrice", p.sku, p.artikul, c.name as category_name
+      FROM cart_items ci
+      LEFT JOIN products p ON ci."productId" = p.id
+      LEFT JOIN categories c ON p."categoryId" = c.id
+      WHERE ci."userId" = $1
+    `, [userId]);
+    
+    return result.rows.map(row => ({
+      id: row.id,
+      productId: row.productId,
+      name: row.name || 'Unknown Product',
+      description: 'Product description',
+      price: parseFloat(row.price) || 0,
+      salePrice: parseFloat(row.salePrice) || parseFloat(row.price) || 0,
+      quantity: parseInt(row.quantity) || 1,
+      sku: row.sku || row.artikul || 'SKU-UNKNOWN',
+      stock: 10,
+      images: [],
+      categoryName: row.category_name || 'General',
+      totalPrice: (parseFloat(row.price) || 0) * (parseInt(row.quantity) || 1),
+      totalSalePrice: (parseFloat(row.salePrice) || parseFloat(row.price) || 0) * (parseInt(row.quantity) || 1),
+      createdAt: row.createdAt || new Date().toISOString()
+    }));
+    
+  } catch (error) {
+    console.error('Error getting cart items from database:', error);
+    return [];
   }
 }
 
@@ -100,75 +125,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user cart items from cart API
-    let userCart;
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
-    try {
-      console.log('Fetching cart for userId:', userId);
-      console.log('Using baseUrl:', baseUrl);
-      
-      const cartUrl = `${baseUrl}/api/cart?userId=${userId}`;
-      console.log('Cart URL:', cartUrl);
-      
-      const cartResponse = await fetch(cartUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      console.log('Cart response status:', cartResponse.status);
-      console.log('Cart response headers:', Object.fromEntries(cartResponse.headers.entries()));
-      
-      if (!cartResponse.ok) {
-        console.error('Cart API returned non-OK status:', cartResponse.status);
-        const errorText = await cartResponse.text();
-        console.error('Cart API error response:', errorText);
-        return NextResponse.json(
-          { error: `Səbət API xətası: ${cartResponse.status}` },
-          { status: 400 }
-        );
-      }
-      
-      const cartData = await cartResponse.json();
-      console.log('Cart data received:', JSON.stringify(cartData, null, 2));
-      
-      if (!cartData.success) {
-        console.error('Cart API returned success: false');
-        return NextResponse.json(
-          { error: 'Səbət məlumatları alınmadı' },
-          { status: 400 }
-        );
-      }
-      
-      if (!cartData.cart) {
-        console.error('Cart data missing cart property');
-        return NextResponse.json(
-          { error: 'Səbət məlumatları düzgün deyil' },
-          { status: 400 }
-        );
-      }
-      
-      if (!cartData.cart.items || cartData.cart.items.length === 0) {
-        console.error('Cart items array is empty or missing');
-        return NextResponse.json(
-          { error: 'Səbətdə məhsul yoxdur' },
-          { status: 400 }
-        );
-      }
-      
-      userCart = cartData.cart.items;
-      console.log('Cart items for order:', JSON.stringify(userCart, null, 2)); // Debug log
-    } catch (error: any) {
-      console.error('Error fetching cart:', error);
-      console.error('Error details:', {
-        message: error?.message || 'Unknown error',
-        stack: error?.stack || 'No stack trace',
-        name: error?.name || 'Unknown error type'
-      });
+    console.log('Creating order for userId:', userId);
+
+    // Get user cart items directly from database
+    const userCart = await getCartItems(userId);
+    console.log('Cart items found:', userCart.length);
+
+    if (userCart.length === 0) {
       return NextResponse.json(
-        { error: 'Səbət məlumatları alınmadı' },
-        { status: 500 }
+        { error: 'Səbətdə məhsul yoxdur' },
+        { status: 400 }
       );
     }
 
@@ -178,6 +144,8 @@ export async function POST(request: NextRequest) {
       const price = item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price);
       totalAmount += price * parseInt(item.quantity);
     });
+
+    console.log('Total amount calculated:', totalAmount);
 
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -193,35 +161,27 @@ export async function POST(request: NextRequest) {
       notes: notes || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      items: await Promise.all(userCart.map(async (item: any) => {
-        // Get real product info from database
-        let productInfo = null;
-        try {
-          productInfo = await getProductInfo(item.productId);
-        } catch (error) {
-          console.error('Error getting product info for order:', error);
-        }
-        
-        return {
-          id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          productId: item.productId,
-          name: productInfo?.name || item.name, // Use real product name from database
-          quantity: item.quantity,
-          price: item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price),
-          totalPrice: (item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price)) * parseInt(item.quantity),
-          sku: productInfo?.sku || item.sku,
-          categoryName: productInfo?.categoryName || item.categoryName
-        };
+      items: userCart.map((item: any) => ({
+        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price),
+        totalPrice: (item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price)) * parseInt(item.quantity),
+        sku: item.sku,
+        categoryName: item.categoryName
       }))
     };
 
-    // Store order in database (simplified approach)
+    console.log('Order object created:', order.id);
+
+    // Store order in database
     try {
       const dbClient = await getClient();
       
       console.log('Attempting to insert order into database...');
       
-      // Simple order insert without complex fields
+      // Insert order
       const orderResult = await dbClient.query(
         `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -239,7 +199,7 @@ export async function POST(request: NextRequest) {
       
       console.log('Order inserted successfully');
 
-      // Simple order items insert
+      // Insert order items
       for (const item of order.items) {
         await dbClient.query(
           `INSERT INTO order_items (id, "orderId", "productId", quantity, price)
@@ -255,7 +215,18 @@ export async function POST(request: NextRequest) {
       }
       
       console.log('All order items inserted successfully');
+
+      // Clear cart by removing all items
+      for (const item of userCart) {
+        await dbClient.query(
+          'DELETE FROM cart_items WHERE id = $1',
+          [item.id]
+        );
+      }
+      
+      console.log('Cart cleared successfully');
       await closeClient();
+      
     } catch (dbError: any) {
       console.error('Database error:', dbError);
       console.error('Database error details:', {
@@ -269,24 +240,6 @@ export async function POST(request: NextRequest) {
       orderStorage.set(userId, userOrders);
     }
 
-         // Clear cart by removing all items
-     try {
-       for (const item of userCart) {
-         console.log('Clearing cart item:', item.id); // Debug log
-         await fetch(`${baseUrl}/api/cart`, {
-           method: 'DELETE',
-           headers: {
-             'Content-Type': 'application/json',
-           },
-           body: JSON.stringify({ cartItemId: item.id })
-         });
-       }
-       console.log('Cart cleared successfully'); // Debug log
-     } catch (error) {
-       console.error('Error clearing cart:', error);
-       // Continue with order creation even if cart clearing fails
-     }
-
     return NextResponse.json({
       success: true,
       message: 'Sifariş uğurla yaradıldı',
@@ -298,7 +251,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create order error:', error);
     return NextResponse.json(
       { error: 'Sifariş yaratma zamanı xəta baş verdi' },
@@ -359,7 +312,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(paginatedOrders);
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get orders error:', error);
     return NextResponse.json(
       { error: 'Sifarişləri əldə etmə zamanı xəta baş verdi' },
