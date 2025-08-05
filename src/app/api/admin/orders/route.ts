@@ -22,29 +22,121 @@ async function closeClient() {
   }
 }
 
-// In-memory order storage (shared with main orders API)
-const orderStorage = new Map<string, any[]>();
+// Get product info from database by productId
+async function getProductInfo(productId: string) {
+  try {
+    // First try to get from products API (this is more reliable)
+    try {
+      const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
+      if (productsResponse.ok) {
+        const products = await productsResponse.json();
+        const foundProduct = products.find((p: any) => p.id === productId);
+        if (foundProduct) {
+          return {
+            name: foundProduct.name,
+            price: parseFloat(foundProduct.price) || 100,
+            salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
+            sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
+            categoryName: foundProduct.category?.name || 'General'
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching from products API:', error);
+    }
+    
+    // If API fails, try database
+    try {
+      const dbClient = await getClient();
+      
+      // Try to find by productId (UUID) first
+      let result = await dbClient.query(
+        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
+        [productId]
+      );
+      
+      // If not found by ID, try to find by SKU
+      if (result.rows.length === 0) {
+        result = await dbClient.query(
+          'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
+          [productId]
+        );
+      }
+      
+      if (result.rows.length > 0) {
+        const product = result.rows[0];
+        return {
+          name: product.name,
+          price: parseFloat(product.price) || 100,
+          salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
+          sku: product.sku || product.artikul || `SKU-${productId}`,
+          categoryName: product.category_name || 'General'
+        };
+      }
+    } catch (dbError) {
+      console.error('Error getting product info from database:', dbError);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error in getProductInfo:', error);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
-    // Get all orders from all users
-    const allOrders: any[] = [];
+    const dbClient = await getClient();
     
-    for (const [userId, userOrders] of orderStorage.entries()) {
-      for (const order of userOrders) {
-        allOrders.push({
-          ...order,
-          userId: userId
-        });
-      }
-    }
-    
-    // Sort by creation date (newest first)
-    allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Get all orders with user information
+    const ordersResult = await dbClient.query(`
+      SELECT o.*, 
+             u."firstName", u."lastName", u.email, u.phone
+      FROM orders o
+      LEFT JOIN users u ON o."userId" = u.id
+      ORDER BY o."createdAt" DESC
+    `);
+
+    const orders = ordersResult.rows;
+
+    // Enhance orders with items and customer info
+    const enhancedOrders = await Promise.all(orders.map(async (order: any) => {
+      // Get order items
+      const itemsResult = await dbClient.query(
+        'SELECT * FROM order_items WHERE "orderId" = $1',
+        [order.id]
+      );
+
+      const items = itemsResult.rows;
+
+      // Enhance items with product information
+      const enhancedItems = await Promise.all(items.map(async (item: any) => {
+        const productInfo = await getProductInfo(item.productId);
+        
+        return {
+          id: item.id,
+          productId: item.productId,
+          name: productInfo?.name || `Məhsul ${item.productId}`,
+          quantity: item.quantity,
+          price: parseFloat(item.price) || 0,
+          totalPrice: (parseFloat(item.price) || 0) * item.quantity,
+          sku: productInfo?.sku || item.productId,
+          categoryName: productInfo?.categoryName || 'General'
+        };
+      }));
+
+      return {
+        ...order,
+        items: enhancedItems,
+        customerName: order.firstName && order.lastName ? `${order.firstName} ${order.lastName}` : order.email,
+        customerEmail: order.email,
+        customerPhone: order.phone
+      };
+    }));
 
     return NextResponse.json({
       success: true,
-      orders: allOrders
+      orders: enhancedOrders
     });
 
   } catch (error) {
@@ -53,6 +145,8 @@ export async function GET(request: NextRequest) {
       { error: 'Sifarişləri əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    await closeClient();
   }
 }
 
