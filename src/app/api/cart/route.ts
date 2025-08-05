@@ -98,6 +98,8 @@ async function getProductInfo(productId: string) {
   } catch (error) {
     console.error('Error in getProductInfo:', error);
     return null;
+  } finally {
+    // Don't close client here as it might be used by the calling function
   }
 }
 
