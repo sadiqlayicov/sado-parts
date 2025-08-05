@@ -152,6 +152,7 @@ export async function POST(request: NextRequest) {
         const userData = await userResponse.json();
         userDiscount = userData.discountPercentage || 0;
         console.log('User discount fetched:', userDiscount, '%');
+        console.log('Full user data:', userData);
       } else {
         console.log('Failed to fetch user data, status:', userResponse.status);
       }
@@ -212,11 +213,11 @@ export async function POST(request: NextRequest) {
         userDiscount,
         discountedPrice,
         productName: productInfo.name,
-        finalSalePrice: Math.round(discountedPrice * 100) / 100
+        finalSalePrice: Math.floor(discountedPrice * 100) / 100
       });
       
-      // Ensure we're using the discounted price as salePrice
-      const finalSalePrice = Math.round(discountedPrice * 100) / 100;
+      // Ensure we're using the discounted price as salePrice (same as AuthProvider)
+      const finalSalePrice = Math.floor(discountedPrice * 100) / 100;
       
       cartItemData = {
         id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -234,6 +235,15 @@ export async function POST(request: NextRequest) {
         totalSalePrice: finalSalePrice * quantity,
         createdAt: new Date().toISOString()
       };
+      
+      console.log('Final cart item data:', {
+        name: cartItemData.name,
+        originalPrice: cartItemData.price,
+        salePrice: cartItemData.salePrice,
+        quantity: cartItemData.quantity,
+        totalPrice: cartItemData.totalPrice,
+        totalSalePrice: cartItemData.totalSalePrice
+      });
       
       userCart.push(cartItemData);
     }
