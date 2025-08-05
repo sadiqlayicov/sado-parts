@@ -32,17 +32,59 @@ async function getProductInfo(productId: string) {
     
     console.log('Looking up product with ID:', productId); // Debug log
     
-    // Try to find by productId (UUID)
-    const result = await dbClient.query(
+    // Try to find by productId (UUID) first
+    let result = await dbClient.query(
       'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
       [productId]
     );
     
-    console.log('Database lookup result:', result.rows.length, 'rows found'); // Debug log
+    console.log('Database lookup by ID result:', result.rows.length, 'rows found'); // Debug log
+    
+    // If not found by ID, try to find by SKU
+    if (result.rows.length === 0) {
+      console.log('Product not found by ID, trying SKU lookup...');
+      result = await dbClient.query(
+        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
+        [productId]
+      );
+      console.log('Database lookup by SKU result:', result.rows.length, 'rows found');
+    }
+    
+    // If still not found, try to get from products API
+    if (result.rows.length === 0) {
+      console.log('Product not found in database, trying products API...');
+      try {
+        const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
+        if (productsResponse.ok) {
+          const products = await productsResponse.json();
+          const foundProduct = products.find((p: any) => p.id === productId || p.sku === productId);
+          if (foundProduct) {
+            console.log('Found product from API:', foundProduct.name);
+            return {
+              name: foundProduct.name,
+              price: parseFloat(foundProduct.price) || 100,
+              salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
+              sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
+              categoryName: foundProduct.category?.name || 'General'
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching from products API:', error);
+      }
+    }
     
     if (result.rows.length > 0) {
       const product = result.rows[0];
-      console.log('Found product:', product.name, 'with price:', product.price, 'salePrice:', product.salePrice); // Debug log
+      console.log('Found product:', {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        salePrice: product.salePrice,
+        sku: product.sku,
+        categoryName: product.category_name
+      });
+      
       return {
         name: product.name,
         price: parseFloat(product.price) || 100,
@@ -52,7 +94,7 @@ async function getProductInfo(productId: string) {
       };
     }
     
-    console.log('No product found for ID:', productId); // Debug log
+    console.log('No product found for ID/SKU:', productId); // Debug log
     return null;
   } catch (error) {
     console.error('Error getting product info from database:', error);

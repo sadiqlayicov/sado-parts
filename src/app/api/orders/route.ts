@@ -25,6 +25,43 @@ async function closeClient() {
 // In-memory order storage (temporary solution)
 const orderStorage = new Map<string, any[]>();
 
+// Get product info from database by productId
+async function getProductInfo(productId: string) {
+  try {
+    const dbClient = await getClient();
+    
+    // Try to find by productId (UUID) first
+    let result = await dbClient.query(
+      'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
+      [productId]
+    );
+    
+    // If not found by ID, try to find by SKU
+    if (result.rows.length === 0) {
+      result = await dbClient.query(
+        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
+        [productId]
+      );
+    }
+    
+    if (result.rows.length > 0) {
+      const product = result.rows[0];
+      return {
+        name: product.name,
+        price: parseFloat(product.price) || 100,
+        salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
+        sku: product.sku || product.artikul || `SKU-${productId}`,
+        categoryName: product.category_name || 'General'
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting product info from database:', error);
+    return null;
+  }
+}
+
 // Create new order
 export async function POST(request: NextRequest) {
   try {
@@ -81,15 +118,25 @@ export async function POST(request: NextRequest) {
       notes: notes || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      items: userCart.map((item: any) => ({
-        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        productId: item.productId,
-        name: item.name, // This should already be the real product name from cart
-        quantity: item.quantity,
-        price: item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price),
-        totalPrice: (item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price)) * parseInt(item.quantity),
-        sku: item.sku,
-        categoryName: item.categoryName
+      items: await Promise.all(userCart.map(async (item: any) => {
+        // Get real product info from database
+        let productInfo = null;
+        try {
+          productInfo = await getProductInfo(item.productId);
+        } catch (error) {
+          console.error('Error getting product info for order:', error);
+        }
+        
+        return {
+          id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          productId: item.productId,
+          name: productInfo?.name || item.name, // Use real product name from database
+          quantity: item.quantity,
+          price: item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price),
+          totalPrice: (item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price)) * parseInt(item.quantity),
+          sku: productInfo?.sku || item.sku,
+          categoryName: productInfo?.categoryName || item.categoryName
+        };
       }))
     };
 
