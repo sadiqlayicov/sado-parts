@@ -166,10 +166,11 @@ export default function HomePage() {
           <div className="min-h-0 flex-1 flex flex-col">
             <div className="font-semibold text-sm mb-3 text-center line-clamp-2 leading-tight overflow-hidden">{product.name}</div>
             <div className="text-center mb-4">
-              {isAuthenticated && isApproved && calculateDiscountedPrice(product.price) !== product.price ? (
+              {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                 <div>
                   <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
                   <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price)?.toFixed(2)}₼</div>
+                  <div className="text-green-400 text-xs mt-1">-{user.discountPercentage}% endirim</div>
                 </div>
               ) : (
                 <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString()}₼</div>
@@ -232,10 +233,11 @@ export default function HomePage() {
                   <div className="min-h-0 flex-1 flex flex-col">
                     <div className="font-semibold text-sm mb-3 text-center line-clamp-2 leading-tight overflow-hidden">{product.name}</div>
                     <div className="text-center mb-4">
-                      {isAuthenticated && isApproved && calculateDiscountedPrice(product.price) !== product.price ? (
+                      {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                         <div>
                           <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
                           <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price)?.toFixed(2)}₼</div>
+                          <div className="text-green-400 text-xs mt-1">-{user.discountPercentage}% endirim</div>
                         </div>
                       ) : (
                         <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString()}₼</div>
