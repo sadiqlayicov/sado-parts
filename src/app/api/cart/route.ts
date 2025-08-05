@@ -116,6 +116,43 @@ export async function GET(request: NextRequest) {
   try {
     const dbClient = await getClient();
     
+    // Check if cart_items table exists, if not return empty cart
+    try {
+      const tableCheck = await dbClient.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'cart_items'
+        );
+      `);
+      
+      if (!tableCheck.rows[0].exists) {
+        console.log('Cart items table does not exist, returning empty cart');
+        return NextResponse.json({
+          success: true,
+          cart: {
+            items: [],
+            totalItems: 0,
+            totalPrice: 0,
+            totalSalePrice: 0,
+            savings: 0
+          }
+        });
+      }
+    } catch (tableError) {
+      console.error('Error checking table existence:', tableError);
+      return NextResponse.json({
+        success: true,
+        cart: {
+          items: [],
+          totalItems: 0,
+          totalPrice: 0,
+          totalSalePrice: 0,
+          savings: 0
+        }
+      });
+    }
+    
     // Get cart items from database
     const result = await dbClient.query(
       'SELECT * FROM cart_items WHERE "userId" = $1 ORDER BY "createdAt" DESC',
@@ -176,6 +213,58 @@ export async function POST(request: NextRequest) {
     }
 
     const dbClient = await getClient();
+    
+    // Check if cart_items table exists, if not create it
+    try {
+      const tableCheck = await dbClient.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'cart_items'
+        );
+      `);
+      
+      if (!tableCheck.rows[0].exists) {
+        console.log('Creating cart_items table...');
+        await dbClient.query(`
+          CREATE TABLE cart_items (
+            id VARCHAR(255) PRIMARY KEY,
+            "userId" VARCHAR(255) NOT NULL,
+            "productId" VARCHAR(255) NOT NULL,
+            name VARCHAR(500) NOT NULL,
+            description TEXT,
+            price DECIMAL(10,2) NOT NULL,
+            "salePrice" DECIMAL(10,2) NOT NULL,
+            images TEXT[],
+            stock INTEGER DEFAULT 10,
+            sku VARCHAR(255),
+            "categoryName" VARCHAR(255),
+            quantity INTEGER NOT NULL DEFAULT 1,
+            "totalPrice" DECIMAL(10,2) NOT NULL,
+            "totalSalePrice" DECIMAL(10,2) NOT NULL,
+            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        
+        // Create indexes
+        await dbClient.query(`
+          CREATE INDEX idx_cart_items_user_id ON cart_items("userId")
+        `);
+        
+        await dbClient.query(`
+          CREATE INDEX idx_cart_items_product_id ON cart_items("productId")
+        `);
+        
+        console.log('Cart items table created successfully');
+      }
+    } catch (tableError) {
+      console.error('Error creating table:', tableError);
+      return NextResponse.json(
+        { error: 'Səbət cədvəli yaradıla bilmədi' },
+        { status: 500 }
+      );
+    }
     
     // Check if product already exists in cart
     const existingItemResult = await dbClient.query(
