@@ -87,7 +87,9 @@ export async function POST(request: NextRequest) {
         name: item.name,
         quantity: item.quantity,
         price: item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price),
-        totalPrice: (item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price)) * parseInt(item.quantity)
+        totalPrice: (item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price)) * parseInt(item.quantity),
+        sku: item.sku,
+        categoryName: item.categoryName
       }))
     };
 

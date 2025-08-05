@@ -149,76 +149,25 @@ export async function POST(request: NextRequest) {
         console.error('Error getting product from database:', error);
       }
       
-      // If database lookup fails, try to get from products API
+      // If database lookup fails, return error - no fallback
       if (!productInfo) {
-        try {
-          const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
-          if (productsResponse.ok) {
-            const products = await productsResponse.json();
-            const foundProduct = products.find((p: any) => p.id === productId);
-            if (foundProduct) {
-              productInfo = {
-                name: foundProduct.name,
-                price: parseFloat(foundProduct.price) || 100,
-                salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
-                sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
-                categoryName: foundProduct.category?.name || 'General'
-              };
-              console.log('Found product from products API:', productInfo);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching from products API:', error);
-        }
-      }
-      
-      // Fallback to hardcoded mapping if all lookups fail
-      if (!productInfo) {
-        const productMap: { [key: string]: any } = {
-          'fuel-filter': {
-            name: 'Fuel Filter',
-            price: 30,
-            salePrice: 24,
-            sku: 'FUEL-FIL-010',
-            categoryName: 'Filters'
-          },
-          'hydraulic-hose': {
-            name: 'Hydraulic Hose',
-            price: 75,
-            salePrice: 60,
-            sku: 'HYD-HOSE-009',
-            categoryName: 'Hydraulic Systems'
-          },
-          'body-panel-front-bumper': {
-            name: 'Body Panel - Front Bumper',
-            price: 320,
-            salePrice: 256,
-            sku: 'BODY-BUMP-008',
-            categoryName: 'Body Parts'
-          },
-          'tire-set-4-pieces': {
-            name: 'Tire Set (4 pieces)',
-            price: 450,
-            salePrice: 360,
-            sku: 'TIRE-SET-007',
-            categoryName: 'Tires & Wheels'
-          }
-        };
-        
-        productInfo = productMap[productId] || {
-          name: `Product ${productId}`,
-          price: 100,
-          salePrice: 80,
-          sku: `SKU-${productId}`,
-          categoryName: 'General'
-        };
-        
-        console.log('Using fallback product mapping:', { productId, productInfo });
+        console.log('Product not found in database:', productId);
+        return NextResponse.json(
+          { error: 'Məhsul tapılmadı' },
+          { status: 404 }
+        );
       }
 
       // Calculate discounted price if user has discount
       const originalPrice = productInfo.price;
       const discountedPrice = userDiscount > 0 ? originalPrice * (1 - userDiscount / 100) : originalPrice;
+      
+      console.log('Price calculation:', {
+        originalPrice,
+        userDiscount,
+        discountedPrice,
+        productName: productInfo.name
+      });
       
       cartItemData = {
         id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
