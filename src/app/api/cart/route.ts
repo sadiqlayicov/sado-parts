@@ -25,6 +25,17 @@ async function closeClient() {
 // Simple cart storage for fallback
 const cartStorage = new Map<string, any[]>();
 
+// Helper function to get cart from storage
+function getCartFromStorage(userId: string) {
+  return cartStorage.get(userId) || [];
+}
+
+// Helper function to save cart to storage
+function saveCartToStorage(userId: string, items: any[]) {
+  cartStorage.set(userId, items);
+  console.log('Cart saved to storage for userId:', userId, 'items count:', items.length);
+}
+
 // Get product info from products API
 async function getProductInfo(productId: string) {
   try {
@@ -95,6 +106,8 @@ export async function GET(request: NextRequest) {
         const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
         const totalSalePrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
 
+        console.log('Cart from database - items:', userCart.length, 'totalItems:', totalItems);
+
         return NextResponse.json({
           success: true,
           cart: {
@@ -111,11 +124,13 @@ export async function GET(request: NextRequest) {
     }
     
     // Fallback to memory storage
-    const userCart = cartStorage.get(userId) || [];
+    const userCart = getCartFromStorage(userId);
     
     const totalItems = userCart.reduce((sum, item) => sum + item.quantity, 0);
     const totalPrice = userCart.reduce((sum, item) => sum + item.totalPrice, 0);
     const totalSalePrice = userCart.reduce((sum, item) => sum + item.totalSalePrice, 0);
+
+    console.log('Cart from fallback - items:', userCart.length, 'totalItems:', totalItems);
 
     return NextResponse.json({
       success: true,
@@ -301,7 +316,7 @@ export async function POST(request: NextRequest) {
       console.error('Database error, using fallback:', dbError);
       
       // Fallback to memory storage
-      const userCart = cartStorage.get(userId) || [];
+      const userCart = getCartFromStorage(userId);
       
       // Check if product already exists
       const existingItemIndex = userCart.findIndex(item => item.productId === productId);
@@ -339,7 +354,7 @@ export async function POST(request: NextRequest) {
         userCart.push(cartItemData);
       }
       
-      cartStorage.set(userId, userCart);
+      saveCartToStorage(userId, userCart);
 
       return NextResponse.json({
         success: true,
