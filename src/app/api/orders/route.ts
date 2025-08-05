@@ -105,11 +105,33 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
     try {
       console.log('Fetching cart for userId:', userId);
-      const cartResponse = await fetch(`${baseUrl}/api/cart?userId=${userId}`);
+      console.log('Using baseUrl:', baseUrl);
+      
+      const cartUrl = `${baseUrl}/api/cart?userId=${userId}`;
+      console.log('Cart URL:', cartUrl);
+      
+      const cartResponse = await fetch(cartUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
       console.log('Cart response status:', cartResponse.status);
+      console.log('Cart response headers:', Object.fromEntries(cartResponse.headers.entries()));
+      
+      if (!cartResponse.ok) {
+        console.error('Cart API returned non-OK status:', cartResponse.status);
+        const errorText = await cartResponse.text();
+        console.error('Cart API error response:', errorText);
+        return NextResponse.json(
+          { error: `Səbət API xətası: ${cartResponse.status}` },
+          { status: 400 }
+        );
+      }
       
       const cartData = await cartResponse.json();
-      console.log('Cart data received:', cartData);
+      console.log('Cart data received:', JSON.stringify(cartData, null, 2));
       
       if (!cartData.success) {
         console.error('Cart API returned success: false');
@@ -136,9 +158,14 @@ export async function POST(request: NextRequest) {
       }
       
       userCart = cartData.cart.items;
-      console.log('Cart items for order:', userCart); // Debug log
-    } catch (error) {
+      console.log('Cart items for order:', JSON.stringify(userCart, null, 2)); // Debug log
+    } catch (error: any) {
       console.error('Error fetching cart:', error);
+      console.error('Error details:', {
+        message: error?.message || 'Unknown error',
+        stack: error?.stack || 'No stack trace',
+        name: error?.name || 'Unknown error type'
+      });
       return NextResponse.json(
         { error: 'Səbət məlumatları alınmadı' },
         { status: 500 }
