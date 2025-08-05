@@ -67,28 +67,57 @@ async function getCartItems(userId: string) {
   try {
     console.log('Getting cart items for userId:', userId);
     
-    // Get cart from cart API
+    // Get cart from cart API with proper headers
     const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
-    const cartResponse = await fetch(`${baseUrl}/api/cart?userId=${userId}`);
+    const cartUrl = `${baseUrl}/api/cart?userId=${userId}`;
+    console.log('Cart URL:', cartUrl);
+    
+    const cartResponse = await fetch(cartUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    console.log('Cart response status:', cartResponse.status);
     
     if (!cartResponse.ok) {
       console.error('Cart API returned non-OK status:', cartResponse.status);
+      const errorText = await cartResponse.text();
+      console.error('Cart API error response:', errorText);
       return [];
     }
     
     const cartData = await cartResponse.json();
-    console.log('Cart API response:', cartData);
+    console.log('Cart API response:', JSON.stringify(cartData, null, 2));
     
-    if (!cartData.success || !cartData.cart || !cartData.cart.items) {
-      console.error('Cart API returned invalid data');
+    if (!cartData.success) {
+      console.error('Cart API returned success: false');
+      return [];
+    }
+    
+    if (!cartData.cart) {
+      console.error('Cart API missing cart property');
+      return [];
+    }
+    
+    if (!cartData.cart.items) {
+      console.error('Cart API missing items array');
       return [];
     }
     
     console.log('Cart items found:', cartData.cart.items.length);
+    console.log('Cart items:', JSON.stringify(cartData.cart.items, null, 2));
     return cartData.cart.items;
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting cart items from API:', error);
+    console.error('Error details:', {
+      message: error?.message || 'Unknown error',
+      stack: error?.stack || 'No stack trace',
+      name: error?.name || 'Unknown error type'
+    });
     return [];
   }
 }
