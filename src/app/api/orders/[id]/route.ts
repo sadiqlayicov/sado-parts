@@ -27,7 +27,8 @@ async function getProductInfo(productId: string) {
   try {
     // First try to get from products API (this is more reliable)
     try {
-      const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
+      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
+      const productsResponse = await fetch(`${baseUrl}/api/products`);
       if (productsResponse.ok) {
         const products = await productsResponse.json();
         const foundProduct = products.find((p: any) => p.id === productId);
