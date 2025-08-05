@@ -7,6 +7,7 @@ interface CartItem {
   id: string;
   productId: string;
   name: string;
+  description: string;
   price: number;
   salePrice: number;
   quantity: number;
@@ -16,6 +17,7 @@ interface CartItem {
   categoryName: string;
   totalPrice: number;
   totalSalePrice: number;
+  createdAt: string;
 }
 
 interface CartContextType {
@@ -109,6 +111,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         id: `temp-${Date.now()}`,
         productId,
         name: 'Yüklənir...',
+        description: 'Product description',
         price: 0,
         salePrice: 0,
         quantity,
@@ -117,7 +120,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         images: [],
         categoryName: 'General',
         totalPrice: 0,
-        totalSalePrice: 0
+        totalSalePrice: 0,
+        createdAt: new Date().toISOString()
       };
 
       setCartItems(prevItems => {
