@@ -92,41 +92,51 @@ export async function POST(request: NextRequest) {
     };
 
     // Store order in database
-    const dbClient = await getClient();
-    
-    // Insert order into database
-    const orderResult = await dbClient.query(
-      `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes, "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [
-        order.id,
-        order.orderNumber,
-        order.userId,
-        order.status,
-        order.totalAmount,
-        order.currency,
-        order.notes,
-        order.createdAt,
-        order.updatedAt
-      ]
-    );
-
-    // Insert order items into database
-    for (const item of order.items) {
-      await dbClient.query(
-        `INSERT INTO order_items (id, "orderId", "productId", quantity, price, "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    try {
+      const dbClient = await getClient();
+      
+      // Insert order into database
+      const orderResult = await dbClient.query(
+        `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes, "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
         [
-          item.id,
           order.id,
-          item.productId,
-          item.quantity,
-          item.price,
-          item.createdAt || new Date().toISOString(),
-          item.updatedAt || new Date().toISOString()
+          order.orderNumber,
+          order.userId,
+          order.status,
+          order.totalAmount,
+          order.currency,
+          order.notes,
+          order.createdAt,
+          order.updatedAt
         ]
       );
+
+      // Insert order items into database
+      for (const item of order.items) {
+        await dbClient.query(
+          `INSERT INTO order_items (id, "orderId", "productId", quantity, price, "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            item.id,
+            order.id,
+            item.productId,
+            item.quantity,
+            item.price,
+            item.createdAt || new Date().toISOString(),
+            item.updatedAt || new Date().toISOString()
+          ]
+        );
+      }
+      
+      await closeClient();
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      // Continue with in-memory storage as fallback
+      const userOrders = orderStorage.get(userId) || [];
+      userOrders.push(order);
+      orderStorage.set(userId, userOrders);
     }
 
          // Clear cart by removing all items
@@ -183,31 +193,41 @@ export async function GET(request: NextRequest) {
     }
 
     // Get orders from database
-    const dbClient = await getClient();
-    
-    const skip = (page - 1) * limit;
-    
-    // Get orders with items
-    const ordersResult = await dbClient.query(
-      `SELECT o.*, 
-              json_agg(
-                json_build_object(
-                  'id', oi.id,
-                  'productId', oi."productId",
-                  'quantity', oi.quantity,
-                  'price', oi.price
-                )
-              ) as items
-       FROM orders o
-       LEFT JOIN order_items oi ON o.id = oi."orderId"
-       WHERE o."userId" = $1
-       GROUP BY o.id
-       ORDER BY o."createdAt" DESC
-       LIMIT $2 OFFSET $3`,
-      [userId, limit, skip]
-    );
+    try {
+      const dbClient = await getClient();
+      
+      const skip = (page - 1) * limit;
+      
+      // Get orders with items
+      const ordersResult = await dbClient.query(
+        `SELECT o.*, 
+                json_agg(
+                  json_build_object(
+                    'id', oi.id,
+                    'productId', oi."productId",
+                    'quantity', oi.quantity,
+                    'price', oi.price
+                  )
+                ) as items
+         FROM orders o
+         LEFT JOIN order_items oi ON o.id = oi."orderId"
+         WHERE o."userId" = $1
+         GROUP BY o.id
+         ORDER BY o."createdAt" DESC
+         LIMIT $2 OFFSET $3`,
+        [userId, limit, skip]
+      );
 
-    return NextResponse.json(ordersResult.rows);
+      await closeClient();
+      return NextResponse.json(ordersResult.rows);
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      // Fallback to in-memory storage
+      const userOrders = orderStorage.get(userId) || [];
+      const skip = (page - 1) * limit;
+      const paginatedOrders = userOrders.slice(skip, skip + limit);
+      return NextResponse.json(paginatedOrders);
+    }
 
   } catch (error) {
     console.error('Get orders error:', error);

@@ -102,6 +102,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user info to check discount
+    let userDiscount = 0;
+    try {
+      const userResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/users/${userId}`);
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        userDiscount = userData.discountPercentage || 0;
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+
     // Get current user cart
     const userCart = cartStorage.get(userId) || [];
     
@@ -204,20 +216,24 @@ export async function POST(request: NextRequest) {
         console.log('Using fallback product mapping:', { productId, productInfo });
       }
 
+      // Calculate discounted price if user has discount
+      const originalPrice = productInfo.price;
+      const discountedPrice = userDiscount > 0 ? originalPrice * (1 - userDiscount / 100) : originalPrice;
+      
       cartItemData = {
         id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         productId: productId,
         name: productInfo.name,
         description: 'Product description',
-        price: productInfo.price,
-        salePrice: productInfo.salePrice,
+        price: originalPrice,
+        salePrice: Math.round(discountedPrice * 100) / 100, // Round to 2 decimal places
         images: [],
         stock: 10,
         sku: productInfo.sku,
         categoryName: productInfo.categoryName,
         quantity: quantity,
-        totalPrice: productInfo.price * quantity,
-        totalSalePrice: productInfo.salePrice * quantity,
+        totalPrice: originalPrice * quantity,
+        totalSalePrice: Math.round(discountedPrice * 100) / 100 * quantity,
         createdAt: new Date().toISOString()
       };
       
