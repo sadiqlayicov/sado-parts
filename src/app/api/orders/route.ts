@@ -62,53 +62,33 @@ async function getProductInfo(productId: string) {
   }
 }
 
-// Get cart items directly from database
+// Get cart items from cart API
 async function getCartItems(userId: string) {
   try {
-    const dbClient = await getClient();
+    console.log('Getting cart items for userId:', userId);
     
-    // Check if cart_items table exists
-    const tableCheck = await dbClient.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'cart_items'
-      );
-    `);
+    // Get cart from cart API
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
+    const cartResponse = await fetch(`${baseUrl}/api/cart?userId=${userId}`);
     
-    if (!tableCheck.rows[0].exists) {
-      console.log('Cart items table does not exist, returning empty cart');
+    if (!cartResponse.ok) {
+      console.error('Cart API returned non-OK status:', cartResponse.status);
       return [];
     }
     
-    // Get cart items with product info
-    const result = await dbClient.query(`
-      SELECT ci.*, p.name, p.price, p."salePrice", p.sku, p.artikul, c.name as category_name
-      FROM cart_items ci
-      LEFT JOIN products p ON ci."productId" = p.id
-      LEFT JOIN categories c ON p."categoryId" = c.id
-      WHERE ci."userId" = $1
-    `, [userId]);
+    const cartData = await cartResponse.json();
+    console.log('Cart API response:', cartData);
     
-    return result.rows.map(row => ({
-      id: row.id,
-      productId: row.productId,
-      name: row.name || 'Unknown Product',
-      description: 'Product description',
-      price: parseFloat(row.price) || 0,
-      salePrice: parseFloat(row.salePrice) || parseFloat(row.price) || 0,
-      quantity: parseInt(row.quantity) || 1,
-      sku: row.sku || row.artikul || 'SKU-UNKNOWN',
-      stock: 10,
-      images: [],
-      categoryName: row.category_name || 'General',
-      totalPrice: (parseFloat(row.price) || 0) * (parseInt(row.quantity) || 1),
-      totalSalePrice: (parseFloat(row.salePrice) || parseFloat(row.price) || 0) * (parseInt(row.quantity) || 1),
-      createdAt: row.createdAt || new Date().toISOString()
-    }));
+    if (!cartData.success || !cartData.cart || !cartData.cart.items) {
+      console.error('Cart API returned invalid data');
+      return [];
+    }
+    
+    console.log('Cart items found:', cartData.cart.items.length);
+    return cartData.cart.items;
     
   } catch (error) {
-    console.error('Error getting cart items from database:', error);
+    console.error('Error getting cart items from API:', error);
     return [];
   }
 }
