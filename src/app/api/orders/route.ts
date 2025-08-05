@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       items: userCart.map((item: any) => ({
         id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         productId: item.productId,
-        name: item.name,
+        name: item.name, // This should already be the real product name from cart
         quantity: item.quantity,
         price: item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price),
         totalPrice: (item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price)) * parseInt(item.quantity),
