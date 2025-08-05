@@ -190,6 +190,13 @@ export async function POST(request: NextRequest) {
     try {
       const dbClient = await getClient();
       
+      console.log('Inserting order into database:', {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        userId: order.userId,
+        totalAmount: order.totalAmount
+      });
+      
       // Insert order into database
       const orderResult = await dbClient.query(
         `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes, "createdAt", "updatedAt")
@@ -207,9 +214,19 @@ export async function POST(request: NextRequest) {
           order.updatedAt
         ]
       );
+      
+      console.log('Order inserted successfully:', orderResult.rows[0]);
 
       // Insert order items into database
       for (const item of order.items) {
+        console.log('Inserting order item:', {
+          id: item.id,
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price
+        });
+        
         await dbClient.query(
           `INSERT INTO order_items (id, "orderId", "productId", quantity, price, "createdAt", "updatedAt")
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -225,9 +242,15 @@ export async function POST(request: NextRequest) {
         );
       }
       
+      console.log('All order items inserted successfully');
       await closeClient();
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('Database error:', dbError);
+      console.error('Database error details:', {
+        message: dbError?.message,
+        code: dbError?.code,
+        detail: dbError?.detail
+      });
       // Continue with in-memory storage as fallback
       const userOrders = orderStorage.get(userId) || [];
       userOrders.push(order);
