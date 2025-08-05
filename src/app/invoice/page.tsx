@@ -12,6 +12,8 @@ interface OrderItem {
   quantity: number;
   price: number;
   totalPrice: number;
+  sku?: string;
+  categoryName?: string;
 }
 
 interface Order {
@@ -48,40 +50,19 @@ function InvoiceContent() {
 
   const fetchOrder = async (orderId: string) => {
     try {
-      // For now, we'll create a mock order since we don't have the orders table
-      // In a real implementation, this would fetch from the actual orders table
-      const mockOrder: Order = {
-        id: orderId,
-        orderNumber: `ORD-${Date.now()}`,
-        status: 'pending',
-        totalAmount: 240,
-        currency: 'AZN',
-        notes: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        items: [
-          {
-            id: 'item-1',
-            productId: 'product-1',
-            name: 'Product cmdsinv7',
-            quantity: 2,
-            price: 80,
-            totalPrice: 160
-          },
-          {
-            id: 'item-2',
-            productId: 'product-2',
-            name: 'Product cmdsinv8',
-            quantity: 1,
-            price: 80,
-            totalPrice: 80
-          }
-        ]
-      };
-
-      setOrder(mockOrder);
+      // Real sifariş məlumatlarını əldə et
+      const response = await fetch(`/api/orders/${orderId}`);
+      
+      if (response.ok) {
+        const orderData = await response.json();
+        setOrder(orderData);
+      } else {
+        console.error('Sifariş tapılmadı');
+        setOrder(null);
+      }
     } catch (error) {
       console.error('Error fetching order:', error);
+      setOrder(null);
     } finally {
       setLoading(false);
     }
@@ -201,7 +182,13 @@ function InvoiceContent() {
                   {order.items.map((item, index) => (
                     <tr key={item.id} className="border-b border-gray-700">
                       <td className="py-3 px-4 text-gray-300">{index + 1}</td>
-                      <td className="py-3 px-4 text-white">{item.name}</td>
+                      <td className="py-3 px-4 text-white">
+                        <div>
+                          <div className="font-medium">{item.name}</div>
+                          {item.sku && <div className="text-sm text-gray-400">Artikul: {item.sku}</div>}
+                          {item.categoryName && <div className="text-sm text-gray-400">Kateqoriya: {item.categoryName}</div>}
+                        </div>
+                      </td>
                       <td className="py-3 px-4 text-gray-300 text-center">{item.quantity}</td>
                       <td className="py-3 px-4 text-gray-300 text-right">{item.price.toFixed(2)} ₼</td>
                       <td className="py-3 px-4 text-cyan-400 font-semibold text-right">{item.totalPrice.toFixed(2)} ₼</td>

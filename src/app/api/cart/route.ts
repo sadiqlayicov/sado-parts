@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-// In-memory cart storage (in production, this should be in database)
-const cartStorage = new Map<string, any[]>();
-
 // Database connection
 let client: Client | null = null;
 
@@ -104,7 +101,7 @@ async function getProductInfo(productId: string) {
   }
 }
 
-// Simple cart API with in-memory storage
+// Get user cart from database
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
@@ -116,25 +113,44 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Get cart items from memory storage
-  const userCart = cartStorage.get(userId) || [];
-  
-  const totalItems = userCart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = userCart.reduce((sum, item) => sum + item.totalPrice, 0);
-  const totalSalePrice = userCart.reduce((sum, item) => sum + item.totalSalePrice, 0);
+  try {
+    const dbClient = await getClient();
+    
+    // Get cart items from database
+    const result = await dbClient.query(
+      'SELECT * FROM cart_items WHERE "userId" = $1 ORDER BY "createdAt" DESC',
+      [userId]
+    );
 
-  return NextResponse.json({
-    success: true,
-    cart: {
-      items: userCart,
-      totalItems,
-      totalPrice: Math.round(totalPrice * 100) / 100,
-      totalSalePrice: Math.round(totalSalePrice * 100) / 100,
-      savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
-    }
-  });
+    const userCart = result.rows;
+    
+    const totalItems = userCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+    const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+    const totalSalePrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
+
+    return NextResponse.json({
+      success: true,
+      cart: {
+        items: userCart,
+        totalItems,
+        totalPrice: Math.round(totalPrice * 100) / 100,
+        totalSalePrice: Math.round(totalSalePrice * 100) / 100,
+        savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
+      }
+    });
+
+  } catch (error) {
+    console.error('Get cart error:', error);
+    return NextResponse.json(
+      { error: 'Səbət məlumatları alınmadı' },
+      { status: 500 }
+    );
+  } finally {
+    await closeClient();
+  }
 }
 
+// Add item to cart
 export async function POST(request: NextRequest) {
   try {
     const { userId, productId, quantity = 1 } = await request.json();
@@ -154,37 +170,40 @@ export async function POST(request: NextRequest) {
         const userData = await userResponse.json();
         userDiscount = userData.discountPercentage || 0;
         console.log('User discount fetched:', userDiscount, '%');
-        console.log('Full user data:', userData);
-      } else {
-        console.log('Failed to fetch user data, status:', userResponse.status);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
     }
 
-    // Get current user cart
-    const userCart = cartStorage.get(userId) || [];
-    
-    console.log('Adding to cart - productId:', productId); // Debug log
+    const dbClient = await getClient();
     
     // Check if product already exists in cart
-    const existingItemIndex = userCart.findIndex(item => item.productId === productId);
+    const existingItemResult = await dbClient.query(
+      'SELECT * FROM cart_items WHERE "userId" = $1 AND "productId" = $2',
+      [userId, productId]
+    );
     
     let cartItemData;
     
-    if (existingItemIndex >= 0) {
+    if (existingItemResult.rows.length > 0) {
       // Update existing item
-      const existingItem = userCart[existingItemIndex];
-      const newQuantity = existingItem.quantity + quantity;
+      const existingItem = existingItemResult.rows[0];
+      const newQuantity = parseInt(existingItem.quantity) + quantity;
       
-      cartItemData = {
-        ...existingItem,
-        quantity: newQuantity,
-        totalPrice: existingItem.price * newQuantity,
-        totalSalePrice: existingItem.salePrice * newQuantity
-      };
+      const updatedItem = await dbClient.query(
+        `UPDATE cart_items 
+         SET quantity = $1, "totalPrice" = $2, "totalSalePrice" = $3, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE id = $4
+         RETURNING *`,
+        [
+          newQuantity,
+          parseFloat(existingItem.price) * newQuantity,
+          parseFloat(existingItem.salePrice) * newQuantity,
+          existingItem.id
+        ]
+      );
       
-      userCart[existingItemIndex] = cartItemData;
+      cartItemData = updatedItem.rows[0];
     } else {
       // Add new item with real product data from database
       let productInfo = null;
@@ -236,37 +255,35 @@ export async function POST(request: NextRequest) {
         productName: productInfo.name
       });
       
-      cartItemData = {
-        id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        productId: productId,
-        name: productInfo.name,
-        description: 'Product description',
-        price: originalPrice,
-        salePrice: finalSalePrice, // Use the calculated discounted price
-        images: [],
-        stock: 10,
-        sku: productInfo.sku,
-        categoryName: productInfo.categoryName,
-        quantity: quantity,
-        totalPrice: originalPrice * quantity,
-        totalSalePrice: finalSalePrice * quantity,
-        createdAt: new Date().toISOString()
-      };
+      const cartItemId = `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      console.log('Final cart item data:', {
-        name: cartItemData.name,
-        originalPrice: cartItemData.price,
-        salePrice: cartItemData.salePrice,
-        quantity: cartItemData.quantity,
-        totalPrice: cartItemData.totalPrice,
-        totalSalePrice: cartItemData.totalSalePrice
-      });
+      // Insert new cart item
+      const insertResult = await dbClient.query(
+        `INSERT INTO cart_items (
+          id, "userId", "productId", name, description, price, "salePrice", 
+          images, stock, sku, "categoryName", quantity, "totalPrice", "totalSalePrice"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        RETURNING *`,
+        [
+          cartItemId,
+          userId,
+          productId,
+          productInfo.name,
+          'Product description',
+          originalPrice,
+          finalSalePrice,
+          [], // images array
+          10, // stock
+          productInfo.sku,
+          productInfo.categoryName,
+          quantity,
+          originalPrice * quantity,
+          finalSalePrice * quantity
+        ]
+      );
       
-      userCart.push(cartItemData);
+      cartItemData = insertResult.rows[0];
     }
-    
-    // Save updated cart
-    cartStorage.set(userId, userCart);
 
     return NextResponse.json({
       success: true,
@@ -281,11 +298,11 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    // Close database connection
     await closeClient();
   }
 }
 
+// Update cart item quantity
 export async function PUT(request: NextRequest) {
   try {
     const { cartItemId, quantity } = await request.json();
@@ -297,26 +314,22 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Find and update cart item in all user carts
-    for (const [userId, userCart] of cartStorage.entries()) {
-      const itemIndex = userCart.findIndex(item => item.id === cartItemId);
-      if (itemIndex >= 0) {
-        if (quantity <= 0) {
-          // Remove item
-          userCart.splice(itemIndex, 1);
-        } else {
-          // Update quantity
-          const item = userCart[itemIndex];
-          userCart[itemIndex] = {
-            ...item,
-            quantity: quantity,
-            totalPrice: item.price * quantity,
-            totalSalePrice: item.salePrice * quantity
-          };
-        }
-        cartStorage.set(userId, userCart);
-        break;
-      }
+    const dbClient = await getClient();
+    
+    if (quantity <= 0) {
+      // Remove item
+      await dbClient.query(
+        'DELETE FROM cart_items WHERE id = $1',
+        [cartItemId]
+      );
+    } else {
+      // Update quantity
+      await dbClient.query(
+        `UPDATE cart_items 
+         SET quantity = $1, "totalPrice" = price * $1, "totalSalePrice" = "salePrice" * $1, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [quantity, cartItemId]
+      );
     }
 
     return NextResponse.json({
@@ -330,9 +343,12 @@ export async function PUT(request: NextRequest) {
       { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    await closeClient();
   }
 }
 
+// Remove item from cart
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -356,18 +372,15 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log('Deleting cart item:', finalCartItemId); // Debug log
+    console.log('Deleting cart item:', finalCartItemId);
 
-    // Find and remove cart item from all user carts
-    for (const [userId, userCart] of cartStorage.entries()) {
-      const itemIndex = userCart.findIndex(item => item.id === finalCartItemId);
-      if (itemIndex >= 0) {
-        userCart.splice(itemIndex, 1);
-        cartStorage.set(userId, userCart);
-        console.log('Cart item deleted successfully'); // Debug log
-        break;
-      }
-    }
+    const dbClient = await getClient();
+    
+    // Delete cart item from database
+    await dbClient.query(
+      'DELETE FROM cart_items WHERE id = $1',
+      [finalCartItemId]
+    );
 
     return NextResponse.json({
       success: true,
@@ -380,5 +393,7 @@ export async function DELETE(request: NextRequest) {
       { error: 'Səbətdən silmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    await closeClient();
   }
 } 
