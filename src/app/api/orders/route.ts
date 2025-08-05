@@ -62,57 +62,57 @@ async function getProductInfo(productId: string) {
   }
 }
 
-// Get cart items directly from database
+// Get cart items from cart API
 async function getCartItems(userId: string) {
   try {
     console.log('Getting cart items for userId:', userId);
     
-    const dbClient = await getClient();
+    // Get cart from cart API with proper headers
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
+    const cartUrl = `${baseUrl}/api/cart?userId=${userId}`;
+    console.log('Cart URL:', cartUrl);
     
-    // Check if cart_items table exists
-    const tableCheck = await dbClient.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'cart_items'
-      );
-    `);
+    const cartResponse = await fetch(cartUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
     
-    if (!tableCheck.rows[0].exists) {
-      console.log('Cart items table does not exist, returning empty cart');
+    console.log('Cart response status:', cartResponse.status);
+    
+    if (!cartResponse.ok) {
+      console.error('Cart API returned non-OK status:', cartResponse.status);
+      const errorText = await cartResponse.text();
+      console.error('Cart API error response:', errorText);
       return [];
     }
     
-    // Get cart items with product info
-    const result = await dbClient.query(`
-      SELECT ci.*, p.name, p.price, p."salePrice", p.sku, p.artikul, c.name as category_name
-      FROM cart_items ci
-      LEFT JOIN products p ON ci."productId" = p.id
-      LEFT JOIN categories c ON p."categoryId" = c.id
-      WHERE ci."userId" = $1
-    `, [userId]);
+    const cartData = await cartResponse.json();
+    console.log('Cart API response:', JSON.stringify(cartData, null, 2));
     
-    console.log('Cart items found in database:', result.rows.length);
+    if (!cartData.success) {
+      console.error('Cart API returned success: false');
+      return [];
+    }
     
-    return result.rows.map(row => ({
-      id: row.id,
-      productId: row.productId,
-      name: row.name || 'Unknown Product',
-      description: 'Product description',
-      price: parseFloat(row.price) || 0,
-      salePrice: parseFloat(row.salePrice) || parseFloat(row.price) || 0,
-      quantity: parseInt(row.quantity) || 1,
-      sku: row.sku || row.artikul || 'SKU-UNKNOWN',
-      stock: 10,
-      images: [],
-      categoryName: row.category_name || 'General',
-      totalPrice: (parseFloat(row.price) || 0) * (parseInt(row.quantity) || 1),
-      totalSalePrice: (parseFloat(row.salePrice) || parseFloat(row.price) || 0) * (parseInt(row.quantity) || 1),
-      createdAt: row.createdAt || new Date().toISOString()
-    }));
+    if (!cartData.cart) {
+      console.error('Cart API missing cart property');
+      return [];
+    }
+    
+    if (!cartData.cart.items) {
+      console.error('Cart API missing items array');
+      return [];
+    }
+    
+    console.log('Cart items found:', cartData.cart.items.length);
+    console.log('Cart items:', JSON.stringify(cartData.cart.items, null, 2));
+    return cartData.cart.items;
     
   } catch (error: any) {
-    console.error('Error getting cart items from database:', error);
+    console.error('Error getting cart items from API:', error);
     console.error('Error details:', {
       message: error?.message || 'Unknown error',
       stack: error?.stack || 'No stack trace',
