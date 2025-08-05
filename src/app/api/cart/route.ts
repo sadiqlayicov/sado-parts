@@ -28,76 +28,78 @@ async function closeClient() {
 // Get product info from database by productId
 async function getProductInfo(productId: string) {
   try {
-    const dbClient = await getClient();
+    // First try to get from products API (this is more reliable)
+    console.log('Looking up product with ID:', productId);
     
-    console.log('Looking up product with ID:', productId); // Debug log
+    try {
+      const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
+      if (productsResponse.ok) {
+        const products = await productsResponse.json();
+        const foundProduct = products.find((p: any) => p.id === productId);
+        if (foundProduct) {
+          console.log('Found product from API:', foundProduct.name);
+          return {
+            name: foundProduct.name,
+            price: parseFloat(foundProduct.price) || 100,
+            salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
+            sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
+            categoryName: foundProduct.category?.name || 'General'
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching from products API:', error);
+    }
     
-    // Try to find by productId (UUID) first
-    let result = await dbClient.query(
-      'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
-      [productId]
-    );
-    
-    console.log('Database lookup by ID result:', result.rows.length, 'rows found'); // Debug log
-    
-    // If not found by ID, try to find by SKU
-    if (result.rows.length === 0) {
-      console.log('Product not found by ID, trying SKU lookup...');
-      result = await dbClient.query(
-        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
+    // If API fails, try database
+    try {
+      const dbClient = await getClient();
+      
+      // Try to find by productId (UUID) first
+      let result = await dbClient.query(
+        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
         [productId]
       );
-      console.log('Database lookup by SKU result:', result.rows.length, 'rows found');
-    }
-    
-    // If still not found, try to get from products API
-    if (result.rows.length === 0) {
-      console.log('Product not found in database, trying products API...');
-      try {
-        const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
-        if (productsResponse.ok) {
-          const products = await productsResponse.json();
-          const foundProduct = products.find((p: any) => p.id === productId || p.sku === productId);
-          if (foundProduct) {
-            console.log('Found product from API:', foundProduct.name);
-            return {
-              name: foundProduct.name,
-              price: parseFloat(foundProduct.price) || 100,
-              salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
-              sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
-              categoryName: foundProduct.category?.name || 'General'
-            };
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching from products API:', error);
-      }
-    }
-    
-    if (result.rows.length > 0) {
-      const product = result.rows[0];
-      console.log('Found product:', {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        salePrice: product.salePrice,
-        sku: product.sku,
-        categoryName: product.category_name
-      });
       
-      return {
-        name: product.name,
-        price: parseFloat(product.price) || 100,
-        salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
-        sku: product.sku || product.artikul || `SKU-${productId}`,
-        categoryName: product.category_name || 'General'
-      };
+      console.log('Database lookup by ID result:', result.rows.length, 'rows found');
+      
+      // If not found by ID, try to find by SKU
+      if (result.rows.length === 0) {
+        console.log('Product not found by ID, trying SKU lookup...');
+        result = await dbClient.query(
+          'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
+          [productId]
+        );
+        console.log('Database lookup by SKU result:', result.rows.length, 'rows found');
+      }
+      
+      if (result.rows.length > 0) {
+        const product = result.rows[0];
+        console.log('Found product from database:', {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          salePrice: product.salePrice,
+          sku: product.sku,
+          categoryName: product.category_name
+        });
+        
+        return {
+          name: product.name,
+          price: parseFloat(product.price) || 100,
+          salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
+          sku: product.sku || product.artikul || `SKU-${productId}`,
+          categoryName: product.category_name || 'General'
+        };
+      }
+    } catch (dbError) {
+      console.error('Error getting product info from database:', dbError);
     }
     
-    console.log('No product found for ID/SKU:', productId); // Debug log
+    console.log('No product found for ID:', productId);
     return null;
   } catch (error) {
-    console.error('Error getting product info from database:', error);
+    console.error('Error in getProductInfo:', error);
     return null;
   }
 }
