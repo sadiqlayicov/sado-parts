@@ -30,7 +30,8 @@ async function getProductInfo(productId: string) {
   try {
     // First try to get from products API (this is more reliable)
     try {
-      const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
+      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
+      const productsResponse = await fetch(`${baseUrl}/api/products`);
       if (productsResponse.ok) {
         const products = await productsResponse.json();
         const foundProduct = products.find((p: any) => p.id === productId);
@@ -101,9 +102,10 @@ export async function POST(request: NextRequest) {
 
     // Get user cart items from cart API
     let userCart;
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
     try {
       console.log('Fetching cart for userId:', userId);
-      const cartResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart?userId=${userId}`);
+      const cartResponse = await fetch(`${baseUrl}/api/cart?userId=${userId}`);
       console.log('Cart response status:', cartResponse.status);
       
       const cartData = await cartResponse.json();
@@ -244,7 +246,7 @@ export async function POST(request: NextRequest) {
      try {
        for (const item of userCart) {
          console.log('Clearing cart item:', item.id); // Debug log
-         await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart`, {
+         await fetch(`${baseUrl}/api/cart`, {
            method: 'DELETE',
            headers: {
              'Content-Type': 'application/json',
