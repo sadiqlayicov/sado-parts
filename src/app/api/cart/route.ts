@@ -80,14 +80,57 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Use memory storage only for now
+    // Try database first
+    try {
+      const dbClient = await getClient();
+      
+      // Check if cart_items table exists
+      const tableCheck = await dbClient.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'cart_items'
+        );
+      `);
+      
+      if (tableCheck.rows[0].exists) {
+        // Get cart items from database
+        const result = await dbClient.query(
+          'SELECT * FROM cart_items WHERE "userId" = $1 ORDER BY "createdAt" DESC',
+          [userId]
+        );
+
+        const userCart = result.rows;
+        
+        const totalItems = userCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+        const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+        const totalSalePrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
+
+        console.log('Cart from database - items:', userCart.length, 'totalItems:', totalItems);
+
+        return NextResponse.json({
+          success: true,
+          cart: {
+            items: userCart,
+            totalItems,
+            totalPrice: Math.round(totalPrice * 100) / 100,
+            totalSalePrice: Math.round(totalSalePrice * 100) / 100,
+            savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
+          }
+        });
+      }
+    } catch (dbError) {
+      console.error('Database error, using fallback:', dbError);
+    }
+    
+    // Fallback to memory storage
     const userCart = getCartFromStorage(userId);
     
     const totalItems = userCart.reduce((sum, item) => sum + item.quantity, 0);
     const totalPrice = userCart.reduce((sum, item) => sum + item.totalPrice, 0);
     const totalSalePrice = userCart.reduce((sum, item) => sum + item.totalSalePrice, 0);
 
-    console.log('Cart from memory - items:', userCart.length, 'totalItems:', totalItems);
+    console.log('Cart from fallback - items:', userCart.length, 'totalItems:', totalItems);
 
     return NextResponse.json({
       success: true,
@@ -162,58 +205,163 @@ export async function POST(request: NextRequest) {
 
     console.log('Price calculation:', { originalPrice, finalSalePrice, productName: productInfo.name });
 
-    // Use memory storage only for now
-    const userCart = getCartFromStorage(userId);
-    
-    // Check if product already exists
-    const existingItemIndex = userCart.findIndex(item => item.productId === productId);
-    
-    let cartItemData;
-    
-    if (existingItemIndex >= 0) {
-      // Update existing item
-      const existingItem = userCart[existingItemIndex];
-      const newQuantity = existingItem.quantity + quantity;
+    // Try database first
+    try {
+      const dbClient = await getClient();
       
-      userCart[existingItemIndex] = {
-        ...existingItem,
-        quantity: newQuantity,
-        totalPrice: existingItem.price * newQuantity,
-        totalSalePrice: existingItem.salePrice * newQuantity
-      };
+      // Check if cart_items table exists, create if not
+      const tableCheck = await dbClient.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'cart_items'
+        );
+      `);
       
-      cartItemData = userCart[existingItemIndex];
-      console.log('Updated existing cart item:', cartItemData);
-    } else {
-      // Add new item
-      cartItemData = {
-        id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        productId: productId,
-        name: productInfo.name,
-        description: 'Product description',
-        price: originalPrice,
-        salePrice: finalSalePrice,
-        images: [],
-        stock: 10,
-        sku: productInfo.sku,
-        categoryName: productInfo.categoryName,
-        quantity: quantity,
-        totalPrice: originalPrice * quantity,
-        totalSalePrice: finalSalePrice * quantity,
-        createdAt: new Date().toISOString()
-      };
+      if (!tableCheck.rows[0].exists) {
+        console.log('Creating cart_items table...');
+        await dbClient.query(`
+          CREATE TABLE cart_items (
+            id VARCHAR(255) PRIMARY KEY,
+            "userId" VARCHAR(255) NOT NULL,
+            "productId" VARCHAR(255) NOT NULL,
+            name VARCHAR(500) NOT NULL,
+            description TEXT,
+            price DECIMAL(10,2) NOT NULL,
+            "salePrice" DECIMAL(10,2) NOT NULL,
+            images TEXT[],
+            stock INTEGER DEFAULT 10,
+            sku VARCHAR(255),
+            "categoryName" VARCHAR(255),
+            quantity INTEGER NOT NULL DEFAULT 1,
+            "totalPrice" DECIMAL(10,2) NOT NULL,
+            "totalSalePrice" DECIMAL(10,2) NOT NULL,
+            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        
+        await dbClient.query(`CREATE INDEX idx_cart_items_user_id ON cart_items("userId")`);
+        await dbClient.query(`CREATE INDEX idx_cart_items_product_id ON cart_items("productId")`);
+        console.log('Cart items table created successfully');
+      }
       
-      userCart.push(cartItemData);
-      console.log('Added new cart item:', cartItemData);
-    }
-    
-    saveCartToStorage(userId, userCart);
+      // Check if product already exists in cart
+      const existingItemResult = await dbClient.query(
+        'SELECT * FROM cart_items WHERE "userId" = $1 AND "productId" = $2',
+        [userId, productId]
+      );
+      
+      let cartItemData;
+      
+      if (existingItemResult.rows.length > 0) {
+        // Update existing item
+        const existingItem = existingItemResult.rows[0];
+        const newQuantity = parseInt(existingItem.quantity) + quantity;
+        
+        const updatedItem = await dbClient.query(
+          `UPDATE cart_items 
+           SET quantity = $1, "totalPrice" = $2, "totalSalePrice" = $3, "updatedAt" = CURRENT_TIMESTAMP
+           WHERE id = $4
+           RETURNING *`,
+          [
+            newQuantity,
+            parseFloat(existingItem.price) * newQuantity,
+            parseFloat(existingItem.salePrice) * newQuantity,
+            existingItem.id
+          ]
+        );
+        
+        cartItemData = updatedItem.rows[0];
+        console.log('Updated existing cart item:', cartItemData);
+      } else {
+        // Add new item
+        const cartItemId = `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        const insertResult = await dbClient.query(
+          `INSERT INTO cart_items (
+            id, "userId", "productId", name, description, price, "salePrice", 
+            images, stock, sku, "categoryName", quantity, "totalPrice", "totalSalePrice"
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          RETURNING *`,
+          [
+            cartItemId,
+            userId,
+            productId,
+            productInfo.name,
+            'Product description',
+            originalPrice,
+            finalSalePrice,
+            [], // images array
+            10, // stock
+            productInfo.sku,
+            productInfo.categoryName,
+            quantity,
+            originalPrice * quantity,
+            finalSalePrice * quantity
+          ]
+        );
+        
+        cartItemData = insertResult.rows[0];
+        console.log('Added new cart item:', cartItemData);
+      }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Məhsul səbətə əlavə edildi',
-      cartItem: cartItemData
-    });
+      return NextResponse.json({
+        success: true,
+        message: 'Məhsul səbətə əlavə edildi',
+        cartItem: cartItemData
+      });
+
+    } catch (dbError) {
+      console.error('Database error, using fallback:', dbError);
+      
+      // Fallback to memory storage
+      const userCart = getCartFromStorage(userId);
+      
+      // Check if product already exists
+      const existingItemIndex = userCart.findIndex(item => item.productId === productId);
+      
+      if (existingItemIndex >= 0) {
+        // Update existing item
+        const existingItem = userCart[existingItemIndex];
+        const newQuantity = existingItem.quantity + quantity;
+        
+        userCart[existingItemIndex] = {
+          ...existingItem,
+          quantity: newQuantity,
+          totalPrice: existingItem.price * newQuantity,
+          totalSalePrice: existingItem.salePrice * newQuantity
+        };
+      } else {
+        // Add new item
+        const cartItemData = {
+          id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          productId: productId,
+          name: productInfo.name,
+          description: 'Product description',
+          price: originalPrice,
+          salePrice: finalSalePrice,
+          images: [],
+          stock: 10,
+          sku: productInfo.sku,
+          categoryName: productInfo.categoryName,
+          quantity: quantity,
+          totalPrice: originalPrice * quantity,
+          totalSalePrice: finalSalePrice * quantity,
+          createdAt: new Date().toISOString()
+        };
+        
+        userCart.push(cartItemData);
+      }
+      
+      saveCartToStorage(userId, userCart);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Məhsul səbətə əlavə edildi (fallback)',
+        cartItem: userCart[userCart.length - 1]
+      });
+    }
 
   } catch (error) {
     console.error('Add to cart error:', error);
