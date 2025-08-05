@@ -206,20 +206,35 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Calculate discounted price if user has discount
+      // Use database salePrice if available, otherwise calculate discount
       const originalPrice = productInfo.price;
-      const discountedPrice = userDiscount > 0 ? originalPrice * (1 - userDiscount / 100) : originalPrice;
+      let finalSalePrice = originalPrice;
       
-      console.log('Price calculation:', {
+      // If database has salePrice, use it (this is the real discounted price)
+      if (productInfo.salePrice && productInfo.salePrice > 0) {
+        finalSalePrice = productInfo.salePrice;
+        console.log('Using database salePrice:', {
+          originalPrice,
+          databaseSalePrice: productInfo.salePrice,
+          productName: productInfo.name
+        });
+      } else if (userDiscount > 0) {
+        // Fallback to user discount calculation
+        const discountedPrice = originalPrice * (1 - userDiscount / 100);
+        finalSalePrice = Math.floor(discountedPrice * 100) / 100;
+        console.log('Using user discount calculation:', {
+          originalPrice,
+          userDiscount,
+          calculatedSalePrice: finalSalePrice,
+          productName: productInfo.name
+        });
+      }
+      
+      console.log('Final price calculation:', {
         originalPrice,
-        userDiscount,
-        discountedPrice,
-        productName: productInfo.name,
-        finalSalePrice: Math.floor(discountedPrice * 100) / 100
+        finalSalePrice,
+        productName: productInfo.name
       });
-      
-      // Ensure we're using the discounted price as salePrice (same as AuthProvider)
-      const finalSalePrice = Math.floor(discountedPrice * 100) / 100;
       
       cartItemData = {
         id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

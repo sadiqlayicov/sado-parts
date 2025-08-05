@@ -102,10 +102,31 @@ export async function POST(request: NextRequest) {
     // Get user cart items from cart API
     let userCart;
     try {
+      console.log('Fetching cart for userId:', userId);
       const cartResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart?userId=${userId}`);
-      const cartData = await cartResponse.json();
+      console.log('Cart response status:', cartResponse.status);
       
-      if (!cartData.success || !cartData.cart || cartData.cart.items.length === 0) {
+      const cartData = await cartResponse.json();
+      console.log('Cart data received:', cartData);
+      
+      if (!cartData.success) {
+        console.error('Cart API returned success: false');
+        return NextResponse.json(
+          { error: 'Səbət məlumatları alınmadı' },
+          { status: 400 }
+        );
+      }
+      
+      if (!cartData.cart) {
+        console.error('Cart data missing cart property');
+        return NextResponse.json(
+          { error: 'Səbət məlumatları düzgün deyil' },
+          { status: 400 }
+        );
+      }
+      
+      if (!cartData.cart.items || cartData.cart.items.length === 0) {
+        console.error('Cart items array is empty or missing');
         return NextResponse.json(
           { error: 'Səbətdə məhsul yoxdur' },
           { status: 400 }
