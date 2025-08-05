@@ -35,6 +35,7 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCart, setIsLoadingCart] = useState(true);
   const { user, isAuthenticated } = useAuth();
+  const { cartItems, cartItemsCount, totalPrice, totalSalePrice, savings, refreshCart } = useCart();
   const router = useRouter();
 
   useEffect(() => {
@@ -42,8 +43,22 @@ export default function CartPage() {
       router.push('/login');
       return;
     }
-    fetchCart();
-  }, [isAuthenticated, user?.id]);
+    
+    // Use CartProvider data instead of fetching separately
+    if (cartItems.length > 0) {
+      setCart({
+        items: cartItems,
+        totalItems: cartItemsCount,
+        totalPrice: totalPrice,
+        totalSalePrice: totalSalePrice,
+        savings: savings
+      });
+      setIsLoadingCart(false);
+    } else {
+      // Fallback to API fetch if CartProvider has no data
+      fetchCart();
+    }
+  }, [isAuthenticated, user?.id, cartItems, cartItemsCount, totalPrice, totalSalePrice, savings]);
 
   const fetchCart = async () => {
     if (!user?.id) return;
@@ -54,9 +69,13 @@ export default function CartPage() {
       
       if (data.success) {
         setCart(data.cart);
+      } else {
+        console.error('Cart fetch failed:', data.error);
+        setCart({ items: [], totalItems: 0, totalPrice: 0, totalSalePrice: 0, savings: 0 });
       }
     } catch (error) {
       console.error('Səbət məlumatlarını əldə etmə xətası:', error);
+      setCart({ items: [], totalItems: 0, totalPrice: 0, totalSalePrice: 0, savings: 0 });
     } finally {
       setIsLoadingCart(false);
     }

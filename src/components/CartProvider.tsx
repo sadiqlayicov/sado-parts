@@ -104,6 +104,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
+      // Optimistic update - immediately update UI
+      const optimisticItem = {
+        id: `temp-${Date.now()}`,
+        productId,
+        name: 'Yüklənir...',
+        price: 0,
+        salePrice: 0,
+        quantity,
+        sku: '',
+        stock: 10,
+        images: [],
+        categoryName: 'General',
+        totalPrice: 0,
+        totalSalePrice: 0
+      };
+
+      setCartItems(prevItems => {
+        const existingItemIndex = prevItems.findIndex(item => item.productId === productId);
+        if (existingItemIndex >= 0) {
+          // Update existing item optimistically
+          const updatedItems = [...prevItems];
+          updatedItems[existingItemIndex] = {
+            ...updatedItems[existingItemIndex],
+            quantity: updatedItems[existingItemIndex].quantity + quantity,
+            totalPrice: updatedItems[existingItemIndex].price * (updatedItems[existingItemIndex].quantity + quantity),
+            totalSalePrice: updatedItems[existingItemIndex].salePrice * (updatedItems[existingItemIndex].quantity + quantity)
+          };
+          return updatedItems;
+        } else {
+          // Add new item optimistically
+          return [...prevItems, optimisticItem];
+        }
+      });
+
       const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,27 +147,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       
       if (data.success) {
-        // Update cart items directly instead of refreshing
+        // Update with real data from server
         const newItem = data.cartItem;
         if (newItem) {
           setCartItems(prevItems => {
             const existingItemIndex = prevItems.findIndex(item => item.productId === productId);
             if (existingItemIndex >= 0) {
-              // Update existing item
+              // Update existing item with real data
               const updatedItems = [...prevItems];
               updatedItems[existingItemIndex] = newItem;
               return updatedItems;
             } else {
-              // Add new item
-              return [...prevItems, newItem];
+              // Replace optimistic item with real data
+              return prevItems.map(item => 
+                item.id === optimisticItem.id ? newItem : item
+              );
             }
           });
         }
       } else {
+        // Revert optimistic update on error
+        setCartItems(prevItems => {
+          const existingItemIndex = prevItems.findIndex(item => item.productId === productId);
+          if (existingItemIndex >= 0) {
+            const updatedItems = [...prevItems];
+            const originalItem = updatedItems[existingItemIndex];
+            updatedItems[existingItemIndex] = {
+              ...originalItem,
+              quantity: originalItem.quantity - quantity,
+              totalPrice: originalItem.price * (originalItem.quantity - quantity),
+              totalSalePrice: originalItem.salePrice * (originalItem.quantity - quantity)
+            };
+            return updatedItems;
+          } else {
+            return prevItems.filter(item => item.id !== optimisticItem.id);
+          }
+        });
+        
         console.error('Add to cart failed:', data.error);
         alert(data.error || 'Səbətə əlavə etmə zamanı xəta baş verdi');
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setCartItems(prevItems => prevItems.filter(item => item.id !== `temp-${Date.now()}`));
       console.error('Add to cart error:', error);
       alert('Səbətə əlavə etmə zamanı xəta baş verdi');
     } finally {
