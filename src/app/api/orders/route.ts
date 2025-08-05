@@ -186,21 +186,16 @@ export async function POST(request: NextRequest) {
       }))
     };
 
-    // Store order in database
+    // Store order in database (simplified approach)
     try {
       const dbClient = await getClient();
       
-      console.log('Inserting order into database:', {
-        id: order.id,
-        orderNumber: order.orderNumber,
-        userId: order.userId,
-        totalAmount: order.totalAmount
-      });
+      console.log('Attempting to insert order into database...');
       
-      // Insert order into database
+      // Simple order insert without complex fields
       const orderResult = await dbClient.query(
-        `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes, "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
         [
           order.id,
@@ -209,35 +204,23 @@ export async function POST(request: NextRequest) {
           order.status,
           order.totalAmount,
           order.currency,
-          order.notes,
-          order.createdAt,
-          order.updatedAt
+          order.notes || ''
         ]
       );
       
-      console.log('Order inserted successfully:', orderResult.rows[0]);
+      console.log('Order inserted successfully');
 
-      // Insert order items into database
+      // Simple order items insert
       for (const item of order.items) {
-        console.log('Inserting order item:', {
-          id: item.id,
-          orderId: order.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price
-        });
-        
         await dbClient.query(
-          `INSERT INTO order_items (id, "orderId", "productId", quantity, price, "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          `INSERT INTO order_items (id, "orderId", "productId", quantity, price)
+           VALUES ($1, $2, $3, $4, $5)`,
           [
             item.id,
             order.id,
             item.productId,
             item.quantity,
-            item.price,
-            item.createdAt || new Date().toISOString(),
-            item.updatedAt || new Date().toISOString()
+            item.price
           ]
         );
       }
