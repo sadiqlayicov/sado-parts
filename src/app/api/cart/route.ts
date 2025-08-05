@@ -22,41 +22,37 @@ async function closeClient() {
   }
 }
 
-// Simple cart storage for fallback
-const cartStorage = new Map<string, any[]>();
-
-// Helper function to get cart from storage
-function getCartFromStorage(userId: string) {
-  return cartStorage.get(userId) || [];
-}
-
-// Helper function to save cart to storage
-function saveCartToStorage(userId: string, items: any[]) {
-  cartStorage.set(userId, items);
-  console.log('Cart saved to storage for userId:', userId, 'items count:', items.length);
-}
-
-// Get product info from products API
+// Get product info from database
 async function getProductInfo(productId: string) {
   try {
     console.log('Looking up product with ID:', productId);
     
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
-    const productsResponse = await fetch(`${baseUrl}/api/products`);
+    const dbClient = await getClient();
     
-    if (productsResponse.ok) {
-      const products = await productsResponse.json();
-      const foundProduct = products.find((p: any) => p.id === productId);
-      if (foundProduct) {
-        console.log('Found product from API:', foundProduct.name);
-        return {
-          name: foundProduct.name,
-          price: parseFloat(foundProduct.price) || 100,
-          salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
-          sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
-          categoryName: foundProduct.category?.name || 'General'
-        };
-      }
+    // Try to find by productId (UUID) first
+    let result = await dbClient.query(
+      'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
+      [productId]
+    );
+    
+    // If not found by ID, try to find by SKU
+    if (result.rows.length === 0) {
+      result = await dbClient.query(
+        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
+        [productId]
+      );
+    }
+    
+    if (result.rows.length > 0) {
+      const product = result.rows[0];
+      console.log('Found product from database:', product.name);
+      return {
+        name: product.name,
+        price: parseFloat(product.price) || 100,
+        salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
+        sku: product.sku || product.artikul || `SKU-${productId}`,
+        categoryName: product.category_name || 'General'
+      };
     }
     
     console.log('No product found for ID:', productId);
@@ -80,57 +76,58 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Try database first
-    try {
-      const dbClient = await getClient();
-      
-      // Check if cart_items table exists
-      const tableCheck = await dbClient.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'cart_items'
-        );
+    const dbClient = await getClient();
+    
+    // Check if cart_items table exists
+    const tableCheck = await dbClient.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'cart_items'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.log('Cart items table does not exist, creating...');
+      await dbClient.query(`
+        CREATE TABLE cart_items (
+          id VARCHAR(255) PRIMARY KEY,
+          "userId" VARCHAR(255) NOT NULL,
+          "productId" VARCHAR(255) NOT NULL,
+          name VARCHAR(500) NOT NULL,
+          description TEXT,
+          price DECIMAL(10,2) NOT NULL,
+          "salePrice" DECIMAL(10,2) NOT NULL,
+          images TEXT[],
+          stock INTEGER DEFAULT 10,
+          sku VARCHAR(255),
+          "categoryName" VARCHAR(255),
+          quantity INTEGER NOT NULL DEFAULT 1,
+          "totalPrice" DECIMAL(10,2) NOT NULL,
+          "totalSalePrice" DECIMAL(10,2) NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
       `);
       
-      if (tableCheck.rows[0].exists) {
-        // Get cart items from database
-        const result = await dbClient.query(
-          'SELECT * FROM cart_items WHERE "userId" = $1 ORDER BY "createdAt" DESC',
-          [userId]
-        );
-
-        const userCart = result.rows;
-        
-        const totalItems = userCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
-        const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
-        const totalSalePrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
-
-        console.log('Cart from database - items:', userCart.length, 'totalItems:', totalItems);
-
-        return NextResponse.json({
-          success: true,
-          cart: {
-            items: userCart,
-            totalItems,
-            totalPrice: Math.round(totalPrice * 100) / 100,
-            totalSalePrice: Math.round(totalSalePrice * 100) / 100,
-            savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
-          }
-        });
-      }
-    } catch (dbError) {
-      console.error('Database error, using fallback:', dbError);
+      await dbClient.query(`CREATE INDEX idx_cart_items_user_id ON cart_items("userId")`);
+      await dbClient.query(`CREATE INDEX idx_cart_items_product_id ON cart_items("productId")`);
+      console.log('Cart items table created successfully');
     }
     
-    // Fallback to memory storage
-    const userCart = getCartFromStorage(userId);
-    
-    const totalItems = userCart.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = userCart.reduce((sum, item) => sum + item.totalPrice, 0);
-    const totalSalePrice = userCart.reduce((sum, item) => sum + item.totalSalePrice, 0);
+    // Get cart items from database
+    const result = await dbClient.query(
+      'SELECT * FROM cart_items WHERE "userId" = $1 ORDER BY "createdAt" DESC',
+      [userId]
+    );
 
-    console.log('Cart from fallback - items:', userCart.length, 'totalItems:', totalItems);
+    const userCart = result.rows;
+    
+    const totalItems = userCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+    const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+    const totalSalePrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
+
+    console.log('Cart from database - items:', userCart.length, 'totalItems:', totalItems);
 
     return NextResponse.json({
       success: true,
@@ -182,11 +179,13 @@ export async function POST(request: NextRequest) {
     // Get user discount
     let userDiscount = 0;
     try {
-      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
-      const userResponse = await fetch(`${baseUrl}/api/users/${userId}`);
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        userDiscount = userData.discountPercentage || 0;
+      const dbClient = await getClient();
+      const userResult = await dbClient.query(
+        'SELECT "discountPercentage" FROM users WHERE id = $1',
+        [userId]
+      );
+      if (userResult.rows.length > 0) {
+        userDiscount = userResult.rows[0].discountPercentage || 0;
         console.log('User discount:', userDiscount, '%');
       }
     } catch (error) {
@@ -205,163 +204,110 @@ export async function POST(request: NextRequest) {
 
     console.log('Price calculation:', { originalPrice, finalSalePrice, productName: productInfo.name });
 
-    // Try database first
-    try {
-      const dbClient = await getClient();
-      
-      // Check if cart_items table exists, create if not
-      const tableCheck = await dbClient.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'cart_items'
-        );
+    const dbClient = await getClient();
+    
+    // Check if cart_items table exists, create if not
+    const tableCheck = await dbClient.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'cart_items'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.log('Creating cart_items table...');
+      await dbClient.query(`
+        CREATE TABLE cart_items (
+          id VARCHAR(255) PRIMARY KEY,
+          "userId" VARCHAR(255) NOT NULL,
+          "productId" VARCHAR(255) NOT NULL,
+          name VARCHAR(500) NOT NULL,
+          description TEXT,
+          price DECIMAL(10,2) NOT NULL,
+          "salePrice" DECIMAL(10,2) NOT NULL,
+          images TEXT[],
+          stock INTEGER DEFAULT 10,
+          sku VARCHAR(255),
+          "categoryName" VARCHAR(255),
+          quantity INTEGER NOT NULL DEFAULT 1,
+          "totalPrice" DECIMAL(10,2) NOT NULL,
+          "totalSalePrice" DECIMAL(10,2) NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
       `);
       
-      if (!tableCheck.rows[0].exists) {
-        console.log('Creating cart_items table...');
-        await dbClient.query(`
-          CREATE TABLE cart_items (
-            id VARCHAR(255) PRIMARY KEY,
-            "userId" VARCHAR(255) NOT NULL,
-            "productId" VARCHAR(255) NOT NULL,
-            name VARCHAR(500) NOT NULL,
-            description TEXT,
-            price DECIMAL(10,2) NOT NULL,
-            "salePrice" DECIMAL(10,2) NOT NULL,
-            images TEXT[],
-            stock INTEGER DEFAULT 10,
-            sku VARCHAR(255),
-            "categoryName" VARCHAR(255),
-            quantity INTEGER NOT NULL DEFAULT 1,
-            "totalPrice" DECIMAL(10,2) NOT NULL,
-            "totalSalePrice" DECIMAL(10,2) NOT NULL,
-            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-          )
-        `);
-        
-        await dbClient.query(`CREATE INDEX idx_cart_items_user_id ON cart_items("userId")`);
-        await dbClient.query(`CREATE INDEX idx_cart_items_product_id ON cart_items("productId")`);
-        console.log('Cart items table created successfully');
-      }
+      await dbClient.query(`CREATE INDEX idx_cart_items_user_id ON cart_items("userId")`);
+      await dbClient.query(`CREATE INDEX idx_cart_items_product_id ON cart_items("productId")`);
+      console.log('Cart items table created successfully');
+    }
+    
+    // Check if product already exists in cart
+    const existingItemResult = await dbClient.query(
+      'SELECT * FROM cart_items WHERE "userId" = $1 AND "productId" = $2',
+      [userId, productId]
+    );
+    
+    let cartItemData;
+    
+    if (existingItemResult.rows.length > 0) {
+      // Update existing item
+      const existingItem = existingItemResult.rows[0];
+      const newQuantity = parseInt(existingItem.quantity) + quantity;
       
-      // Check if product already exists in cart
-      const existingItemResult = await dbClient.query(
-        'SELECT * FROM cart_items WHERE "userId" = $1 AND "productId" = $2',
-        [userId, productId]
+      const updatedItem = await dbClient.query(
+        `UPDATE cart_items 
+         SET quantity = $1, "totalPrice" = $2, "totalSalePrice" = $3, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE id = $4
+         RETURNING *`,
+        [
+          newQuantity,
+          parseFloat(existingItem.price) * newQuantity,
+          parseFloat(existingItem.salePrice) * newQuantity,
+          existingItem.id
+        ]
       );
       
-      let cartItemData;
+      cartItemData = updatedItem.rows[0];
+      console.log('Updated existing cart item:', cartItemData);
+    } else {
+      // Add new item
+      const cartItemId = `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      if (existingItemResult.rows.length > 0) {
-        // Update existing item
-        const existingItem = existingItemResult.rows[0];
-        const newQuantity = parseInt(existingItem.quantity) + quantity;
-        
-        const updatedItem = await dbClient.query(
-          `UPDATE cart_items 
-           SET quantity = $1, "totalPrice" = $2, "totalSalePrice" = $3, "updatedAt" = CURRENT_TIMESTAMP
-           WHERE id = $4
-           RETURNING *`,
-          [
-            newQuantity,
-            parseFloat(existingItem.price) * newQuantity,
-            parseFloat(existingItem.salePrice) * newQuantity,
-            existingItem.id
-          ]
-        );
-        
-        cartItemData = updatedItem.rows[0];
-        console.log('Updated existing cart item:', cartItemData);
-      } else {
-        // Add new item
-        const cartItemId = `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        const insertResult = await dbClient.query(
-          `INSERT INTO cart_items (
-            id, "userId", "productId", name, description, price, "salePrice", 
-            images, stock, sku, "categoryName", quantity, "totalPrice", "totalSalePrice"
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-          RETURNING *`,
-          [
-            cartItemId,
-            userId,
-            productId,
-            productInfo.name,
-            'Product description',
-            originalPrice,
-            finalSalePrice,
-            [], // images array
-            10, // stock
-            productInfo.sku,
-            productInfo.categoryName,
-            quantity,
-            originalPrice * quantity,
-            finalSalePrice * quantity
-          ]
-        );
-        
-        cartItemData = insertResult.rows[0];
-        console.log('Added new cart item:', cartItemData);
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Məhsul səbətə əlavə edildi',
-        cartItem: cartItemData
-      });
-
-    } catch (dbError) {
-      console.error('Database error, using fallback:', dbError);
+      const insertResult = await dbClient.query(
+        `INSERT INTO cart_items (
+          id, "userId", "productId", name, description, price, "salePrice", 
+          images, stock, sku, "categoryName", quantity, "totalPrice", "totalSalePrice"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        RETURNING *`,
+        [
+          cartItemId,
+          userId,
+          productId,
+          productInfo.name,
+          'Product description',
+          originalPrice,
+          finalSalePrice,
+          [], // images array
+          10, // stock
+          productInfo.sku,
+          productInfo.categoryName,
+          quantity,
+          originalPrice * quantity,
+          finalSalePrice * quantity
+        ]
+      );
       
-      // Fallback to memory storage
-      const userCart = getCartFromStorage(userId);
-      
-      // Check if product already exists
-      const existingItemIndex = userCart.findIndex(item => item.productId === productId);
-      
-      if (existingItemIndex >= 0) {
-        // Update existing item
-        const existingItem = userCart[existingItemIndex];
-        const newQuantity = existingItem.quantity + quantity;
-        
-        userCart[existingItemIndex] = {
-          ...existingItem,
-          quantity: newQuantity,
-          totalPrice: existingItem.price * newQuantity,
-          totalSalePrice: existingItem.salePrice * newQuantity
-        };
-      } else {
-        // Add new item
-        const cartItemData = {
-          id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          productId: productId,
-          name: productInfo.name,
-          description: 'Product description',
-          price: originalPrice,
-          salePrice: finalSalePrice,
-          images: [],
-          stock: 10,
-          sku: productInfo.sku,
-          categoryName: productInfo.categoryName,
-          quantity: quantity,
-          totalPrice: originalPrice * quantity,
-          totalSalePrice: finalSalePrice * quantity,
-          createdAt: new Date().toISOString()
-        };
-        
-        userCart.push(cartItemData);
-      }
-      
-      saveCartToStorage(userId, userCart);
-
-      return NextResponse.json({
-        success: true,
-        message: 'Məhsul səbətə əlavə edildi (fallback)',
-        cartItem: userCart[userCart.length - 1]
-      });
+      cartItemData = insertResult.rows[0];
+      console.log('Added new cart item:', cartItemData);
     }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Məhsul səbətə əlavə edildi',
+      cartItem: cartItemData
+    });
 
   } catch (error) {
     console.error('Add to cart error:', error);
@@ -369,6 +315,8 @@ export async function POST(request: NextRequest) {
       { error: 'Səbətə əlavə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    await closeClient();
   }
 }
 
@@ -384,54 +332,23 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Try database first
-    try {
-      const dbClient = await getClient();
-      
-      if (quantity <= 0) {
-        await dbClient.query('DELETE FROM cart_items WHERE id = $1', [cartItemId]);
-      } else {
-        await dbClient.query(
-          `UPDATE cart_items 
-           SET quantity = $1, "totalPrice" = price * $1, "totalSalePrice" = "salePrice" * $1, "updatedAt" = CURRENT_TIMESTAMP
-           WHERE id = $2`,
-          [quantity, cartItemId]
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Səbət yeniləndi'
-      });
-
-    } catch (dbError) {
-      console.error('Database error, using fallback:', dbError);
-      
-      // Fallback to memory storage
-      for (const [userId, userCart] of cartStorage.entries()) {
-        const itemIndex = userCart.findIndex(item => item.id === cartItemId);
-        if (itemIndex >= 0) {
-          if (quantity <= 0) {
-            userCart.splice(itemIndex, 1);
-          } else {
-            const item = userCart[itemIndex];
-            userCart[itemIndex] = {
-              ...item,
-              quantity: quantity,
-              totalPrice: item.price * quantity,
-              totalSalePrice: item.salePrice * quantity
-            };
-          }
-          cartStorage.set(userId, userCart);
-          break;
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Səbət yeniləndi (fallback)'
-      });
+    const dbClient = await getClient();
+    
+    if (quantity <= 0) {
+      await dbClient.query('DELETE FROM cart_items WHERE id = $1', [cartItemId]);
+    } else {
+      await dbClient.query(
+        `UPDATE cart_items 
+         SET quantity = $1, "totalPrice" = price * $1, "totalSalePrice" = "salePrice" * $1, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [quantity, cartItemId]
+      );
     }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Səbət yeniləndi'
+    });
 
   } catch (error) {
     console.error('Update cart error:', error);
@@ -469,34 +386,13 @@ export async function DELETE(request: NextRequest) {
 
     console.log('Deleting cart item:', finalCartItemId);
 
-    // Try database first
-    try {
-      const dbClient = await getClient();
-      await dbClient.query('DELETE FROM cart_items WHERE id = $1', [finalCartItemId]);
+    const dbClient = await getClient();
+    await dbClient.query('DELETE FROM cart_items WHERE id = $1', [finalCartItemId]);
 
-      return NextResponse.json({
-        success: true,
-        message: 'Məhsul səbətdən silindi'
-      });
-
-    } catch (dbError) {
-      console.error('Database error, using fallback:', dbError);
-      
-      // Fallback to memory storage
-      for (const [userId, userCart] of cartStorage.entries()) {
-        const itemIndex = userCart.findIndex(item => item.id === finalCartItemId);
-        if (itemIndex >= 0) {
-          userCart.splice(itemIndex, 1);
-          cartStorage.set(userId, userCart);
-          break;
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Məhsul səbətdən silindi (fallback)'
-      });
-    }
+    return NextResponse.json({
+      success: true,
+      message: 'Məhsul səbətdən silindi'
+    });
 
   } catch (error) {
     console.error('Remove from cart error:', error);
