@@ -93,7 +93,10 @@ export default function CartPage() {
       });
       
       if (response.ok) {
-        fetchCart(); // Səbəti yenilə
+        // CartProvider-dən refreshCart çağır
+        await refreshCart();
+        // Sonra local state-i yenilə
+        fetchCart();
       }
     } catch (error) {
       console.error('Miqdar yeniləmə xətası:', error);
@@ -109,7 +112,10 @@ export default function CartPage() {
       });
       
       if (response.ok) {
-        fetchCart(); // Səbəti yenilə
+        // CartProvider-dən refreshCart çağır
+        await refreshCart();
+        // Sonra local state-i yenilə
+        fetchCart();
       }
     } catch (error) {
       console.error('Məhsul silmə xətası:', error);

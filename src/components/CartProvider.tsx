@@ -101,14 +101,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     if (isLoading) {
+      console.log('Add to cart already in progress, skipping...');
       return;
     }
 
     setIsLoading(true);
+    const optimisticId = `temp-${Date.now()}`;
+    
     try {
+      console.log('Adding to cart:', { productId, quantity, userId: user.id });
+      
       // Optimistic update - immediately update UI
       const optimisticItem = {
-        id: `temp-${Date.now()}`,
+        id: optimisticId,
         productId,
         name: 'Yüklənir...',
         description: 'Product description',
@@ -149,6 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
+      console.log('Cart API response:', data);
       
       if (data.success) {
         // Update with real data from server
@@ -164,11 +170,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
             } else {
               // Replace optimistic item with real data
               return prevItems.map(item => 
-                item.id === optimisticItem.id ? newItem : item
+                item.id === optimisticId ? newItem : item
               );
             }
           });
         }
+        console.log('Cart updated successfully');
       } else {
         // Revert optimistic update on error
         setCartItems(prevItems => {
@@ -184,7 +191,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             };
             return updatedItems;
           } else {
-            return prevItems.filter(item => item.id !== optimisticItem.id);
+            return prevItems.filter(item => item.id !== optimisticId);
           }
         });
         
@@ -193,7 +200,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       // Revert optimistic update on error
-      setCartItems(prevItems => prevItems.filter(item => item.id !== `temp-${Date.now()}`));
+      setCartItems(prevItems => prevItems.filter(item => item.id !== optimisticId));
       console.error('Add to cart error:', error);
       alert('Səbətə əlavə etmə zamanı xəta baş verdi');
     } finally {
