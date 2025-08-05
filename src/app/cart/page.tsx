@@ -86,6 +86,8 @@ export default function CartPage() {
     if (!user?.id) return;
     
     try {
+      console.log('Updating quantity for cartItemId:', cartItemId, 'to quantity:', quantity);
+      
       const response = await fetch('/api/cart', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -93,10 +95,11 @@ export default function CartPage() {
       });
       
       if (response.ok) {
-        // CartProvider-dən refreshCart çağır
+        console.log('Quantity updated successfully');
+        // Yalnız CartProvider-dən refreshCart çağır
         await refreshCart();
-        // Sonra local state-i yenilə
-        fetchCart();
+      } else {
+        console.error('Failed to update quantity:', response.status);
       }
     } catch (error) {
       console.error('Miqdar yeniləmə xətası:', error);
@@ -107,15 +110,18 @@ export default function CartPage() {
     if (!user?.id) return;
     
     try {
+      console.log('Removing cart item:', cartItemId);
+      
       const response = await fetch(`/api/cart?cartItemId=${cartItemId}`, {
         method: 'DELETE'
       });
       
       if (response.ok) {
-        // CartProvider-dən refreshCart çağır
+        console.log('Cart item removed successfully');
+        // Yalnız CartProvider-dən refreshCart çağır
         await refreshCart();
-        // Sonra local state-i yenilə
-        fetchCart();
+      } else {
+        console.error('Failed to remove cart item:', response.status);
       }
     } catch (error) {
       console.error('Məhsul silmə xətası:', error);

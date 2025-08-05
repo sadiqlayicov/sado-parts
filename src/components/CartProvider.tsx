@@ -100,8 +100,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Prevent multiple simultaneous requests for the same product
-    const requestKey = `${productId}-${user.id}`;
+    // Prevent multiple simultaneous requests
     if (isLoading) {
       console.log('Add to cart already in progress, skipping...');
       return;
