@@ -29,7 +29,8 @@ async function getProductInfo(productId: string) {
     console.log('Looking up product with ID:', productId);
     
     try {
-      const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
+      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
+      const productsResponse = await fetch(`${baseUrl}/api/products`);
       if (productsResponse.ok) {
         const products = await productsResponse.json();
         const foundProduct = products.find((p: any) => p.id === productId);
@@ -204,7 +205,8 @@ export async function POST(request: NextRequest) {
     // Get user info to check discount
     let userDiscount = 0;
     try {
-      const userResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/users/${userId}`);
+      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sado-parts.vercel.app';
+      const userResponse = await fetch(`${baseUrl}/api/users/${userId}`);
       if (userResponse.ok) {
         const userData = await userResponse.json();
         userDiscount = userData.discountPercentage || 0;
