@@ -101,8 +101,10 @@ export async function GET(
   
   try {
     const { id: orderId } = await params;
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
     
-    console.log('GET /api/orders/[id] called with orderId:', orderId);
+    console.log('GET /api/orders/[id] called with orderId:', orderId, 'userId:', userId);
 
     if (!orderId) {
       console.log('No orderId provided');
@@ -118,12 +120,20 @@ export async function GET(
       dbClient = await getClient();
       console.log('Database client obtained');
       
-      // Get order details
+      // Get order details with userId filter if provided
       console.log('Querying order with ID:', orderId);
-      const orderResult = await dbClient.query(
-        'SELECT * FROM orders WHERE id = $1',
-        [orderId]
-      );
+      let orderResult;
+      if (userId) {
+        orderResult = await dbClient.query(
+          'SELECT * FROM orders WHERE id = $1 AND "userId" = $2',
+          [orderId, userId]
+        );
+      } else {
+        orderResult = await dbClient.query(
+          'SELECT * FROM orders WHERE id = $1',
+          [orderId]
+        );
+      }
 
       console.log('Order query result:', orderResult.rows);
 
@@ -176,7 +186,7 @@ export async function GET(
       
       console.log('Final order with items:', orderWithItems);
 
-      return NextResponse.json(orderWithItems);
+      return NextResponse.json([orderWithItems]); // Return as array to match expected format
 
     } catch (dbError) {
       console.error('Database error:', dbError);
