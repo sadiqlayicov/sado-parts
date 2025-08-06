@@ -202,7 +202,7 @@ function InvoiceContent() {
           {/* Total */}
           <div className="text-right mb-8">
             <div className="text-2xl font-bold text-cyan-500">
-              Ümumi: {order.totalAmount.toFixed(2)} ₼
+              Ümumi: {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼
             </div>
             <p className="text-gray-400 text-sm mt-1">Endirim daxil edilmiş qiymət</p>
           </div>

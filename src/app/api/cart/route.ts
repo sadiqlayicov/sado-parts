@@ -382,20 +382,27 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const cartItem = checkResult.rows[0];
+
     if (quantity <= 0) {
       // Delete item if quantity is 0 or negative
       await dbClient.query(
         'DELETE FROM cart_items WHERE id = $1',
         [cartItemId]
       );
+      console.log('Cart item deleted:', cartItemId);
     } else {
       // Update quantity
+      const newTotalPrice = parseFloat(cartItem.price) * quantity;
+      const newTotalSalePrice = parseFloat(cartItem.salePrice) * quantity;
+      
       await dbClient.query(
         `UPDATE cart_items
-         SET quantity = $1, "totalPrice" = price * $1, "totalSalePrice" = "salePrice" * $1, "updatedAt" = CURRENT_TIMESTAMP
-         WHERE id = $2`,
-        [quantity, cartItemId]
+         SET quantity = $1, "totalPrice" = $2, "totalSalePrice" = $3, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE id = $4`,
+        [quantity, newTotalPrice, newTotalSalePrice, cartItemId]
       );
+      console.log('Cart item updated:', { cartItemId, quantity, newTotalPrice, newTotalSalePrice });
     }
 
     return NextResponse.json({
