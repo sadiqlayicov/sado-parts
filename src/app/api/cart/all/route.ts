@@ -27,7 +27,22 @@ export async function GET(request: NextRequest) {
   let dbClient: Client | null = null;
   
   try {
+    console.log('GET /api/cart/all called');
+    
     dbClient = await getClient();
+    
+    // Check if cart_items table exists
+    try {
+      await dbClient.query('SELECT 1 FROM cart_items LIMIT 1');
+    } catch (tableError) {
+      console.log('Cart items table does not exist, returning empty result');
+      return NextResponse.json({
+        success: true,
+        cartItems: [],
+        totalUsers: 0,
+        totalItems: 0
+      });
+    }
     
     // Get all cart items with user and product details
     const cartResult = await dbClient.query(`
@@ -43,30 +58,55 @@ export async function GET(request: NextRequest) {
       ORDER BY ci."createdAt" DESC
     `);
 
+    console.log('Found cart items:', cartResult.rows.length);
+
     const cartItems = cartResult.rows.map((item: any) => {
-      const quantity = parseInt(item.quantity);
-      const price = parseFloat(item.price);
-      const salePrice = item.salePrice ? parseFloat(item.salePrice) : price;
-      
-      return {
-        id: item.id,
-        userId: item.userId,
-        userEmail: item.email,
-        userName: `${item.firstName} ${item.lastName}`,
-        productId: item.productId,
-        productName: item.name,
-        productDescription: item.description,
-        price: price,
-        salePrice: salePrice,
-        images: item.images,
-        stock: parseInt(item.stock),
-        sku: item.sku,
-        categoryName: item.categoryName,
-        quantity: quantity,
-        totalPrice: price * quantity,
-        totalSalePrice: salePrice * quantity,
-        createdAt: item.createdAt
-      };
+      try {
+        const quantity = parseInt(item.quantity?.toString() || '1');
+        const price = parseFloat(item.price?.toString() || '0');
+        const salePrice = item.salePrice ? parseFloat(item.salePrice.toString()) : price;
+        
+        return {
+          id: item.id,
+          userId: item.userId,
+          userEmail: item.email,
+          userName: `${item.firstName || ''} ${item.lastName || ''}`.trim() || 'Unknown User',
+          productId: item.productId,
+          productName: item.name || 'Unknown Product',
+          productDescription: item.description || '',
+          price: price,
+          salePrice: salePrice,
+          images: item.images || [],
+          stock: parseInt(item.stock?.toString() || '0'),
+          sku: item.sku || 'N/A',
+          categoryName: item.categoryName || 'General',
+          quantity: quantity,
+          totalPrice: price * quantity,
+          totalSalePrice: salePrice * quantity,
+          createdAt: item.createdAt
+        };
+      } catch (itemError) {
+        console.error('Error processing cart item:', itemError);
+        return {
+          id: item.id,
+          userId: item.userId,
+          userEmail: item.email || 'unknown@email.com',
+          userName: 'Unknown User',
+          productId: item.productId,
+          productName: 'Unknown Product',
+          productDescription: '',
+          price: 0,
+          salePrice: 0,
+          images: [],
+          stock: 0,
+          sku: 'N/A',
+          categoryName: 'General',
+          quantity: 1,
+          totalPrice: 0,
+          totalSalePrice: 0,
+          createdAt: item.createdAt
+        };
+      }
     });
 
     // Group by user
@@ -89,6 +129,8 @@ export async function GET(request: NextRequest) {
       userCarts[item.userId].totalSalePrice += item.totalSalePrice;
     });
 
+    console.log('Processed user carts:', Object.keys(userCarts).length);
+
     return NextResponse.json({
       success: true,
       cartItems: Object.values(userCarts),
@@ -98,10 +140,13 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Get all cart items error:', error);
-    await closeClient();
     return NextResponse.json(
       { error: 'Səbət məlumatlarını əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await closeClient();
+    }
   }
 } 

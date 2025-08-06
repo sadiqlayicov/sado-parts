@@ -98,41 +98,75 @@ export async function GET(request: NextRequest) {
     `);
 
     const orders = ordersResult.rows;
+    console.log('Found orders:', orders.length);
 
     // Enhance orders with items and customer info
     const enhancedOrders = await Promise.all(orders.map(async (order: any) => {
-      // Get order items
-      const itemsResult = await dbClient.query(
-        'SELECT * FROM order_items WHERE "orderId" = $1',
-        [order.id]
-      );
+      try {
+        // Get order items
+        const itemsResult = await dbClient.query(
+          'SELECT * FROM order_items WHERE "orderId" = $1',
+          [order.id]
+        );
 
-      const items = itemsResult.rows;
+        const items = itemsResult.rows;
+        console.log(`Order ${order.id} has ${items.length} items`);
 
-      // Enhance items with product information
-      const enhancedItems = await Promise.all(items.map(async (item: any) => {
-        const productInfo = await getProductInfo(item.productId);
-        
+        // Enhance items with product information
+        const enhancedItems = await Promise.all(items.map(async (item: any) => {
+          try {
+            const productInfo = await getProductInfo(item.productId);
+            
+            return {
+              id: item.id,
+              productId: item.productId,
+              name: productInfo?.name || `Məhsul ${item.productId}`,
+              quantity: parseInt(item.quantity) || 1,
+              price: parseFloat(item.price) || 0,
+              totalPrice: (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1),
+              sku: productInfo?.sku || item.productId,
+              categoryName: productInfo?.categoryName || 'General'
+            };
+          } catch (itemError) {
+            console.error('Error processing item:', itemError);
+            return {
+              id: item.id,
+              productId: item.productId,
+              name: `Məhsul ${item.productId}`,
+              quantity: parseInt(item.quantity) || 1,
+              price: parseFloat(item.price) || 0,
+              totalPrice: (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1),
+              sku: item.productId,
+              categoryName: 'General'
+            };
+          }
+        }));
+
+        // Ensure totalAmount is a number
+        const totalAmount = parseFloat(order.totalAmount?.toString() || '0') || 0;
+
         return {
-          id: item.id,
-          productId: item.productId,
-          name: productInfo?.name || `Məhsul ${item.productId}`,
-          quantity: item.quantity,
-          price: parseFloat(item.price) || 0,
-          totalPrice: (parseFloat(item.price) || 0) * item.quantity,
-          sku: productInfo?.sku || item.productId,
-          categoryName: productInfo?.categoryName || 'General'
+          ...order,
+          totalAmount: totalAmount,
+          items: enhancedItems,
+          customerName: order.firstName && order.lastName ? `${order.firstName} ${order.lastName}` : order.email,
+          customerEmail: order.email,
+          customerPhone: order.phone
         };
-      }));
-
-      return {
-        ...order,
-        items: enhancedItems,
-        customerName: order.firstName && order.lastName ? `${order.firstName} ${order.lastName}` : order.email,
-        customerEmail: order.email,
-        customerPhone: order.phone
-      };
+      } catch (orderError) {
+        console.error('Error processing order:', orderError);
+        return {
+          ...order,
+          totalAmount: parseFloat(order.totalAmount?.toString() || '0') || 0,
+          items: [],
+          customerName: order.firstName && order.lastName ? `${order.firstName} ${order.lastName}` : order.email,
+          customerEmail: order.email,
+          customerPhone: order.phone
+        };
+      }
     }));
+
+    console.log('Enhanced orders processed:', enhancedOrders.length);
 
     return NextResponse.json({
       success: true,

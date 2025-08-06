@@ -180,7 +180,7 @@ export default function AdminOrdersPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-cyan-400 font-semibold">
-                        {order.totalAmount.toFixed(2)} ₼
+                        {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼
                       </td>
                       <td className="py-3 px-4">
                         {getStatusBadge(order.status)}
