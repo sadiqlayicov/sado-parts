@@ -248,15 +248,21 @@ export async function POST(request: NextRequest) {
 
       // Clear cart by removing all items
       console.log('Clearing cart...');
+      console.log('Cart items to clear:', userCart.map((item: any) => ({ id: item.id, name: item.name })));
+      
       for (const item of userCart) {
-        await dbClient.query(
-          'DELETE FROM cart_items WHERE id = $1',
+        console.log('Deleting cart item:', item.id);
+        const deleteResult = await dbClient.query(
+          'DELETE FROM cart_items WHERE id = $1 RETURNING id',
           [item.id]
         );
+        console.log('Cart item deleted:', deleteResult.rows[0]);
       }
       
       console.log('Cart cleared successfully');
-      await closeClient();
+      
+      // Don't close client here, let it be managed by the connection pool
+      // await closeClient();
       
     } catch (dbError: any) {
       console.error('Database error:', dbError);

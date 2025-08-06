@@ -80,7 +80,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
 
+  console.log('GET /api/cart called for userId:', userId);
+
   if (!userId) {
+    console.log('No userId provided');
     return NextResponse.json(
       { error: 'İstifadəçi ID tələb olunur' },
       { status: 400 }
@@ -88,7 +91,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    console.log('Getting database client...');
     const dbClient = await getClient();
+    console.log('Database client obtained');
     
     // Check if cart_items table exists
     const tableCheck = await dbClient.query(`
@@ -128,12 +133,14 @@ export async function GET(request: NextRequest) {
     }
     
     // Get cart items from database
+    console.log('Querying cart items for userId:', userId);
     const result = await dbClient.query(
       'SELECT * FROM cart_items WHERE "userId" = $1 ORDER BY "createdAt" DESC',
       [userId]
     );
 
     const userCart = result.rows;
+    console.log('Raw cart items from database:', userCart);
     
     const totalItems = userCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
     const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
@@ -141,7 +148,7 @@ export async function GET(request: NextRequest) {
 
     console.log('Cart from database - items:', userCart.length, 'totalItems:', totalItems);
 
-    return NextResponse.json({
+    const response = {
       success: true,
       cart: {
         items: userCart,
@@ -150,7 +157,10 @@ export async function GET(request: NextRequest) {
         totalSalePrice: Math.round(totalSalePrice * 100) / 100,
         savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
       }
-    });
+    };
+    
+    console.log('Sending cart response:', response);
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('Get cart error:', error);

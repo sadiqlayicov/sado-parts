@@ -64,22 +64,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const loadCart = async () => {
         if (!user?.id) return;
         
+        console.log('Loading cart for user:', user.id);
         setIsLoading(true);
         try {
           const response = await fetch(`/api/cart?userId=${user.id}`);
           const data = await response.json();
           
+          console.log('Cart API response:', data);
+          
           if (data.success) {
+            console.log('Raw cart items from API:', data.cart.items);
+            
             // Convert string values to numbers for proper calculations
-            const processedItems = (data.cart.items || []).map((item: any) => ({
-              ...item,
-              price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-              salePrice: typeof item.salePrice === 'string' ? parseFloat(item.salePrice) : item.salePrice,
-              quantity: typeof item.quantity === 'string' ? parseInt(item.quantity) : item.quantity,
-              totalPrice: typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice,
-              totalSalePrice: typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice
-            }));
+            const processedItems = (data.cart.items || []).map((item: any) => {
+              const processed = {
+                ...item,
+                price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+                salePrice: typeof item.salePrice === 'string' ? parseFloat(item.salePrice) : item.salePrice,
+                quantity: typeof item.quantity === 'string' ? parseInt(item.quantity) : item.quantity,
+                totalPrice: typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice,
+                totalSalePrice: typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice
+              };
+              console.log('Processed cart item:', processed);
+              return processed;
+            });
+            
+            console.log('Final processed cart items:', processedItems);
             setCartItems(processedItems);
+          } else {
+            console.error('Cart API returned error:', data.error);
           }
         } catch (error) {
           console.error('Cart refresh error:', error);
