@@ -357,10 +357,30 @@ export async function PUT(request: NextRequest) {
     const dbClient = await getClient();
     console.log('Database client obtained');
     
+    // First check if cart item exists
+    console.log('Checking if cart item exists:', cartItemId);
+    const checkResult = await dbClient.query(
+      'SELECT * FROM cart_items WHERE id = $1',
+      [cartItemId]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      console.log('Cart item not found:', cartItemId);
+      return NextResponse.json(
+        { error: 'Səbət elementi tapılmadı' },
+        { status: 404 }
+      );
+    }
+    
+    console.log('Cart item found:', checkResult.rows[0]);
+    
     if (quantity <= 0) {
       console.log('Deleting cart item due to quantity <= 0');
-      await dbClient.query('DELETE FROM cart_items WHERE id = $1', [cartItemId]);
-      console.log('Cart item deleted');
+      const deleteResult = await dbClient.query(
+        'DELETE FROM cart_items WHERE id = $1 RETURNING *',
+        [cartItemId]
+      );
+      console.log('Cart item deleted:', deleteResult.rows[0]);
     } else {
       console.log('Updating cart item quantity');
       const updateResult = await dbClient.query(

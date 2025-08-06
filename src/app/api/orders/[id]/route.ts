@@ -92,8 +92,11 @@ export async function GET(
 ) {
   try {
     const { id: orderId } = await params;
+    
+    console.log('GET /api/orders/[id] called with orderId:', orderId);
 
     if (!orderId) {
+      console.log('No orderId provided');
       return NextResponse.json(
         { error: 'Sifariş ID tələb olunur' },
         { status: 400 }
@@ -102,15 +105,21 @@ export async function GET(
 
     // Get order from database
     try {
+      console.log('Getting database client...');
       const dbClient = await getClient();
+      console.log('Database client obtained');
       
       // Get order details
+      console.log('Querying order with ID:', orderId);
       const orderResult = await dbClient.query(
         'SELECT * FROM orders WHERE id = $1',
         [orderId]
       );
 
+      console.log('Order query result:', orderResult.rows);
+
       if (orderResult.rows.length === 0) {
+        console.log('Order not found in database');
         await closeClient();
         return NextResponse.json(
           { error: 'Sifariş tapılmadı' },
@@ -119,20 +128,26 @@ export async function GET(
       }
 
       const order = orderResult.rows[0];
+      console.log('Order found:', order);
 
       // Get order items
+      console.log('Querying order items for orderId:', orderId);
       const itemsResult = await dbClient.query(
         'SELECT * FROM order_items WHERE "orderId" = $1',
         [orderId]
       );
 
       const items = itemsResult.rows;
+      console.log('Order items found:', items);
 
       // Enhance items with product information
+      console.log('Enhancing items with product information...');
       const enhancedItems = await Promise.all(items.map(async (item: any) => {
+        console.log('Getting product info for:', item.productId);
         const productInfo = await getProductInfo(item.productId);
+        console.log('Product info:', productInfo);
         
-        return {
+        const enhanced = {
           id: item.id,
           productId: item.productId,
           name: productInfo?.name || `Məhsul ${item.productId}`,
@@ -142,6 +157,8 @@ export async function GET(
           sku: productInfo?.sku || item.productId,
           categoryName: productInfo?.categoryName || 'General'
         };
+        console.log('Enhanced item:', enhanced);
+        return enhanced;
       }));
 
       await closeClient();
@@ -150,6 +167,8 @@ export async function GET(
         ...order,
         items: enhancedItems
       };
+      
+      console.log('Final order with items:', orderWithItems);
 
       return NextResponse.json(orderWithItems);
 
