@@ -5,15 +5,23 @@ import { Client } from 'pg';
 async function getClient() {
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000,
+    query_timeout: 10000
   });
   
   try {
+    console.log('Attempting to connect to database...');
     await client.connect();
     console.log('Database connected successfully');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
+    console.error('Connection error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      code: (error as any)?.code,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     throw error;
   }
 }
@@ -344,6 +352,7 @@ export async function PUT(request: NextRequest) {
   
   try {
     const { cartItemId, quantity } = await request.json();
+    console.log('=== CART UPDATE START ===');
     console.log('PUT /api/cart called with:', { cartItemId, quantity });
 
     if (!cartItemId || quantity === undefined) {
@@ -356,7 +365,7 @@ export async function PUT(request: NextRequest) {
 
     console.log('Getting database client...');
     dbClient = await getClient();
-    console.log('Database client obtained');
+    console.log('Database client obtained successfully');
 
     // First check if cart item exists
     console.log('Checking if cart item exists:', cartItemId);
@@ -384,6 +393,7 @@ export async function PUT(request: NextRequest) {
         [cartItemId]
       );
       console.log('Cart item deleted');
+      console.log('=== CART UPDATE SUCCESS (DELETE) ===');
     } else {
       console.log('Updating cart item quantity to:', quantity);
       
@@ -395,6 +405,7 @@ export async function PUT(request: NextRequest) {
         [quantity, cartItemId]
       );
       console.log('Cart item updated:', updateResult.rows[0]);
+      console.log('=== CART UPDATE SUCCESS (UPDATE) ===');
     }
 
     return NextResponse.json({
@@ -403,6 +414,7 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error('=== CART UPDATE ERROR ===');
     console.error('Update cart error:', error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -415,7 +427,9 @@ export async function PUT(request: NextRequest) {
     );
   } finally {
     if (dbClient) {
+      console.log('Closing database connection...');
       await closeClient(dbClient);
+      console.log('Database connection closed');
     }
   }
 }

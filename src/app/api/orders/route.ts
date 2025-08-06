@@ -5,15 +5,23 @@ import { Client } from 'pg';
 async function getClient() {
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000,
+    query_timeout: 10000
   });
   
   try {
+    console.log('Attempting to connect to database...');
     await client.connect();
     console.log('Database connected successfully');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
+    console.error('Connection error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      code: (error as any)?.code,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     throw error;
   }
 }
@@ -136,7 +144,11 @@ export async function POST(request: NextRequest) {
   try {
     const { userId, notes, shippingAddress, cartItems } = await request.json();
 
+    console.log('=== ORDER CREATION START ===');
+    console.log('Request body:', { userId, notes, cartItemsCount: cartItems?.length });
+
     if (!userId) {
+      console.log('No userId provided');
       return NextResponse.json(
         { error: 'İstifadəçi ID tələb olunur' },
         { status: 400 }
@@ -204,19 +216,21 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('Order object created:', order.id);
+    console.log('Order details:', {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      userId: order.userId,
+      totalAmount: order.totalAmount,
+      itemsCount: order.items.length
+    });
 
     // Store order in database
     try {
+      console.log('Getting database client...');
       dbClient = await getClient();
+      console.log('Database client obtained successfully');
       
       console.log('Attempting to insert order into database...');
-      console.log('Order data:', {
-        id: order.id,
-        orderNumber: order.orderNumber,
-        userId: order.userId,
-        totalAmount: order.totalAmount,
-        itemsCount: order.items.length
-      });
       
       // Check if orders table exists and create if needed
       console.log('Checking if orders table exists...');
@@ -225,6 +239,8 @@ export async function POST(request: NextRequest) {
         console.log('Orders table exists');
       } catch (tableError) {
         console.log('Orders table does not exist, creating...');
+        console.log('Table error:', tableError);
+        
         await dbClient.query(`
           CREATE TABLE orders (
             id VARCHAR(255) PRIMARY KEY,
@@ -256,6 +272,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Insert order
+      console.log('Inserting order into database...');
       const orderResult = await dbClient.query(
         `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -303,6 +320,7 @@ export async function POST(request: NextRequest) {
       }
       
       console.log('Cart cleared successfully');
+      console.log('=== ORDER CREATION SUCCESS ===');
       
       return NextResponse.json({
         success: true,
@@ -316,12 +334,14 @@ export async function POST(request: NextRequest) {
       });
       
     } catch (dbError: any) {
+      console.error('=== DATABASE ERROR ===');
       console.error('Database error:', dbError);
       console.error('Database error details:', {
         message: dbError?.message,
         code: dbError?.code,
         detail: dbError?.detail,
-        stack: dbError?.stack
+        stack: dbError?.stack,
+        name: dbError?.name
       });
       
       return NextResponse.json({
@@ -331,14 +351,22 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: any) {
+    console.error('=== GENERAL ERROR ===');
     console.error('Create order error:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    });
     return NextResponse.json(
       { error: 'Sifariş yaratma zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
     if (dbClient) {
+      console.log('Closing database connection...');
       await closeClient(dbClient);
+      console.log('Database connection closed');
     }
   }
 }
