@@ -341,7 +341,10 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
+    console.log('GET /api/orders called with:', { userId, page, limit });
+
     if (!userId) {
+      console.log('No userId provided');
       return NextResponse.json(
         { error: 'İstifadəçi ID tələb olunur' },
         { status: 400 }
@@ -354,27 +357,53 @@ export async function GET(request: NextRequest) {
       
       const skip = (page - 1) * limit;
       
-      // Get orders with items
+      // First, get orders
       const ordersResult = await dbClient.query(
-        `SELECT o.*, 
-                json_agg(
-                  json_build_object(
-                    'id', oi.id,
-                    'productId', oi."productId",
-                    'quantity', oi.quantity,
-                    'price', oi.price
-                  )
-                ) as items
-         FROM orders o
-         LEFT JOIN order_items oi ON o.id = oi."orderId"
-         WHERE o."userId" = $1
-         GROUP BY o.id
-         ORDER BY o."createdAt" DESC
+        `SELECT * FROM orders 
+         WHERE "userId" = $1 
+         ORDER BY "createdAt" DESC 
          LIMIT $2 OFFSET $3`,
         [userId, limit, skip]
       );
 
-      return NextResponse.json(ordersResult.rows);
+      console.log('Found orders:', ordersResult.rows.length);
+
+      // Then, get order items for each order
+      const ordersWithItems = await Promise.all(
+        ordersResult.rows.map(async (order) => {
+          if (!dbClient) {
+            throw new Error('Database client is null');
+          }
+          
+          const itemsResult = await dbClient.query(
+            `SELECT oi.*, p.name, p.sku, p.artikul, c.name as "categoryName"
+             FROM order_items oi
+             LEFT JOIN products p ON oi."productId" = p.id
+             LEFT JOIN categories c ON p."categoryId" = c.id
+             WHERE oi."orderId" = $1`,
+            [order.id]
+          );
+
+          return {
+            ...order,
+            items: itemsResult.rows.map(item => ({
+              id: item.id,
+              productId: item.productId,
+              name: item.name || 'Unknown Product',
+              quantity: item.quantity,
+              price: parseFloat(item.price) || 0,
+              totalPrice: (parseFloat(item.price) || 0) * item.quantity,
+              sku: item.sku || item.artikul || 'N/A',
+              categoryName: item.categoryName || 'General'
+            }))
+          };
+        })
+      );
+
+      console.log('Orders with items processed:', ordersWithItems.length);
+
+      return NextResponse.json(ordersWithItems);
+
     } catch (dbError) {
       console.error('Database error:', dbError);
       return NextResponse.json(

@@ -306,7 +306,7 @@ export default function ProfilePage() {
            </div>
            
            <div class="total">
-             <h3>Ümumi Məbləğ: ${order.totalAmount.toFixed(2)} ${order.currency}</h3>
+             <h3>Ümumi Məbləğ: ${(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ${order.currency}</h3>
            </div>
            
            <div class="footer">
@@ -489,7 +489,7 @@ export default function ProfilePage() {
                              {getStatusText(order.status)}
                            </span>
                            <p className="text-2xl font-bold text-cyan-500 mt-1">
-                             {order.totalAmount.toFixed(2)} ₼
+                             {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼
                            </p>
                            <div className="flex gap-2 mt-2">
                              <button
@@ -611,7 +611,7 @@ export default function ProfilePage() {
                        </div>
                        <div>
                          <p className="text-gray-400 text-sm">Ümumi Məbləğ</p>
-                         <p className="text-white font-bold text-lg">{selectedOrder.totalAmount.toFixed(2)} {selectedOrder.currency}</p>
+                         <p className="text-white font-bold text-lg">{(parseFloat(selectedOrder.totalAmount?.toString() || '0')).toFixed(2)} {selectedOrder.currency}</p>
                        </div>
                        {selectedOrder.notes && (
                          <div className="md:col-span-2">
