@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Profile {
   id: string;
@@ -100,6 +101,7 @@ export default function ProfilePage() {
   const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -504,7 +506,7 @@ export default function ProfilePage() {
                              <button
                                onClick={(e) => {
                                  e.stopPropagation();
-                                 handleOrderClick(order.id);
+                                 router.push(`/profile/orders/${order.id}`);
                                }}
                                className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition"
                              >
