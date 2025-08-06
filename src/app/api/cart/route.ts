@@ -364,8 +364,6 @@ export async function PUT(request: NextRequest) {
       { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
-  } finally {
-    await closeClient();
   }
 }
 
@@ -408,7 +406,5 @@ export async function DELETE(request: NextRequest) {
       { error: 'Səbətdən silmə zamanı xəta baş verdi' },
       { status: 500 }
     );
-  } finally {
-    await closeClient();
   }
 } 
