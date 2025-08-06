@@ -1,24 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-// Database connection
+// Database connection with better error handling
 let client: Client | null = null;
 
 async function getClient() {
-  if (!client) {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    await client.connect();
+  try {
+    if (!client || client.ended) {
+      client = new Client({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+        connectionTimeoutMillis: 10000,
+        idleTimeoutMillis: 30000,
+        max: 20
+      });
+      await client.connect();
+      console.log('Database connected successfully');
+    }
+    return client;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw error;
   }
-  return client;
 }
 
 async function closeClient() {
-  if (client) {
-    await client.end();
-    client = null;
+  try {
+    if (client && !client.ended) {
+      await client.end();
+      client = null;
+      console.log('Database connection closed');
+    }
+  } catch (error) {
+    console.error('Error closing database connection:', error);
   }
 }
 
@@ -146,8 +160,6 @@ export async function GET(request: NextRequest) {
       { error: 'Səbət məlumatları alınmadı' },
       { status: 500 }
     );
-  } finally {
-    await closeClient();
   }
 }
 
@@ -315,8 +327,6 @@ export async function POST(request: NextRequest) {
       { error: 'Səbətə əlavə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
-  } finally {
-    await closeClient();
   }
 }
 

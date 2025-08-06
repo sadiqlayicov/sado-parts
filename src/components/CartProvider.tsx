@@ -101,7 +101,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     // Prevent multiple simultaneous requests for the same product
-    const requestKey = `${productId}-${user.id}`;
     if (isLoading) {
       console.log('Add to cart already in progress, skipping...');
       return;
@@ -158,7 +157,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       console.log('Cart API response:', data);
       
-      if (data.success) {
+      if (response.ok && data.success) {
         // Update with real data from server
         const newItem = data.cartItem;
         if (newItem) {
