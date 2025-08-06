@@ -367,6 +367,8 @@ export async function PUT(request: NextRequest) {
       [cartItemId]
     );
     
+    console.log('Check result rows:', checkResult.rows);
+    
     if (checkResult.rows.length === 0) {
       console.log('Cart item not found:', cartItemId);
       return NextResponse.json(
@@ -375,7 +377,8 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    console.log('Cart item found:', checkResult.rows[0]);
+    const cartItem = checkResult.rows[0];
+    console.log('Cart item found:', cartItem);
     
     if (quantity <= 0) {
       console.log('Deleting cart item due to quantity <= 0');
@@ -386,6 +389,13 @@ export async function PUT(request: NextRequest) {
       console.log('Cart item deleted:', deleteResult.rows[0]);
     } else {
       console.log('Updating cart item quantity');
+      console.log('Current cart item data:', {
+        id: cartItem.id,
+        price: cartItem.price,
+        salePrice: cartItem.salePrice,
+        quantity: cartItem.quantity
+      });
+      
       const updateResult = await dbClient.query(
         `UPDATE cart_items 
          SET quantity = $1, "totalPrice" = price * $1, "totalSalePrice" = "salePrice" * $1, "updatedAt" = CURRENT_TIMESTAMP
@@ -414,7 +424,11 @@ export async function PUT(request: NextRequest) {
     );
   } finally {
     if (dbClient) {
-      await closeClient(dbClient);
+      try {
+        await closeClient(dbClient);
+      } catch (closeError) {
+        console.error('Error closing client:', closeError);
+      }
     }
   }
 }

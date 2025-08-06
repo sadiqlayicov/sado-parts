@@ -15,10 +15,9 @@ async function getClient() {
   return client;
 }
 
-async function closeClient() {
-  if (client) {
-    await client.end();
-    client = null;
+async function closeClient(dbClient: Client) {
+  if (dbClient) {
+    await dbClient.end();
   }
 }
 
@@ -90,6 +89,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let dbClient: Client | null = null;
+  
   try {
     const { id: orderId } = await params;
     
@@ -106,7 +107,7 @@ export async function GET(
     // Get order from database
     try {
       console.log('Getting database client...');
-      const dbClient = await getClient();
+      dbClient = await getClient();
       console.log('Database client obtained');
       
       // Get order details
@@ -120,7 +121,6 @@ export async function GET(
 
       if (orderResult.rows.length === 0) {
         console.log('Order not found in database');
-        await closeClient();
         return NextResponse.json(
           { error: 'Sifariş tapılmadı' },
           { status: 404 }
@@ -161,8 +161,6 @@ export async function GET(
         return enhanced;
       }));
 
-      await closeClient();
-
       const orderWithItems = {
         ...order,
         items: enhancedItems
@@ -174,7 +172,6 @@ export async function GET(
 
     } catch (dbError) {
       console.error('Database error:', dbError);
-      await closeClient();
       return NextResponse.json(
         { error: 'Verilənlər bazası xətası' },
         { status: 500 }
@@ -187,6 +184,14 @@ export async function GET(
       { error: 'Sifariş əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      try {
+        await closeClient(dbClient);
+      } catch (closeError) {
+        console.error('Error closing client:', closeError);
+      }
+    }
   }
 }
 
@@ -232,10 +237,17 @@ export async function PUT(
 
   } catch (error) {
     console.error('Update order error:', error);
-    await closeClient();
     return NextResponse.json(
       { error: 'Sifariş yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      try {
+        await closeClient(dbClient);
+      } catch (closeError) {
+        console.error('Error closing client:', closeError);
+      }
+    }
   }
 } 
