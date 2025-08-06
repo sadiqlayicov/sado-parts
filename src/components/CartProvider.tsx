@@ -60,7 +60,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Load cart from API when user is authenticated
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
+    if (isAuthenticated && user?.id && !hasLoadedCart.current) {
       const loadCart = async () => {
         if (!user?.id) return;
         
@@ -72,11 +72,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
           
           console.log('Cart API response:', data);
           
-          if (data.success) {
+          if (data.success && data.cart && data.cart.items) {
             console.log('Raw cart items from API:', data.cart.items);
             
             // Convert string values to numbers for proper calculations
-            const processedItems = (data.cart.items || []).map((item: any) => {
+            const processedItems = data.cart.items.map((item: any) => {
               const processed = {
                 ...item,
                 price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
@@ -91,11 +91,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
             
             console.log('Final processed cart items:', processedItems);
             setCartItems(processedItems);
+            hasLoadedCart.current = true;
           } else {
-            console.error('Cart API returned error:', data.error);
+            console.error('Cart API returned error or no items:', data.error || 'No items found');
+            setCartItems([]);
           }
         } catch (error) {
           console.error('Cart refresh error:', error);
+          setCartItems([]);
         } finally {
           setIsLoading(false);
         }
@@ -103,6 +106,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       loadCart();
     } else if (!isAuthenticated) {
       setCartItems([]);
+      hasLoadedCart.current = false;
     }
   }, [isAuthenticated, user?.id]);
 

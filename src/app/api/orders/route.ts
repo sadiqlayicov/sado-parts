@@ -264,6 +264,17 @@ export async function POST(request: NextRequest) {
       // Don't close client here, let it be managed by the connection pool
       // await closeClient();
       
+      return NextResponse.json({
+        success: true,
+        message: 'Sifariş uğurla yaradıldı',
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          totalAmount: order.totalAmount,
+          status: order.status
+        }
+      });
+      
     } catch (dbError: any) {
       console.error('Database error:', dbError);
       console.error('Database error details:', {
@@ -276,18 +287,18 @@ export async function POST(request: NextRequest) {
       const userOrders = orderStorage.get(userId) || [];
       userOrders.push(order);
       orderStorage.set(userId, userOrders);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Sifariş uğurla yaradıldı (fallback)',
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          totalAmount: order.totalAmount,
+          status: order.status
+        }
+      });
     }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Sifariş uğurla yaradıldı',
-      order: {
-        id: order.id,
-        orderNumber: order.orderNumber,
-        totalAmount: order.totalAmount,
-        status: order.status
-      }
-    });
 
   } catch (error: any) {
     console.error('Create order error:', error);

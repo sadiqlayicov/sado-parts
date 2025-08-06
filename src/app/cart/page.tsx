@@ -81,6 +81,18 @@ export default function CartPage() {
     console.log('Cart items count:', cartItems.length);
     console.log('Cart items:', cartItems);
     
+    // Check if cart items have required data
+    const validCartItems = cartItems.filter(item => 
+      item.id && item.productId && item.name && item.price && item.quantity
+    );
+    
+    console.log('Valid cart items:', validCartItems);
+    
+    if (validCartItems.length === 0) {
+      alert('Səbətdə düzgün məhsul məlumatları yoxdur');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -88,7 +100,7 @@ export default function CartPage() {
       const requestBody = {
         userId: user.id,
         notes: 'Səbətdən yaradılmış sifariş',
-        cartItems: cartItems // Cart items-ləri də göndər
+        cartItems: validCartItems // Yalnız düzgün cart items-ləri göndər
       };
       
       console.log('Sending order request with body:', requestBody);
