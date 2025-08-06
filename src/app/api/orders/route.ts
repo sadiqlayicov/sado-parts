@@ -261,6 +261,20 @@ export async function POST(request: NextRequest) {
       
       console.log('Cart cleared successfully');
       
+      // Verify order was created successfully
+      console.log('Verifying order creation...');
+      const verifyOrder = await dbClient.query(
+        'SELECT * FROM orders WHERE id = $1',
+        [order.id]
+      );
+      console.log('Order verification result:', verifyOrder.rows[0]);
+      
+      const verifyItems = await dbClient.query(
+        'SELECT * FROM order_items WHERE "orderId" = $1',
+        [order.id]
+      );
+      console.log('Order items verification result:', verifyItems.rows);
+      
       // Don't close client here, let it be managed by the connection pool
       // await closeClient();
       

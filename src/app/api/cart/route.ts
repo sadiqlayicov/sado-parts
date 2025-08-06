@@ -18,6 +18,8 @@ async function getClient() {
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
+    // Reset client on error
+    client = null;
     throw error;
   }
 }
@@ -31,6 +33,7 @@ async function closeClient() {
     }
   } catch (error) {
     console.error('Error closing database connection:', error);
+    client = null;
   }
 }
 
