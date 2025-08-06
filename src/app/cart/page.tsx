@@ -85,7 +85,8 @@ export default function CartPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          notes: 'Səbətdən yaradılmış sifariş'
+          notes: 'Səbətdən yaradılmış sifariş',
+          cartItems: cartItems // Cart items-ləri də göndər
         })
       });
       

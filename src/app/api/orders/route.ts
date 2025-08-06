@@ -125,7 +125,7 @@ async function getCartItems(userId: string) {
 // Create new order
 export async function POST(request: NextRequest) {
   try {
-    const { userId, notes, shippingAddress } = await request.json();
+    const { userId, notes, shippingAddress, cartItems } = await request.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -136,8 +136,14 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating order for userId:', userId);
 
-    // Get user cart items directly from database
-    const userCart = await getCartItems(userId);
+    // Use cart items from request body if provided, otherwise get from database
+    let userCart = cartItems || [];
+    
+    if (userCart.length === 0) {
+      // Fallback to database if no cart items provided
+      userCart = await getCartItems(userId);
+    }
+    
     console.log('Cart items found:', userCart.length);
 
     if (userCart.length === 0) {
