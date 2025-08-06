@@ -95,6 +95,34 @@ export default function AdminOrderDetailsPage() {
     }
   };
 
+  const updateItemQuantity = async (itemId: string, newQuantity: number) => {
+    try {
+      const response = await fetch('/api/admin/orders/update-item-quantity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId,
+          itemId,
+          quantity: newQuantity
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        fetchOrderDetails(); // Refresh order
+        alert('Məhsul sayı uğurla yeniləndi');
+      } else {
+        alert('Məhsul sayı yeniləmə zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Error updating item quantity:', error);
+      alert('Məhsul sayı yeniləmə zamanı xəta baş verdi');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -241,7 +269,24 @@ export default function AdminOrderDetailsPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-white font-medium">{item.quantity} ədəd</p>
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-white font-medium">Sayı:</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateItemQuantity(item.id, Math.max(1, item.quantity - 1))}
+                              className="w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded flex items-center justify-center transition"
+                            >
+                              -
+                            </button>
+                            <span className="text-white font-bold min-w-[40px] text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                              className="w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded flex items-center justify-center transition"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
                         <p className="text-gray-400 text-sm">{item.price.toFixed(2)} ₼</p>
                         <p className="text-cyan-500 font-bold">{item.totalPrice.toFixed(2)} ₼</p>
                       </div>

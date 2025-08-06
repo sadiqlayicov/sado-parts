@@ -140,7 +140,7 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Sifarişlər</h1>
           <p className="text-gray-300">Bütün sifarişləri idarə edin</p>
@@ -156,65 +156,69 @@ export default function AdminOrdersPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-gray-600">
-                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Sifariş №</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Müştəri</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Məhsullar</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Ümumi</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Status</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Tarix</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Əməliyyatlar</th>
+                    <th className="py-4 px-6 text-gray-300 font-semibold text-sm min-w-[180px]">Sifariş №</th>
+                    <th className="py-4 px-6 text-gray-300 font-semibold text-sm min-w-[250px]">Müştəri</th>
+                    <th className="py-4 px-6 text-gray-300 font-semibold text-sm min-w-[300px]">Məhsullar</th>
+                    <th className="py-4 px-6 text-gray-300 font-semibold text-sm min-w-[150px]">Ümumi</th>
+                    <th className="py-4 px-6 text-gray-300 font-semibold text-sm min-w-[140px]">Status</th>
+                    <th className="py-4 px-6 text-gray-300 font-semibold text-sm min-w-[180px]">Tarix</th>
+                    <th className="py-4 px-6 text-gray-300 font-semibold text-sm min-w-[200px]">Əməliyyatlar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map((order) => (
                     <tr key={order.id} className="border-b border-gray-700 hover:bg-[#0f172a] transition-colors">
-                      <td className="py-3 px-4 text-white font-semibold text-sm">
-                        <div className="font-mono">{order.orderNumber}</div>
+                      <td className="py-4 px-6 text-white font-semibold text-sm">
+                        <div className="font-mono text-base">{order.orderNumber}</div>
                       </td>
-                      <td className="py-3 px-4 text-gray-300">
-                        <div className="min-w-[200px]">
-                          <div className="font-medium text-white">{order.customerName || 'Müştəri'}</div>
-                          <div className="text-xs text-gray-400">{order.customerEmail}</div>
+                      <td className="py-4 px-6 text-gray-300">
+                        <div className="min-w-[250px]">
+                          <div className="font-medium text-white text-base">{order.customerName || 'Müştəri'}</div>
+                          <div className="text-sm text-gray-400 mt-1">{order.customerEmail}</div>
                           {order.customerPhone && (
-                            <div className="text-xs text-gray-400">📞 {order.customerPhone}</div>
+                            <div className="text-sm text-gray-400 mt-1">📞 {order.customerPhone}</div>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-300">
-                        <div className="min-w-[250px]">
-                          <div className="text-sm font-medium text-white">
+                      <td className="py-4 px-6 text-gray-300">
+                        <div className="min-w-[300px]">
+                          <div className="text-base font-medium text-white">
                             {order.items.length} məhsul
                           </div>
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div className="text-sm text-gray-400 mt-2">
                             {order.items.slice(0, 2).map(item => item.name).join(', ')}
                             {order.items.length > 2 && ` və ${order.items.length - 2} ədəd daha`}
                           </div>
-                          <div className="text-xs text-cyan-400 mt-1">
+                          <div className="text-sm text-cyan-400 mt-2 font-medium">
                             {order.items.reduce((sum, item) => sum + item.quantity, 0)} ədəd ümumi
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-cyan-400 font-semibold">
-                        <div className="text-lg">{(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼</div>
-                        <div className="text-xs text-gray-400">Endirimli qiymət</div>
+                      <td className="py-4 px-6 text-cyan-400 font-semibold">
+                        <div className="text-xl">{(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼</div>
+                        <div className="text-xs text-gray-400 mt-1">Endirimli qiymət</div>
                       </td>
-                      <td className="py-3 px-4">
-                        {getStatusBadge(order.status)}
-                      </td>
-                      <td className="py-3 px-4 text-gray-300 text-sm">
-                        <div>{new Date(order.createdAt).toLocaleDateString('az-AZ')}</div>
-                        <div className="text-xs text-gray-400">
-                          {new Date(order.createdAt).toLocaleTimeString('az-AZ', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
+                      <td className="py-4 px-6">
+                        <div className="min-w-[140px]">
+                          {getStatusBadge(order.status)}
                         </div>
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-col gap-2">
+                      <td className="py-4 px-6 text-gray-300 text-sm">
+                        <div className="min-w-[180px]">
+                          <div className="text-base">{new Date(order.createdAt).toLocaleDateString('az-AZ')}</div>
+                          <div className="text-sm text-gray-400 mt-1">
+                            {new Date(order.createdAt).toLocaleTimeString('az-AZ', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex flex-col gap-3 min-w-[200px]">
                           <button
                             onClick={() => handleOrderClick(order.id)}
-                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition flex items-center justify-center gap-1"
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition flex items-center justify-center gap-2"
                           >
                             👁️ Detallar
                           </button>
