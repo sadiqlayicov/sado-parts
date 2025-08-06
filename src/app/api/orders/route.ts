@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-// Vercel üçün connection pool
-let client: Client | null = null;
-
+// Create new database connection for each request
 async function getClient() {
-  if (!client) {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000
+  });
+  
+  try {
     await client.connect();
+    console.log('Database connected successfully');
+    return client;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw error;
   }
-  return client;
 }
 
-async function closeClient() {
-  if (client) {
-    await client.end();
-    client = null;
+async function closeClient(client: Client) {
+  try {
+    if (client) {
+      await client.end();
+      console.log('Database connection closed');
+    }
+  } catch (error) {
+    console.error('Error closing database connection:', error);
   }
 }
 
@@ -124,6 +132,8 @@ async function getCartItems(userId: string) {
 
 // Create new order
 export async function POST(request: NextRequest) {
+  let dbClient: Client | null = null;
+  
   try {
     const { userId, notes, shippingAddress, cartItems } = await request.json();
 
@@ -198,7 +208,7 @@ export async function POST(request: NextRequest) {
 
     // Store order in database
     try {
-      const dbClient = await getClient();
+      dbClient = await getClient();
       
       console.log('Attempting to insert order into database...');
       console.log('Order data:', {
@@ -275,9 +285,6 @@ export async function POST(request: NextRequest) {
       );
       console.log('Order items verification result:', verifyItems.rows);
       
-      // Don't close client here, let it be managed by the connection pool
-      // await closeClient();
-      
       return NextResponse.json({
         success: true,
         message: 'Sifariş uğurla yaradıldı',
@@ -320,6 +327,10 @@ export async function POST(request: NextRequest) {
       { error: 'Sifariş yaratma zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await closeClient(dbClient);
+    }
   }
 }
 
@@ -364,7 +375,7 @@ export async function GET(request: NextRequest) {
         [userId, limit, skip]
       );
 
-      await closeClient();
+      await closeClient(dbClient);
       return NextResponse.json(ordersResult.rows);
     } catch (dbError) {
       console.error('Database error:', dbError);

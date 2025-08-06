@@ -1,39 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-// Database connection with better error handling
-let client: Client | null = null;
-
+// Create new database connection for each request
 async function getClient() {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000
+  });
+  
   try {
-    if (!client) {
-      client = new Client({
-        connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-        connectionTimeoutMillis: 10000
-      });
-      await client.connect();
-      console.log('Database connected successfully');
-    }
+    await client.connect();
+    console.log('Database connected successfully');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
-    // Reset client on error
-    client = null;
     throw error;
   }
 }
 
-async function closeClient() {
+async function closeClient(client: Client) {
   try {
     if (client) {
       await client.end();
-      client = null;
       console.log('Database connection closed');
     }
   } catch (error) {
     console.error('Error closing database connection:', error);
-    client = null;
   }
 }
 
@@ -98,72 +91,77 @@ export async function GET(request: NextRequest) {
     const dbClient = await getClient();
     console.log('Database client obtained');
     
-    // Check if cart_items table exists
-    const tableCheck = await dbClient.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'cart_items'
-      );
-    `);
-    
-    if (!tableCheck.rows[0].exists) {
-      console.log('Cart items table does not exist, creating...');
-      await dbClient.query(`
-        CREATE TABLE cart_items (
-          id VARCHAR(255) PRIMARY KEY,
-          "userId" VARCHAR(255) NOT NULL,
-          "productId" VARCHAR(255) NOT NULL,
-          name VARCHAR(500) NOT NULL,
-          description TEXT,
-          price DECIMAL(10,2) NOT NULL,
-          "salePrice" DECIMAL(10,2) NOT NULL,
-          images TEXT[],
-          stock INTEGER DEFAULT 10,
-          sku VARCHAR(255),
-          "categoryName" VARCHAR(255),
-          quantity INTEGER NOT NULL DEFAULT 1,
-          "totalPrice" DECIMAL(10,2) NOT NULL,
-          "totalSalePrice" DECIMAL(10,2) NOT NULL,
-          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+    try {
+      // Check if cart_items table exists
+      const tableCheck = await dbClient.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'cart_items'
+        );
       `);
       
-      await dbClient.query(`CREATE INDEX idx_cart_items_user_id ON cart_items("userId")`);
-      await dbClient.query(`CREATE INDEX idx_cart_items_product_id ON cart_items("productId")`);
-      console.log('Cart items table created successfully');
-    }
-    
-    // Get cart items from database
-    console.log('Querying cart items for userId:', userId);
-    const result = await dbClient.query(
-      'SELECT * FROM cart_items WHERE "userId" = $1 ORDER BY "createdAt" DESC',
-      [userId]
-    );
-
-    const userCart = result.rows;
-    console.log('Raw cart items from database:', userCart);
-    
-    const totalItems = userCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
-    const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
-    const totalSalePrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
-
-    console.log('Cart from database - items:', userCart.length, 'totalItems:', totalItems);
-
-    const response = {
-      success: true,
-      cart: {
-        items: userCart,
-        totalItems,
-        totalPrice: Math.round(totalPrice * 100) / 100,
-        totalSalePrice: Math.round(totalSalePrice * 100) / 100,
-        savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
+      if (!tableCheck.rows[0].exists) {
+        console.log('Cart items table does not exist, creating...');
+        await dbClient.query(`
+          CREATE TABLE cart_items (
+            id VARCHAR(255) PRIMARY KEY,
+            "userId" VARCHAR(255) NOT NULL,
+            "productId" VARCHAR(255) NOT NULL,
+            name VARCHAR(500) NOT NULL,
+            description TEXT,
+            price DECIMAL(10,2) NOT NULL,
+            "salePrice" DECIMAL(10,2) NOT NULL,
+            images TEXT[],
+            stock INTEGER DEFAULT 10,
+            sku VARCHAR(255),
+            "categoryName" VARCHAR(255),
+            quantity INTEGER NOT NULL DEFAULT 1,
+            "totalPrice" DECIMAL(10,2) NOT NULL,
+            "totalSalePrice" DECIMAL(10,2) NOT NULL,
+            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        
+        await dbClient.query(`CREATE INDEX idx_cart_items_user_id ON cart_items("userId")`);
+        await dbClient.query(`CREATE INDEX idx_cart_items_product_id ON cart_items("productId")`);
+        console.log('Cart items table created successfully');
       }
-    };
-    
-    console.log('Sending cart response:', response);
-    return NextResponse.json(response);
+      
+      // Get cart items from database
+      console.log('Querying cart items for userId:', userId);
+      const result = await dbClient.query(
+        'SELECT * FROM cart_items WHERE "userId" = $1 ORDER BY "createdAt" DESC',
+        [userId]
+      );
+
+      const userCart = result.rows;
+      console.log('Raw cart items from database:', userCart);
+      
+      const totalItems = userCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+      const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      const totalSalePrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
+
+      console.log('Cart from database - items:', userCart.length, 'totalItems:', totalItems);
+
+      const response = {
+        success: true,
+        cart: {
+          items: userCart,
+          totalItems,
+          totalPrice: Math.round(totalPrice * 100) / 100,
+          totalSalePrice: Math.round(totalSalePrice * 100) / 100,
+          savings: Math.round((totalPrice - totalSalePrice) * 100) / 100
+        }
+      };
+      
+      console.log('Sending cart response:', response);
+      return NextResponse.json(response);
+      
+    } finally {
+      await closeClient(dbClient);
+    }
 
   } catch (error) {
     console.error('Get cart error:', error);
@@ -343,6 +341,8 @@ export async function POST(request: NextRequest) {
 
 // Update cart item quantity
 export async function PUT(request: NextRequest) {
+  let dbClient: Client | null = null;
+  
   try {
     const { cartItemId, quantity } = await request.json();
     
@@ -357,7 +357,7 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log('Getting database client...');
-    const dbClient = await getClient();
+    dbClient = await getClient();
     console.log('Database client obtained');
     
     // First check if cart item exists
@@ -412,6 +412,10 @@ export async function PUT(request: NextRequest) {
       { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await closeClient(dbClient);
+    }
   }
 }
 
