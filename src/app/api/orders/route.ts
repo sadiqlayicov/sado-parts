@@ -182,7 +182,8 @@ export async function POST(request: NextRequest) {
     console.log('Total amount calculated:', totalAmount);
 
     // Generate order number
-    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const timestamp = Date.now();
+    const orderNumber = `SIF-${String(timestamp).slice(-8)}`;
 
     // Create order object
     const order = {

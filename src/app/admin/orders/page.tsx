@@ -26,6 +26,7 @@ interface Order {
   items: OrderItem[];
   customerName?: string;
   customerEmail?: string;
+  customerPhone?: string;
 }
 
 export default function AdminOrdersPage() {
@@ -121,6 +122,10 @@ export default function AdminOrdersPage() {
     return null;
   };
 
+  const handleOrderClick = (orderId: string) => {
+    router.push(`/admin/orders/${orderId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
@@ -149,47 +154,70 @@ export default function AdminOrdersPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-gray-600">
-                    <th className="py-3 px-4 text-gray-300 font-semibold">Sifariş №</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold">Müştəri</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold">Məhsullar</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold">Ümumi</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold">Status</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold">Tarix</th>
-                    <th className="py-3 px-4 text-gray-300 font-semibold">Əməliyyatlar</th>
+                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Sifariş №</th>
+                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Müştəri</th>
+                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Məhsullar</th>
+                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Ümumi</th>
+                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Status</th>
+                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Tarix</th>
+                    <th className="py-3 px-4 text-gray-300 font-semibold text-sm">Əməliyyatlar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map((order) => (
-                    <tr key={order.id} className="border-b border-gray-700">
-                      <td className="py-3 px-4 text-white font-semibold">
-                        {order.orderNumber}
+                    <tr key={order.id} className="border-b border-gray-700 hover:bg-[#0f172a] transition-colors">
+                      <td className="py-3 px-4 text-white font-semibold text-sm">
+                        <div className="font-mono">{order.orderNumber}</div>
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        <div>
-                          <div>{order.customerName || 'Müştəri'}</div>
+                        <div className="min-w-[200px]">
+                          <div className="font-medium text-white">{order.customerName || 'Müştəri'}</div>
                           <div className="text-xs text-gray-400">{order.customerEmail}</div>
+                          {order.customerPhone && (
+                            <div className="text-xs text-gray-400">📞 {order.customerPhone}</div>
+                          )}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        <div className="text-sm">
-                          {order.items.length} məhsul
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {order.items.slice(0, 2).map(item => item.name).join(', ')}
-                          {order.items.length > 2 && '...'}
+                        <div className="min-w-[250px]">
+                          <div className="text-sm font-medium text-white">
+                            {order.items.length} məhsul
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {order.items.slice(0, 2).map(item => item.name).join(', ')}
+                            {order.items.length > 2 && ` və ${order.items.length - 2} ədəd daha`}
+                          </div>
+                          <div className="text-xs text-cyan-400 mt-1">
+                            {order.items.reduce((sum, item) => sum + item.quantity, 0)} ədəd ümumi
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4 text-cyan-400 font-semibold">
-                        {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼
+                        <div className="text-lg">{(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼</div>
+                        <div className="text-xs text-gray-400">Endirimli qiymət</div>
                       </td>
                       <td className="py-3 px-4">
                         {getStatusBadge(order.status)}
                       </td>
                       <td className="py-3 px-4 text-gray-300 text-sm">
-                        {new Date(order.createdAt).toLocaleDateString('az-AZ')}
+                        <div>{new Date(order.createdAt).toLocaleDateString('az-AZ')}</div>
+                        <div className="text-xs text-gray-400">
+                          {new Date(order.createdAt).toLocaleTimeString('az-AZ', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </div>
                       </td>
                       <td className="py-3 px-4">
-                        {getStatusActions(order)}
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => handleOrderClick(order.id)}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition flex items-center justify-center gap-1"
+                          >
+                            👁️ Detallar
+                          </button>
+                          {getStatusActions(order)}
+                        </div>
                       </td>
                     </tr>
                   ))}
