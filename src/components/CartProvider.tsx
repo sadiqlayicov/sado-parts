@@ -43,11 +43,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const hasLoadedCart = useRef(false);
 
   // Cart items count
-  const cartItemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartItemsCount = cartItems.reduce((sum, item) => sum + parseInt(item.quantity.toString()), 0);
   
-  // Total prices
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
-  const totalSalePrice = cartItems.reduce((sum, item) => sum + item.totalSalePrice, 0);
+  // Total prices - ensure proper number conversion
+  const totalPrice = cartItems.reduce((sum, item) => {
+    const itemTotal = typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice;
+    return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+  }, 0);
+  
+  const totalSalePrice = cartItems.reduce((sum, item) => {
+    const itemTotal = typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice;
+    return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+  }, 0);
+  
   const savings = totalPrice - totalSalePrice;
 
   // Load cart from API when user is authenticated
@@ -62,7 +70,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const data = await response.json();
           
           if (data.success) {
-            setCartItems(data.cart.items || []);
+            // Convert string values to numbers for proper calculations
+            const processedItems = (data.cart.items || []).map((item: any) => ({
+              ...item,
+              price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+              salePrice: typeof item.salePrice === 'string' ? parseFloat(item.salePrice) : item.salePrice,
+              quantity: typeof item.quantity === 'string' ? parseInt(item.quantity) : item.quantity,
+              totalPrice: typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice,
+              totalSalePrice: typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice
+            }));
+            setCartItems(processedItems);
           }
         } catch (error) {
           console.error('Cart refresh error:', error);
@@ -85,7 +102,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       
       if (data.success) {
-        setCartItems(data.cart.items || []);
+        // Convert string values to numbers for proper calculations
+        const processedItems = (data.cart.items || []).map((item: any) => ({
+          ...item,
+          price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+          salePrice: typeof item.salePrice === 'string' ? parseFloat(item.salePrice) : item.salePrice,
+          quantity: typeof item.quantity === 'string' ? parseInt(item.quantity) : item.quantity,
+          totalPrice: typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice,
+          totalSalePrice: typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice
+        }));
+        setCartItems(processedItems);
       }
     } catch (error) {
       console.error('Cart refresh error:', error);
