@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-// Simple database connection function
+// Use connection pool for better reliability
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000
+});
+
+// Get client from pool
 async function getClient() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
-  
   try {
-    await client.connect();
-    console.log('Database connected successfully');
+    const client = await pool.connect();
+    console.log('Database client obtained from pool');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
@@ -18,14 +22,15 @@ async function getClient() {
   }
 }
 
-async function closeClient(client: Client) {
+// Release client back to pool
+async function releaseClient(client: any) {
   try {
     if (client) {
-      await client.end();
-      console.log('Database connection closed');
+      client.release();
+      console.log('Database client released to pool');
     }
   } catch (error) {
-    console.error('Error closing database connection:', error);
+    console.error('Error releasing client:', error);
   }
 }
 
@@ -131,7 +136,7 @@ async function getCartItems(userId: string) {
 
 // Create new order
 export async function POST(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let dbClient: any | null = null;
   
   try {
     const { userId, notes, shippingAddress, cartItems } = await request.json();
@@ -325,7 +330,7 @@ export async function POST(request: NextRequest) {
   } finally {
     if (dbClient) {
       console.log('Closing database connection...');
-      await closeClient(dbClient);
+      await releaseClient(dbClient);
       console.log('Database connection closed');
     }
   }
@@ -333,7 +338,7 @@ export async function POST(request: NextRequest) {
 
 // Get user orders
 export async function GET(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let dbClient: any | null = null;
   
   try {
     const { searchParams } = new URL(request.url);
@@ -391,7 +396,7 @@ export async function GET(request: NextRequest) {
     );
   } finally {
     if (dbClient) {
-      await closeClient(dbClient);
+      await releaseClient(dbClient);
     }
   }
 } 
