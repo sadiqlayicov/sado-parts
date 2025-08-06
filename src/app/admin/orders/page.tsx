@@ -101,9 +101,9 @@ export default function AdminOrdersPage() {
   };
 
   const getStatusActions = (order: Order) => {
-    if (order.status === 'completed') {
+    if (order.status === 'pending') {
       return (
-        <div className="flex gap-2">
+        <>
           <button
             onClick={() => updateOrderStatus(order.id, 'approved')}
             className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition"
@@ -116,7 +116,7 @@ export default function AdminOrdersPage() {
           >
             Rədd et
           </button>
-        </div>
+        </>
       );
     }
     return null;
