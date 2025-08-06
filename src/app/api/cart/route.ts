@@ -6,13 +6,11 @@ let client: Client | null = null;
 
 async function getClient() {
   try {
-    if (!client || client.ended) {
+    if (!client) {
       client = new Client({
         connectionString: process.env.DATABASE_URL,
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-        connectionTimeoutMillis: 10000,
-        idleTimeoutMillis: 30000,
-        max: 20
+        connectionTimeoutMillis: 10000
       });
       await client.connect();
       console.log('Database connected successfully');
@@ -26,7 +24,7 @@ async function getClient() {
 
 async function closeClient() {
   try {
-    if (client && !client.ended) {
+    if (client) {
       await client.end();
       client = null;
       console.log('Database connection closed');
