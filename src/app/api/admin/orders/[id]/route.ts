@@ -61,10 +61,10 @@ async function getProductInfo(productId: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const orderId = params.id;
+    const { id: orderId } = await params;
     console.log('GET /api/admin/orders/[id] called for orderId:', orderId);
     
     const dbClient = await getClient();
