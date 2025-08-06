@@ -219,6 +219,48 @@ export async function POST(request: NextRequest) {
         itemsCount: order.items.length
       });
       
+      // Check if orders table exists
+      console.log('Checking if orders table exists...');
+      const tableCheck = await dbClient.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'orders'
+        );
+      `);
+      
+      if (!tableCheck.rows[0].exists) {
+        console.log('Orders table does not exist, creating...');
+        await dbClient.query(`
+          CREATE TABLE orders (
+            id VARCHAR(255) PRIMARY KEY,
+            "orderNumber" VARCHAR(255) NOT NULL,
+            "userId" VARCHAR(255) NOT NULL,
+            status VARCHAR(50) NOT NULL DEFAULT 'pending',
+            "totalAmount" DECIMAL(10,2) NOT NULL,
+            currency VARCHAR(10) DEFAULT 'AZN',
+            notes TEXT,
+            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        
+        await dbClient.query(`
+          CREATE TABLE order_items (
+            id VARCHAR(255) PRIMARY KEY,
+            "orderId" VARCHAR(255) NOT NULL,
+            "productId" VARCHAR(255) NOT NULL,
+            quantity INTEGER NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        
+        await dbClient.query(`CREATE INDEX idx_orders_user_id ON orders("userId")`);
+        await dbClient.query(`CREATE INDEX idx_order_items_order_id ON order_items("orderId")`);
+        console.log('Orders and order_items tables created successfully');
+      }
+      
       // Insert order
       const orderResult = await dbClient.query(
         `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes)
