@@ -1,23 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-// Vercel üçün connection pool
-let client: Client | null = null;
+// Use connection pool for better performance and reliability
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000
+});
 
+// Get client from pool
 async function getClient() {
-  if (!client) {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    await client.connect();
+  try {
+    const client = await pool.connect();
+    console.log('Database client obtained from pool');
+    return client;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw error;
   }
-  return client;
 }
 
-async function closeClient(dbClient: Client) {
-  if (dbClient) {
-    await dbClient.end();
+// Release client back to pool
+async function releaseClient(client: any) {
+  try {
+    if (client) {
+      client.release();
+      console.log('Database client released to pool');
+    }
+  } catch (error) {
+    console.error('Error releasing client:', error);
   }
 }
 
@@ -89,7 +102,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let dbClient: Client | null = null;
+  let dbClient: any | null = null;
   
   try {
     const { id: orderId } = await params;
@@ -187,9 +200,9 @@ export async function GET(
   } finally {
     if (dbClient) {
       try {
-        await closeClient(dbClient);
+        await releaseClient(dbClient);
       } catch (closeError) {
-        console.error('Error closing client:', closeError);
+        console.error('Error releasing client:', closeError);
       }
     }
   }
@@ -201,7 +214,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await params;
-  let dbClient: Client | null = null;
+  let dbClient: any | null = null;
   
   try {
     dbClient = await getClient();
@@ -244,9 +257,9 @@ export async function PUT(
   } finally {
     if (dbClient) {
       try {
-        await closeClient(dbClient);
+        await releaseClient(dbClient);
       } catch (closeError) {
-        console.error('Error closing client:', closeError);
+        console.error('Error releasing client:', closeError);
       }
     }
   }

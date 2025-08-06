@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-// Create new database connection for each request
+// Use connection pool for better performance and reliability
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000
+});
+
+// Get client from pool
 async function getClient() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 30000 // Increase timeout
-  });
-  
   try {
-    await client.connect();
-    console.log('Database connected successfully');
+    const client = await pool.connect();
+    console.log('Database client obtained from pool');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
@@ -19,14 +22,15 @@ async function getClient() {
   }
 }
 
-async function closeClient(client: Client) {
+// Release client back to pool
+async function releaseClient(client: any) {
   try {
     if (client) {
-      await client.end();
-      console.log('Database connection closed');
+      client.release();
+      console.log('Database client released to pool');
     }
   } catch (error) {
-    console.error('Error closing database connection:', error);
+    console.error('Error releasing client:', error);
   }
 }
 
@@ -132,7 +136,7 @@ async function getCartItems(userId: string) {
 
 // Create new order
 export async function POST(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let dbClient: any | null = null;
   
   try {
     const { userId, notes, shippingAddress, cartItems } = await request.json();
@@ -219,17 +223,12 @@ export async function POST(request: NextRequest) {
         itemsCount: order.items.length
       });
       
-      // Check if orders table exists
+      // Check if orders table exists and create if needed
       console.log('Checking if orders table exists...');
-      const tableCheck = await dbClient.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'orders'
-        );
-      `);
-      
-      if (!tableCheck.rows[0].exists) {
+      try {
+        await dbClient.query('SELECT 1 FROM orders LIMIT 1');
+        console.log('Orders table exists');
+      } catch (tableError) {
         console.log('Orders table does not exist, creating...');
         await dbClient.query(`
           CREATE TABLE orders (
@@ -300,15 +299,12 @@ export async function POST(request: NextRequest) {
 
       // Clear cart by removing all items
       console.log('Clearing cart...');
-      console.log('Cart items to clear:', userCart.map((item: any) => ({ id: item.id, name: item.name })));
-      
       for (const item of userCart) {
         console.log('Deleting cart item:', item.id);
-        const deleteResult = await dbClient.query(
-          'DELETE FROM cart_items WHERE id = $1 RETURNING id',
+        await dbClient.query(
+          'DELETE FROM cart_items WHERE id = $1',
           [item.id]
         );
-        console.log('Cart item deleted:', deleteResult.rows[0]);
       }
       
       console.log('Cart cleared successfully');
@@ -346,21 +342,12 @@ export async function POST(request: NextRequest) {
         detail: dbError?.detail,
         stack: dbError?.stack
       });
-      // Continue with in-memory storage as fallback
-      const userOrders = orderStorage.get(userId) || [];
-      userOrders.push(order);
-      orderStorage.set(userId, userOrders);
       
+      // Return error instead of fallback
       return NextResponse.json({
-        success: true,
-        message: 'Sifariş uğurla yaradıldı (fallback)',
-        order: {
-          id: order.id,
-          orderNumber: order.orderNumber,
-          totalAmount: order.totalAmount,
-          status: order.status
-        }
-      });
+        success: false,
+        error: 'Sifariş yaratma zamanı verilənlər bazası xətası baş verdi'
+      }, { status: 500 });
     }
 
   } catch (error: any) {
@@ -371,13 +358,15 @@ export async function POST(request: NextRequest) {
     );
   } finally {
     if (dbClient) {
-      await closeClient(dbClient);
+      await releaseClient(dbClient);
     }
   }
 }
 
 // Get user orders
 export async function GET(request: NextRequest) {
+  let dbClient: any = null;
+  
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -393,7 +382,7 @@ export async function GET(request: NextRequest) {
 
     // Get orders from database
     try {
-      const dbClient = await getClient();
+      dbClient = await getClient();
       
       const skip = (page - 1) * limit;
       
@@ -417,22 +406,24 @@ export async function GET(request: NextRequest) {
         [userId, limit, skip]
       );
 
-      await closeClient(dbClient);
       return NextResponse.json(ordersResult.rows);
     } catch (dbError) {
       console.error('Database error:', dbError);
-      // Fallback to in-memory storage
-      const userOrders = orderStorage.get(userId) || [];
-      const skip = (page - 1) * limit;
-      const paginatedOrders = userOrders.slice(skip, skip + limit);
-      return NextResponse.json(paginatedOrders);
+      return NextResponse.json(
+        { error: 'Verilənlər bazası xətası' },
+        { status: 500 }
+      );
     }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Get orders error:', error);
     return NextResponse.json(
-      { error: 'Sifarişləri əldə etmə zamanı xəta baş verdi' },
+      { error: 'Sifarişlər əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await releaseClient(dbClient);
+    }
   }
 } 

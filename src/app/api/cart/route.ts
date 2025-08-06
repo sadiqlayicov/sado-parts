@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-// Create new database connection for each request
+// Use connection pool for better performance and reliability
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000
+});
+
+// Get client from pool
 async function getClient() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 10000
-  });
-  
   try {
-    await client.connect();
-    console.log('Database connected successfully');
+    const client = await pool.connect();
+    console.log('Database client obtained from pool');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
@@ -19,14 +22,15 @@ async function getClient() {
   }
 }
 
-async function closeClient(client: Client) {
+// Release client back to pool
+async function releaseClient(client: any) {
   try {
     if (client) {
-      await client.end();
-      console.log('Database connection closed');
+      client.release();
+      console.log('Database client released to pool');
     }
   } catch (error) {
-    console.error('Error closing database connection:', error);
+    console.error('Error releasing client:', error);
   }
 }
 
@@ -160,7 +164,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response);
       
     } finally {
-      await closeClient(dbClient);
+      await releaseClient(dbClient);
     }
 
   } catch (error) {
@@ -341,7 +345,7 @@ export async function POST(request: NextRequest) {
 
 // Update cart item quantity
 export async function PUT(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let dbClient: any | null = null;
   
   try {
     const { cartItemId, quantity } = await request.json();
@@ -425,9 +429,9 @@ export async function PUT(request: NextRequest) {
   } finally {
     if (dbClient) {
       try {
-        await closeClient(dbClient);
+        await releaseClient(dbClient);
       } catch (closeError) {
-        console.error('Error closing client:', closeError);
+        console.error('Error releasing client:', closeError);
       }
     }
   }
