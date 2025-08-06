@@ -139,14 +139,20 @@ export async function POST(request: NextRequest) {
     // Use cart items from request body if provided, otherwise get from database
     let userCart = cartItems || [];
     
+    console.log('Cart items from request:', userCart.length);
+    console.log('Cart items data:', userCart);
+    
     if (userCart.length === 0) {
       // Fallback to database if no cart items provided
+      console.log('No cart items in request, getting from database...');
       userCart = await getCartItems(userId);
+      console.log('Cart items from database:', userCart.length);
     }
     
-    console.log('Cart items found:', userCart.length);
+    console.log('Final cart items found:', userCart.length);
 
     if (userCart.length === 0) {
+      console.log('No cart items found, returning error');
       return NextResponse.json(
         { error: 'Səbətdə məhsul yoxdur' },
         { status: 400 }

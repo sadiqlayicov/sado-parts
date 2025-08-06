@@ -76,30 +76,44 @@ export default function CartPage() {
       return;
     }
     
+    console.log('Starting checkout process...');
+    console.log('User ID:', user.id);
+    console.log('Cart items count:', cartItems.length);
+    console.log('Cart items:', cartItems);
+    
     setIsLoading(true);
     
     try {
       // Sifariş yarat
+      const requestBody = {
+        userId: user.id,
+        notes: 'Səbətdən yaradılmış sifariş',
+        cartItems: cartItems // Cart items-ləri də göndər
+      };
+      
+      console.log('Sending order request with body:', requestBody);
+      
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          notes: 'Səbətdən yaradılmış sifariş',
-          cartItems: cartItems // Cart items-ləri də göndər
-        })
+        body: JSON.stringify(requestBody)
       });
       
+      console.log('Order response status:', response.status);
+      
       const data = await response.json();
+      console.log('Order response data:', data);
       
       if (data.success) {
         // Sifariş uğurla yaradıldı
+        console.log('Order created successfully:', data.order);
         setIsLoading(false);
         
         // Hesab-faktura səhifəsinə yönləndir
         router.push(`/invoice?orderId=${data.order.id}`);
         
       } else {
+        console.error('Order creation failed:', data.error);
         throw new Error(data.error || 'Sifariş yaratma xətası');
       }
       

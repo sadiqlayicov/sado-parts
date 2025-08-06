@@ -332,25 +332,35 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const { cartItemId, quantity } = await request.json();
+    
+    console.log('PUT /api/cart called with:', { cartItemId, quantity });
 
     if (!cartItemId || quantity === undefined) {
+      console.log('Missing required parameters');
       return NextResponse.json(
         { error: 'Səbət elementi ID və miqdar tələb olunur' },
         { status: 400 }
       );
     }
 
+    console.log('Getting database client...');
     const dbClient = await getClient();
+    console.log('Database client obtained');
     
     if (quantity <= 0) {
+      console.log('Deleting cart item due to quantity <= 0');
       await dbClient.query('DELETE FROM cart_items WHERE id = $1', [cartItemId]);
+      console.log('Cart item deleted');
     } else {
-      await dbClient.query(
+      console.log('Updating cart item quantity');
+      const updateResult = await dbClient.query(
         `UPDATE cart_items 
          SET quantity = $1, "totalPrice" = price * $1, "totalSalePrice" = "salePrice" * $1, "updatedAt" = CURRENT_TIMESTAMP
-         WHERE id = $2`,
+         WHERE id = $2
+         RETURNING *`,
         [quantity, cartItemId]
       );
+      console.log('Cart item updated:', updateResult.rows[0]);
     }
 
     return NextResponse.json({
@@ -360,6 +370,11 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('Update cart error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown'
+    });
     return NextResponse.json(
       { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
