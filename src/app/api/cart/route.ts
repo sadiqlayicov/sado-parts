@@ -5,23 +5,15 @@ import { Client } from 'pg';
 async function getClient() {
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 10000,
-    query_timeout: 10000
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
   });
   
   try {
-    console.log('Attempting to connect to database...');
     await client.connect();
     console.log('Database connected successfully');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
-    console.error('Connection error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      code: (error as any)?.code,
-      stack: error instanceof Error ? error.stack : undefined
-    });
     throw error;
   }
 }
@@ -352,60 +344,44 @@ export async function PUT(request: NextRequest) {
   
   try {
     const { cartItemId, quantity } = await request.json();
-    console.log('=== CART UPDATE START ===');
     console.log('PUT /api/cart called with:', { cartItemId, quantity });
 
     if (!cartItemId || quantity === undefined) {
-      console.log('Missing required parameters');
       return NextResponse.json(
         { error: 'Səbət elementi ID və miqdar tələb olunur' },
         { status: 400 }
       );
     }
 
-    console.log('Getting database client...');
     dbClient = await getClient();
-    console.log('Database client obtained successfully');
 
-    // First check if cart item exists
-    console.log('Checking if cart item exists:', cartItemId);
+    // Check if cart item exists
     const checkResult = await dbClient.query(
       'SELECT * FROM cart_items WHERE id = $1',
       [cartItemId]
     );
-    console.log('Check result rows:', checkResult.rows);
 
     if (checkResult.rows.length === 0) {
-      console.log('Cart item not found:', cartItemId);
       return NextResponse.json(
         { error: 'Səbət elementi tapılmadı' },
         { status: 404 }
       );
     }
 
-    const cartItem = checkResult.rows[0];
-    console.log('Cart item found:', cartItem);
-
     if (quantity <= 0) {
-      console.log('Deleting cart item due to quantity <= 0');
+      // Delete item if quantity is 0 or negative
       await dbClient.query(
         'DELETE FROM cart_items WHERE id = $1',
         [cartItemId]
       );
-      console.log('Cart item deleted');
-      console.log('=== CART UPDATE SUCCESS (DELETE) ===');
     } else {
-      console.log('Updating cart item quantity to:', quantity);
-      
-      const updateResult = await dbClient.query(
+      // Update quantity
+      await dbClient.query(
         `UPDATE cart_items
          SET quantity = $1, "totalPrice" = price * $1, "totalSalePrice" = "salePrice" * $1, "updatedAt" = CURRENT_TIMESTAMP
-         WHERE id = $2
-         RETURNING *`,
+         WHERE id = $2`,
         [quantity, cartItemId]
       );
-      console.log('Cart item updated:', updateResult.rows[0]);
-      console.log('=== CART UPDATE SUCCESS (UPDATE) ===');
     }
 
     return NextResponse.json({
@@ -414,22 +390,14 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('=== CART UPDATE ERROR ===');
     console.error('Update cart error:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : 'Unknown'
-    });
     return NextResponse.json(
       { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
     if (dbClient) {
-      console.log('Closing database connection...');
       await closeClient(dbClient);
-      console.log('Database connection closed');
     }
   }
 }

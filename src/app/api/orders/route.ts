@@ -5,23 +5,15 @@ import { Client } from 'pg';
 async function getClient() {
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 10000,
-    query_timeout: 10000
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
   });
   
   try {
-    console.log('Attempting to connect to database...');
     await client.connect();
     console.log('Database connected successfully');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
-    console.error('Connection error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      code: (error as any)?.code,
-      stack: error instanceof Error ? error.stack : undefined
-    });
     throw error;
   }
 }
@@ -226,21 +218,12 @@ export async function POST(request: NextRequest) {
 
     // Store order in database
     try {
-      console.log('Getting database client...');
       dbClient = await getClient();
-      console.log('Database client obtained successfully');
-      
-      console.log('Attempting to insert order into database...');
       
       // Check if orders table exists and create if needed
-      console.log('Checking if orders table exists...');
       try {
         await dbClient.query('SELECT 1 FROM orders LIMIT 1');
-        console.log('Orders table exists');
       } catch (tableError) {
-        console.log('Orders table does not exist, creating...');
-        console.log('Table error:', tableError);
-        
         await dbClient.query(`
           CREATE TABLE orders (
             id VARCHAR(255) PRIMARY KEY,
@@ -268,15 +251,12 @@ export async function POST(request: NextRequest) {
         
         await dbClient.query(`CREATE INDEX idx_orders_user_id ON orders("userId")`);
         await dbClient.query(`CREATE INDEX idx_order_items_order_id ON order_items("orderId")`);
-        console.log('Orders and order_items tables created successfully');
       }
       
       // Insert order
-      console.log('Inserting order into database...');
-      const orderResult = await dbClient.query(
+      await dbClient.query(
         `INSERT INTO orders (id, "orderNumber", "userId", status, "totalAmount", currency, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING *`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           order.id,
           order.orderNumber,
@@ -287,13 +267,9 @@ export async function POST(request: NextRequest) {
           order.notes || ''
         ]
       );
-      
-      console.log('Order inserted successfully:', orderResult.rows[0]);
 
       // Insert order items
-      console.log('Inserting order items...');
       for (const item of order.items) {
-        console.log('Inserting item:', item);
         await dbClient.query(
           `INSERT INTO order_items (id, "orderId", "productId", quantity, price)
            VALUES ($1, $2, $3, $4, $5)`,
@@ -306,21 +282,14 @@ export async function POST(request: NextRequest) {
           ]
         );
       }
-      
-      console.log('All order items inserted successfully');
 
       // Clear cart by removing all items
-      console.log('Clearing cart...');
       for (const item of userCart) {
-        console.log('Deleting cart item:', item.id);
         await dbClient.query(
           'DELETE FROM cart_items WHERE id = $1',
           [item.id]
         );
       }
-      
-      console.log('Cart cleared successfully');
-      console.log('=== ORDER CREATION SUCCESS ===');
       
       return NextResponse.json({
         success: true,
@@ -334,16 +303,7 @@ export async function POST(request: NextRequest) {
       });
       
     } catch (dbError: any) {
-      console.error('=== DATABASE ERROR ===');
       console.error('Database error:', dbError);
-      console.error('Database error details:', {
-        message: dbError?.message,
-        code: dbError?.code,
-        detail: dbError?.detail,
-        stack: dbError?.stack,
-        name: dbError?.name
-      });
-      
       return NextResponse.json({
         success: false,
         error: 'Sifariş yaratma zamanı verilənlər bazası xətası baş verdi'
