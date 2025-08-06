@@ -31,10 +31,11 @@ async function closeClient(client: Client) {
 
 // Get product info from database
 async function getProductInfo(productId: string) {
+  let dbClient: Client | null = null;
   try {
     console.log('Looking up product with ID:', productId);
     
-    const dbClient = await getClient();
+    dbClient = await getClient();
     
     // Try to find by productId (UUID) first
     let result = await dbClient.query(
@@ -45,7 +46,7 @@ async function getProductInfo(productId: string) {
     // If not found by ID, try to find by SKU
     if (result.rows.length === 0) {
       result = await dbClient.query(
-        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
+        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1 OR p.artikul = $1',
         [productId]
       );
     }
@@ -67,6 +68,10 @@ async function getProductInfo(productId: string) {
   } catch (error) {
     console.error('Error in getProductInfo:', error);
     return null;
+  } finally {
+    if (dbClient) {
+      await closeClient(dbClient);
+    }
   }
 }
 
@@ -173,6 +178,8 @@ export async function GET(request: NextRequest) {
 
 // Add item to cart
 export async function POST(request: NextRequest) {
+  let dbClient: Client | null = null;
+  
   try {
     const { userId, productId, quantity = 1 } = await request.json();
 
@@ -199,7 +206,7 @@ export async function POST(request: NextRequest) {
     // Get user discount
     let userDiscount = 0;
     try {
-      const dbClient = await getClient();
+      dbClient = await getClient();
       const userResult = await dbClient.query(
         'SELECT "discountPercentage" FROM users WHERE id = $1',
         [userId]
@@ -224,8 +231,11 @@ export async function POST(request: NextRequest) {
 
     console.log('Price calculation:', { originalPrice, finalSalePrice, productName: productInfo.name });
 
-    const dbClient = await getClient();
-    
+    // Ensure dbClient is available
+    if (!dbClient) {
+      dbClient = await getClient();
+    }
+
     // Check if cart_items table exists, create if not
     const tableCheck = await dbClient.query(`
       SELECT EXISTS (
@@ -335,6 +345,10 @@ export async function POST(request: NextRequest) {
       { error: 'Səbətə əlavə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await closeClient(dbClient);
+    }
   }
 }
 
