@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { Client } from 'pg';
 
-// Use connection pool for better performance and reliability
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 30000
-});
-
-// Get client from pool
+// Simple database connection function
 async function getClient() {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
   try {
-    const client = await pool.connect();
-    console.log('Database client obtained from pool');
+    await client.connect();
+    console.log('Database connected successfully');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
@@ -22,15 +18,14 @@ async function getClient() {
   }
 }
 
-// Release client back to pool
-async function releaseClient(client: any) {
+async function closeClient(client: Client) {
   try {
     if (client) {
-      client.release();
-      console.log('Database client released to pool');
+      await client.end();
+      console.log('Database connection closed');
     }
   } catch (error) {
-    console.error('Error releasing client:', error);
+    console.error('Error closing database connection:', error);
   }
 }
 
@@ -102,7 +97,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let dbClient: any | null = null;
+  let dbClient: Client | null = null;
   
   try {
     const { id: orderId } = await params;
@@ -200,7 +195,7 @@ export async function GET(
   } finally {
     if (dbClient) {
       try {
-        await releaseClient(dbClient);
+        await closeClient(dbClient);
       } catch (closeError) {
         console.error('Error releasing client:', closeError);
       }
@@ -214,7 +209,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await params;
-  let dbClient: any | null = null;
+  let dbClient: Client | null = null;
   
   try {
     dbClient = await getClient();
@@ -257,7 +252,7 @@ export async function PUT(
   } finally {
     if (dbClient) {
       try {
-        await releaseClient(dbClient);
+        await closeClient(dbClient);
       } catch (closeError) {
         console.error('Error releasing client:', closeError);
       }

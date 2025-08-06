@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { Client } from 'pg';
 
-// Use connection pool for better performance and reliability
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 30000
-});
-
-// Get client from pool
+// Simple database connection function
 async function getClient() {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
   try {
-    const client = await pool.connect();
-    console.log('Database client obtained from pool');
+    await client.connect();
+    console.log('Database connected successfully');
     return client;
   } catch (error) {
     console.error('Database connection error:', error);
@@ -22,15 +18,14 @@ async function getClient() {
   }
 }
 
-// Release client back to pool
-async function releaseClient(client: any) {
+async function closeClient(client: Client) {
   try {
     if (client) {
-      client.release();
-      console.log('Database client released to pool');
+      await client.end();
+      console.log('Database connection closed');
     }
   } catch (error) {
-    console.error('Error releasing client:', error);
+    console.error('Error closing database connection:', error);
   }
 }
 
@@ -164,7 +159,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response);
       
     } finally {
-      await releaseClient(dbClient);
+      await closeClient(dbClient);
     }
 
   } catch (error) {
@@ -345,11 +340,10 @@ export async function POST(request: NextRequest) {
 
 // Update cart item quantity
 export async function PUT(request: NextRequest) {
-  let dbClient: any | null = null;
+  let dbClient: Client | null = null;
   
   try {
     const { cartItemId, quantity } = await request.json();
-    
     console.log('PUT /api/cart called with:', { cartItemId, quantity });
 
     if (!cartItemId || quantity === undefined) {
@@ -363,16 +357,15 @@ export async function PUT(request: NextRequest) {
     console.log('Getting database client...');
     dbClient = await getClient();
     console.log('Database client obtained');
-    
+
     // First check if cart item exists
     console.log('Checking if cart item exists:', cartItemId);
     const checkResult = await dbClient.query(
       'SELECT * FROM cart_items WHERE id = $1',
       [cartItemId]
     );
-    
     console.log('Check result rows:', checkResult.rows);
-    
+
     if (checkResult.rows.length === 0) {
       console.log('Cart item not found:', cartItemId);
       return NextResponse.json(
@@ -380,28 +373,22 @@ export async function PUT(request: NextRequest) {
         { status: 404 }
       );
     }
-    
+
     const cartItem = checkResult.rows[0];
     console.log('Cart item found:', cartItem);
-    
+
     if (quantity <= 0) {
       console.log('Deleting cart item due to quantity <= 0');
-      const deleteResult = await dbClient.query(
-        'DELETE FROM cart_items WHERE id = $1 RETURNING *',
+      await dbClient.query(
+        'DELETE FROM cart_items WHERE id = $1',
         [cartItemId]
       );
-      console.log('Cart item deleted:', deleteResult.rows[0]);
+      console.log('Cart item deleted');
     } else {
-      console.log('Updating cart item quantity');
-      console.log('Current cart item data:', {
-        id: cartItem.id,
-        price: cartItem.price,
-        salePrice: cartItem.salePrice,
-        quantity: cartItem.quantity
-      });
+      console.log('Updating cart item quantity to:', quantity);
       
       const updateResult = await dbClient.query(
-        `UPDATE cart_items 
+        `UPDATE cart_items
          SET quantity = $1, "totalPrice" = price * $1, "totalSalePrice" = "salePrice" * $1, "updatedAt" = CURRENT_TIMESTAMP
          WHERE id = $2
          RETURNING *`,
@@ -428,11 +415,7 @@ export async function PUT(request: NextRequest) {
     );
   } finally {
     if (dbClient) {
-      try {
-        await releaseClient(dbClient);
-      } catch (closeError) {
-        console.error('Error releasing client:', closeError);
-      }
+      await closeClient(dbClient);
     }
   }
 }
