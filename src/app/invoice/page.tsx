@@ -55,7 +55,15 @@ function InvoiceContent() {
       
       if (response.ok) {
         const orderData = await response.json();
-        setOrder(orderData);
+        // API array qaytarır, ilk elementi götür
+        const order = Array.isArray(orderData) ? orderData[0] : orderData;
+        
+        if (order && order.items) {
+          setOrder(order);
+        } else {
+          console.error('Sifariş məlumatları düzgün deyil:', order);
+          setOrder(null);
+        }
       } else {
         console.error('Sifariş tapılmadı');
         setOrder(null);
@@ -179,7 +187,7 @@ function InvoiceContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items.map((item, index) => (
+                  {(order.items || []).map((item, index) => (
                     <tr key={item.id} className="border-b border-gray-700">
                       <td className="py-3 px-4 text-gray-300">{index + 1}</td>
                       <td className="py-3 px-4 text-white">
@@ -190,8 +198,8 @@ function InvoiceContent() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-gray-300 text-center">{item.quantity}</td>
-                      <td className="py-3 px-4 text-gray-300 text-right">{item.price.toFixed(2)} ₼</td>
-                      <td className="py-3 px-4 text-cyan-400 font-semibold text-right">{item.totalPrice.toFixed(2)} ₼</td>
+                      <td className="py-3 px-4 text-gray-300 text-right">{(item.price || 0).toFixed(2)} ₼</td>
+                      <td className="py-3 px-4 text-cyan-400 font-semibold text-right">{(item.totalPrice || 0).toFixed(2)} ₼</td>
                     </tr>
                   ))}
                 </tbody>
