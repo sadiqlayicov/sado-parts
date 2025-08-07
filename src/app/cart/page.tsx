@@ -121,6 +121,9 @@ export default function CartPage() {
         console.log('Order created successfully:', data.order);
         setIsLoading(false);
         
+        // Səbəti təmizlə
+        await clearCart();
+        
         // Hesab-faktura səhifəsinə yönləndir
         router.push(`/invoice?orderId=${data.order.id}`);
         

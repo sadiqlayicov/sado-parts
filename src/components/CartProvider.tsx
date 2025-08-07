@@ -50,16 +50,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const quantityUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingQuantityUpdates = useRef<Map<string, number>>(new Map());
 
+  // Ensure cartItems is always an array
+  const safeCartItems = cartItems || [];
+  
   // Cart items count
-  const cartItemsCount = cartItems.reduce((sum, item) => sum + parseInt(item.quantity.toString()), 0);
+  const cartItemsCount = safeCartItems.reduce((sum, item) => sum + parseInt(item.quantity.toString()), 0);
   
   // Total prices - ensure proper number conversion
-  const totalPrice = cartItems.reduce((sum, item) => {
+  const totalPrice = safeCartItems.reduce((sum, item) => {
     const itemTotal = typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice;
     return sum + (isNaN(itemTotal) ? 0 : itemTotal);
   }, 0);
   
-  const totalSalePrice = cartItems.reduce((sum, item) => {
+  const totalSalePrice = safeCartItems.reduce((sum, item) => {
     const itemTotal = typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice;
     return sum + (isNaN(itemTotal) ? 0 : itemTotal);
   }, 0);
@@ -348,15 +351,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // Remove all items one by one
-      for (const item of cartItems) {
-        await fetch(`/api/cart?cartItemId=${item.id}`, {
-          method: 'DELETE'
-        });
-      }
-      // Clear local state immediately
+      // Clear local state immediately to prevent map errors
       setCartItems([]);
-      console.log('Cart cleared from local state');
+      
+      // Remove all items from database
+      if (safeCartItems && safeCartItems.length > 0) {
+        for (const item of safeCartItems) {
+          try {
+            await fetch(`/api/cart?cartItemId=${item.id}`, {
+              method: 'DELETE'
+            });
+          } catch (itemError) {
+            console.error('Error removing cart item:', itemError);
+          }
+        }
+      }
+      console.log('Cart cleared from local state and database');
     } catch (error) {
       console.error('Clear cart error:', error);
     } finally {
@@ -366,7 +376,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider value={{
-      cartItems,
+      cartItems: safeCartItems,
       cartItemsCount,
       totalPrice,
       totalSalePrice,
