@@ -103,20 +103,29 @@ export default function AdminOrderDetailsPage() {
   };
 
   const updateItemQuantity = async (itemId: string, newQuantity: number) => {
+    console.log('updateItemQuantity called with:', { itemId, newQuantity, orderId });
+    
     try {
+      const requestBody = {
+        orderId,
+        itemId,
+        quantity: newQuantity
+      };
+      
+      console.log('Sending request to API:', requestBody);
+      
       const response = await fetch('/api/admin/orders/update-item-quantity', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          orderId,
-          itemId,
-          quantity: newQuantity
-        })
+        body: JSON.stringify(requestBody)
       });
       
+      console.log('Response status:', response.status);
+      
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success) {
         // Optimize: Update local state instead of full refresh
@@ -134,7 +143,8 @@ export default function AdminOrderDetailsPage() {
         });
         console.log('Item quantity updated successfully:', { itemId, newQuantity, orderTotal: data.data.orderTotal });
       } else {
-        alert('Məhsul sayı yeniləmə zamanı xəta baş verdi');
+        console.error('API returned error:', data.error);
+        alert('Məhsul sayı yeniləmə zamanı xəta baş verdi: ' + (data.error || 'Naməlum xəta'));
       }
     } catch (error) {
       console.error('Error updating item quantity:', error);
@@ -331,14 +341,20 @@ export default function AdminOrderDetailsPage() {
                           <span className="text-white font-medium">Sayı:</span>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => updateItemQuantity(item.id, Math.max(1, item.quantity - 1))}
+                              onClick={() => {
+                                console.log('Decrease button clicked for item:', item.id, 'current quantity:', item.quantity);
+                                updateItemQuantity(item.id, Math.max(1, item.quantity - 1));
+                              }}
                               className="w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded flex items-center justify-center transition"
                             >
                               -
                             </button>
                             <span className="text-white font-bold min-w-[40px] text-center">{item.quantity}</span>
                             <button
-                              onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                              onClick={() => {
+                                console.log('Increase button clicked for item:', item.id, 'current quantity:', item.quantity);
+                                updateItemQuantity(item.id, item.quantity + 1);
+                              }}
                               className="w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded flex items-center justify-center transition"
                             >
                               +
