@@ -213,7 +213,7 @@ export default function HomePage() {
                           <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
                           <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)}₼</div>
                         </div>
-                      ) : product.salePrice && product.salePrice > 0 ? (
+                      ) : product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
                         <div>
                           <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
                           <div className="text-cyan-400 font-bold text-lg">{product.salePrice?.toLocaleString()}₼</div>
@@ -284,7 +284,7 @@ export default function HomePage() {
                           <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
                           <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)}₼</div>
                         </div>
-                      ) : product.salePrice && product.salePrice > 0 ? (
+                      ) : product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
                         <div>
                           <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
                           <div className="text-cyan-400 font-bold text-lg">{product.salePrice?.toLocaleString()}₼</div>
