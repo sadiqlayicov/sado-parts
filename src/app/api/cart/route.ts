@@ -164,17 +164,20 @@ export async function GET(request: NextRequest) {
       const userCart = result.rows;
       console.log('Raw cart items from database:', userCart);
       
-      // Recalculate prices based on current user discount
-      const recalculatedCart = userCart.map(item => {
+      // Recalculate prices based on current user discount and fresh product data
+      const recalculatedCart = await Promise.all(userCart.map(async item => {
         const originalPrice = parseFloat(item.price);
         let finalSalePrice = originalPrice;
+        
+        // Get fresh product data to check for product-specific sale prices
+        const freshProductInfo = await getProductInfo(item.productId);
         
         // Apply current user discount if any
         if (userDiscount > 0) {
           finalSalePrice = Math.floor(originalPrice * (1 - userDiscount / 100) * 100) / 100;
-        } else if (parseFloat(item.salePrice) > 0 && parseFloat(item.salePrice) < originalPrice) {
-          // Use stored sale price only if no user discount
-          finalSalePrice = parseFloat(item.salePrice);
+        } else if (freshProductInfo && freshProductInfo.salePrice && freshProductInfo.salePrice > 0 && freshProductInfo.salePrice < originalPrice) {
+          // Use fresh product sale price only if no user discount
+          finalSalePrice = freshProductInfo.salePrice;
         }
         
         const quantity = parseInt(item.quantity);
@@ -187,7 +190,7 @@ export async function GET(request: NextRequest) {
           totalPrice: newTotalPrice,
           totalSalePrice: newTotalSalePrice
         };
-      });
+      }));
       
       const totalItems = recalculatedCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
       const totalPrice = recalculatedCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);

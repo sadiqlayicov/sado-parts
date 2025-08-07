@@ -55,7 +55,11 @@ export default function Header() {
         const categoriesRes = await fetch('/api/categories');
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json();
-          if (Array.isArray(categoriesData)) {
+          // Check if response has success and data properties (new API format)
+          if (categoriesData.success && Array.isArray(categoriesData.data)) {
+            setCategories(categoriesData.data);
+          } else if (Array.isArray(categoriesData)) {
+            // Fallback for old API format
             setCategories(categoriesData);
           } else {
             setCategories([]);
