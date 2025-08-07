@@ -90,15 +90,15 @@ export default function AdminOrdersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2 py-1 bg-yellow-500 text-white text-xs rounded-full whitespace-nowrap">Gözləmədə</span>;
+        return <span className="px-1 py-0.5 bg-yellow-500 text-white text-xs rounded-full whitespace-nowrap">Gözləmədə</span>;
       case 'completed':
-        return <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded-full whitespace-nowrap">Təsdiq gözləyir</span>;
+        return <span className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded-full whitespace-nowrap">Təsdiq gözləyir</span>;
       case 'approved':
-        return <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full whitespace-nowrap">Təsdiqləndi</span>;
+        return <span className="px-1 py-0.5 bg-green-500 text-white text-xs rounded-full whitespace-nowrap">Təsdiqləndi</span>;
       case 'rejected':
-        return <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full whitespace-nowrap">Rədd edildi</span>;
+        return <span className="px-1 py-0.5 bg-red-500 text-white text-xs rounded-full whitespace-nowrap">Rədd edildi</span>;
       default:
-        return <span className="px-2 py-1 bg-gray-500 text-white text-xs rounded-full whitespace-nowrap">{status}</span>;
+        return <span className="px-1 py-0.5 bg-gray-500 text-white text-xs rounded-full whitespace-nowrap">{status}</span>;
     }
   };
 
@@ -108,13 +108,13 @@ export default function AdminOrdersPage() {
         <>
           <button
             onClick={() => updateOrderStatus(order.id, 'approved')}
-            className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition whitespace-nowrap"
+            className="px-1 py-0.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition whitespace-nowrap"
           >
             Təsdiqlə
           </button>
           <button
             onClick={() => updateOrderStatus(order.id, 'rejected')}
-            className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition whitespace-nowrap"
+            className="px-1 py-0.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition whitespace-nowrap"
           >
             Rədd et
           </button>
@@ -140,13 +140,13 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
-      <div className="max-w-[1400px] mx-auto px-6 py-8">
+      <div className="max-w-[1600px] mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Sifarişlər</h1>
           <p className="text-gray-300">Bütün sifarişləri idarə edin</p>
         </div>
 
-        <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
+        <div className="bg-[#1e293b] rounded-xl p-4 shadow-2xl">
           {orders.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-gray-400 text-xl">Hələ sifariş yoxdur</div>
@@ -156,33 +156,33 @@ export default function AdminOrdersPage() {
               <table className="w-full text-left whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-gray-600">
-                    <th className="py-4 px-4 text-gray-300 font-semibold text-sm w-[160px]">Sifariş №</th>
-                    <th className="py-4 px-4 text-gray-300 font-semibold text-sm w-[200px]">Müştəri</th>
-                    <th className="py-4 px-4 text-gray-300 font-semibold text-sm w-[250px]">Məhsullar</th>
-                    <th className="py-4 px-4 text-gray-300 font-semibold text-sm w-[120px]">Ümumi</th>
-                    <th className="py-4 px-4 text-gray-300 font-semibold text-sm w-[120px]">Status</th>
-                    <th className="py-4 px-4 text-gray-300 font-semibold text-sm w-[140px]">Tarix</th>
-                    <th className="py-4 px-4 text-gray-300 font-semibold text-sm w-[150px]">Əməliyyatlar</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[140px]">Sifariş №</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[180px]">Müştəri</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[220px]">Məhsullar</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[100px]">Ümumi</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[100px]">Status</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[120px]">Tarix</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[120px]">Əməliyyatlar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map((order) => (
                     <tr key={order.id} className="border-b border-gray-700 hover:bg-[#0f172a] transition-colors">
-                      <td className="py-4 px-4 text-white font-semibold text-sm">
-                        <div className="font-mono text-sm">{order.orderNumber}</div>
+                      <td className="py-3 px-3 text-white font-semibold text-xs">
+                        <div className="font-mono text-xs">{order.orderNumber}</div>
                       </td>
-                      <td className="py-4 px-4 text-gray-300">
-                        <div className="w-[200px]">
-                          <div className="font-medium text-white text-sm truncate">{order.customerName || 'Müştəri'}</div>
+                      <td className="py-3 px-3 text-gray-300">
+                        <div className="w-[180px]">
+                          <div className="font-medium text-white text-xs truncate">{order.customerName || 'Müştəri'}</div>
                           <div className="text-xs text-gray-400 mt-1 truncate">{order.customerEmail}</div>
                           {order.customerPhone && (
                             <div className="text-xs text-gray-400 mt-1">📞 {order.customerPhone}</div>
                           )}
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-gray-300">
-                        <div className="w-[250px]">
-                          <div className="text-sm font-medium text-white">
+                      <td className="py-3 px-3 text-gray-300">
+                        <div className="w-[220px]">
+                          <div className="text-xs font-medium text-white">
                             {order.items.length} məhsul
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
@@ -194,18 +194,18 @@ export default function AdminOrdersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-cyan-400 font-semibold">
-                        <div className="text-lg">{(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼</div>
+                      <td className="py-3 px-3 text-cyan-400 font-semibold">
+                        <div className="text-sm">{(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼</div>
                         <div className="text-xs text-gray-400 mt-1">Endirimli qiymət</div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="w-[120px]">
+                      <td className="py-3 px-3">
+                        <div className="w-[100px]">
                           {getStatusBadge(order.status)}
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-gray-300 text-sm">
-                        <div className="w-[140px]">
-                          <div className="text-sm">{new Date(order.createdAt).toLocaleDateString('az-AZ')}</div>
+                      <td className="py-3 px-3 text-gray-300 text-xs">
+                        <div className="w-[120px]">
+                          <div className="text-xs">{new Date(order.createdAt).toLocaleDateString('az-AZ')}</div>
                           <div className="text-xs text-gray-400 mt-1">
                             {new Date(order.createdAt).toLocaleTimeString('az-AZ', { 
                               hour: '2-digit', 
@@ -214,11 +214,11 @@ export default function AdminOrdersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col gap-2 w-[150px]">
+                      <td className="py-3 px-3">
+                        <div className="flex flex-col gap-1 w-[120px]">
                           <button
                             onClick={() => handleOrderClick(order.id)}
-                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition flex items-center justify-center gap-1"
+                            className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition flex items-center justify-center gap-1"
                           >
                             👁️ Detallar
                           </button>
