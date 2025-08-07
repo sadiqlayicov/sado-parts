@@ -59,7 +59,7 @@ async function getProductInfo(productId: string) {
       const productInfo = {
         name: product.name,
         price: parseFloat(product.price) || 100,
-        salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
+        salePrice: parseFloat(product.salePrice) || null, // Only use salePrice if it exists, otherwise null
         sku: product.sku || product.artikul || `SKU-${productId}`,
         categoryName: product.category_name || 'General'
       };

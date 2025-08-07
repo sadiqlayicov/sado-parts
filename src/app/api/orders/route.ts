@@ -56,7 +56,7 @@ async function getProductInfo(productId: string) {
       return {
         name: product.name,
         price: parseFloat(product.price) || 100,
-        salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
+        salePrice: parseFloat(product.salePrice) || null,
         sku: product.sku || product.artikul || `SKU-${productId}`,
         categoryName: product.category_name || 'General'
       };

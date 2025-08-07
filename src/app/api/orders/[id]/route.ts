@@ -43,7 +43,7 @@ async function getProductInfo(productId: string) {
           return {
             name: foundProduct.name,
             price: parseFloat(foundProduct.price) || 100,
-            salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
+            salePrice: parseFloat(foundProduct.salePrice) || null,
             sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
             categoryName: foundProduct.category?.name || 'General'
           };
@@ -76,7 +76,7 @@ async function getProductInfo(productId: string) {
         return {
           name: product.name,
           price: parseFloat(product.price) || 100,
-          salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
+          salePrice: parseFloat(product.salePrice) || null,
           sku: product.sku || product.artikul || `SKU-${productId}`,
           categoryName: product.category_name || 'General'
         };
