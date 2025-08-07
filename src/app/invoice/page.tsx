@@ -98,6 +98,17 @@ function InvoiceContent() {
       const data = await response.json();
       
       if (data.success) {
+        // Sifariş tamamlandıqdan sonra səbəti təmizlə
+        try {
+          await fetch('/api/cart/clear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user?.id })
+          });
+        } catch (clearError) {
+          console.error('Cart clear error:', clearError);
+        }
+        
         alert('Sifariş uğurla tamamlandı! Admin təsdiqi gözləyir.');
         window.location.href = '/profile';
       } else {
@@ -156,8 +167,18 @@ function InvoiceContent() {
                 <p className="text-gray-300"><span className="text-gray-400">Sifariş Nömrəsi:</span> {order.orderNumber}</p>
                 <p className="text-gray-300"><span className="text-gray-400">Tarix:</span> {new Date(order.createdAt).toLocaleDateString('az-AZ')}</p>
                 <p className="text-gray-300"><span className="text-gray-400">Status:</span> 
-                  <span className="ml-2 px-2 py-1 bg-yellow-500 text-white text-xs rounded-full">
-                    Gözləmədə
+                  <span className={`ml-2 px-2 py-1 text-white text-xs rounded-full ${
+                    order.status === 'pending' ? 'bg-yellow-500' :
+                    order.status === 'completed' ? 'bg-blue-500' :
+                    order.status === 'approved' ? 'bg-green-500' :
+                    order.status === 'rejected' ? 'bg-red-500' :
+                    'bg-gray-500'
+                  }`}>
+                    {order.status === 'pending' ? 'Gözləmədə' :
+                     order.status === 'completed' ? 'Təsdiq gözləyir' :
+                     order.status === 'approved' ? 'Təsdiqləndi' :
+                     order.status === 'rejected' ? 'Rədd edildi' :
+                     order.status}
                   </span>
                 </p>
               </div>
@@ -238,24 +259,43 @@ function InvoiceContent() {
           >
             🖨️ Çap et
           </button>
-          <button
-            onClick={completeOrder}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
-          >
-            ✅ Sifarişi tamamla
-          </button>
-          <Link
-            href="/profile"
-            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition"
-          >
-            Profilə qayıt
-          </Link>
-          <Link
-            href="/catalog"
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
-          >
-            Alış-verişə davam et
-          </Link>
+          
+          {/* Sifariş statusuna görə düymələri göstər */}
+          {order.status === 'pending' && (
+            <button
+              onClick={completeOrder}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+            >
+              ✅ Sifarişi tamamla
+            </button>
+          )}
+          
+          {order.status === 'pending' && (
+            <Link
+              href="/catalog"
+              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+            >
+              Alış-verişə davam et
+            </Link>
+          )}
+          
+          {(order.status === 'completed' || order.status === 'approved' || order.status === 'rejected') && (
+            <Link
+              href="/profile"
+              className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition"
+            >
+              Profilə qayıt
+            </Link>
+          )}
+          
+          {(order.status === 'completed' || order.status === 'approved' || order.status === 'rejected') && (
+            <Link
+              href="/catalog"
+              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+            >
+              Yeni sifariş yarat
+            </Link>
+          )}
         </div>
       </div>
     </div>

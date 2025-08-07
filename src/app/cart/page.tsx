@@ -122,8 +122,9 @@ export default function CartPage() {
         console.log('Order created successfully:', data.order);
         setIsLoading(false);
         
-        // Səbəti təmizlə
-        await clearCart();
+        // Səbəti təmizləmə - yalnız sifariş tamamlandıqdan sonra
+        // Səbəti təmizləmirik, çünki istifadəçi "Alış-verişə davam et" düyməsini basa bilər
+        // Səbət yalnız sifariş tamamlandıqdan sonra təmizlənəcək
         
         // Hesab-faktura səhifəsinə yönləndir
         router.push(`/invoice?orderId=${data.order.id}`);
