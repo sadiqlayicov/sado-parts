@@ -75,40 +75,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const loadCart = async () => {
         if (!user?.id) return;
         
-        console.log('Loading cart for user:', user.id);
         setIsLoading(true);
         try {
           const response = await fetch(`/api/cart?userId=${user.id}`);
           const data = await response.json();
           
-          console.log('Cart API response:', data);
-          
           if (data.success && data.cart && data.cart.items) {
-            console.log('Raw cart items from API:', data.cart.items);
-            
             // Convert string values to numbers for proper calculations
-            const processedItems = data.cart.items.map((item: any) => {
-              const processed = {
-                ...item,
-                price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-                salePrice: typeof item.salePrice === 'string' ? parseFloat(item.salePrice) : item.salePrice,
-                quantity: typeof item.quantity === 'string' ? parseInt(item.quantity) : item.quantity,
-                totalPrice: typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice,
-                totalSalePrice: typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice
-              };
-              console.log('Processed cart item:', processed);
-              return processed;
-            });
+            const processedItems = data.cart.items.map((item: any) => ({
+              ...item,
+              price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+              salePrice: typeof item.salePrice === 'string' ? parseFloat(item.salePrice) : item.salePrice,
+              quantity: typeof item.quantity === 'string' ? parseInt(item.quantity) : item.quantity,
+              totalPrice: typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice,
+              totalSalePrice: typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice
+            }));
             
-            console.log('Final processed cart items:', processedItems);
             setCartItems(processedItems);
             hasLoadedCart.current = true;
           } else {
-            console.error('Cart API returned error or no items:', data.error || 'No items found');
             setCartItems([]);
           }
         } catch (error) {
-          console.error('Cart refresh error:', error);
           setCartItems([]);
         } finally {
           setIsLoading(false);
@@ -142,7 +130,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCartItems(processedItems);
       }
     } catch (error) {
-      console.error('Cart refresh error:', error);
+      // Silent error handling
     } finally {
       setIsLoading(false);
     }
@@ -173,8 +161,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const optimisticId = `temp-${Date.now()}`;
     
     try {
-      console.log('Adding to cart:', { productId, quantity, userId: user.id });
-      
       // Optimistic update - immediately update UI
       const optimisticItem = {
         id: optimisticId,
@@ -218,7 +204,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
-      console.log('Cart API response:', data);
       
       if (response.ok && data.success) {
         // Update with real data from server
@@ -239,7 +224,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             }
           });
         }
-        console.log('Cart updated successfully');
       } else {
         // Revert optimistic update on error
         setCartItems(prevItems => {

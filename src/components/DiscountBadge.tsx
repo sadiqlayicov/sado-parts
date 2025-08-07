@@ -4,14 +4,15 @@ import { useAuth } from './AuthProvider';
 
 interface DiscountBadgeProps {
   originalPrice: number;
+  productSalePrice?: number | null;
   className?: string;
 }
 
-export default function DiscountBadge({ originalPrice, className = '' }: DiscountBadgeProps) {
+export default function DiscountBadge({ originalPrice, productSalePrice, className = '' }: DiscountBadgeProps) {
   const { isApproved, getDiscountPercentage, calculateDiscountedPrice } = useAuth();
   
   const discountPercentage = getDiscountPercentage();
-  const discountedPrice = calculateDiscountedPrice(originalPrice);
+  const discountedPrice = calculateDiscountedPrice(originalPrice, productSalePrice);
   const savings = originalPrice - discountedPrice;
 
   if (!isApproved || discountPercentage === 0) {

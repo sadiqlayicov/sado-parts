@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { Client } from 'pg'
+import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
-// GET - Get all products
+/**
+ * GET - Get all products
+ * Fetches all active products with their category information
+ */
 export async function GET(request: NextRequest) {
-  console.log('GET /api/products called')
-  console.log('Environment:', process.env.NODE_ENV)
-  console.log('Database URL exists:', !!process.env.DATABASE_URL)
-
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? {
@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
 
   try {
     await client.connect()
-    console.log('✅ Database connected successfully')
 
     // Get products with categories
     const productsResult = await client.query(`
@@ -44,8 +43,6 @@ export async function GET(request: NextRequest) {
       ORDER BY p."createdAt" DESC
     `)
 
-    console.log(`Found ${productsResult.rows.length} products`)
-
     // Transform the data to match the expected format
     const products = productsResult.rows.map(row => ({
       id: row.id,
@@ -70,27 +67,19 @@ export async function GET(request: NextRequest) {
       } : null
     }))
 
-    console.log('Returning products with categories')
-
-    return NextResponse.json(products)
+    return successResponse(products, `${products.length} məhsul tapıldı`)
   } catch (error) {
-    console.error('Get products error:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : 'Unknown'
-    })
-
-    return NextResponse.json(
-      { error: 'Failed to fetch products' },
-      { status: 500 }
-    )
+    logError('GET /api/products', error)
+    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
   } finally {
     await client.end()
   }
 }
 
-// POST - Create new product
+/**
+ * POST - Create new product
+ * Creates a new product with validation
+ */
 export async function POST(request: NextRequest) {
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
@@ -100,19 +89,16 @@ export async function POST(request: NextRequest) {
   })
 
   try {
-    console.log('POST /api/products called')
     const body = await request.json()
-    console.log('Received data:', JSON.stringify(body, null, 2))
-
     const { name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured, artikul, catalogNumber } = body
 
     // Validation
     if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+      return errorResponse(ErrorMessages.REQUIRED_FIELD('Məhsul adı'), 400)
     }
 
-    if (!price) {
-      return NextResponse.json({ error: 'Price is required' }, { status: 400 })
+    if (!price || isNaN(parseFloat(price))) {
+      return errorResponse(ErrorMessages.INVALID_PRICE, 400)
     }
 
     await client.connect()
@@ -142,19 +128,14 @@ export async function POST(request: NextRequest) {
 
     const product = result.rows[0]
 
-    console.log('Created product:', JSON.stringify(product, null, 2))
-
-    return NextResponse.json({
-      message: 'Məhsul uğurla əlavə olundu',
-      product: { ...product, images: imagesArray }
-    }, { status: 201 })
-  } catch (error) {
-    console.error('Create product error:', error)
-    
-    return NextResponse.json(
-      { error: typeof error === 'object' && error && 'message' in error ? (error as any).message : 'Məhsul əlavə etmə xətası' },
-      { status: 500 }
+    return successResponse(
+      { ...product, images: imagesArray },
+      'Məhsul uğurla əlavə olundu',
+      201
     )
+  } catch (error) {
+    logError('POST /api/products', error)
+    return errorResponse(ErrorMessages.CREATION_FAILED('məhsul'), 500)
   } finally {
     await client.end()
   }

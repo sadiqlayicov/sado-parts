@@ -1,9 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { Client } from 'pg'
+import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
+/**
+ * GET - Get all categories
+ * Fetches all active categories
+ */
 export async function GET(request: NextRequest) {
-  console.log('GET /api/categories called')
-
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? {
@@ -13,7 +16,6 @@ export async function GET(request: NextRequest) {
 
   try {
     await client.connect()
-    console.log('✅ Database connected successfully for categories')
 
     const categoriesResult = await client.query(`
       SELECT id, name, description, image, "isActive", "createdAt", "updatedAt"
@@ -21,8 +23,6 @@ export async function GET(request: NextRequest) {
       WHERE "isActive" = true
       ORDER BY name ASC
     `)
-
-    console.log(`Found ${categoriesResult.rows.length} categories`)
 
     const categories = categoriesResult.rows.map(row => ({
       id: row.id,
@@ -34,16 +34,19 @@ export async function GET(request: NextRequest) {
       updatedAt: row.updatedAt
     }))
 
-    return NextResponse.json(categories)
+    return successResponse(categories, `${categories.length} kateqoriya tapıldı`)
   } catch (error) {
-    console.error('Get categories error:', error)
-    
-    return NextResponse.json([])
+    logError('GET /api/categories', error)
+    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
   } finally {
     await client.end()
   }
 }
 
+/**
+ * POST - Create new category
+ * Creates a new category with validation
+ */
 export async function POST(request: NextRequest) {
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
@@ -57,7 +60,7 @@ export async function POST(request: NextRequest) {
     const { name, description, image, isActive } = body
 
     if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+      return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya adı'), 400)
     }
 
     await client.connect()
@@ -75,17 +78,10 @@ export async function POST(request: NextRequest) {
 
     const category = result.rows[0]
 
-    return NextResponse.json({
-      message: 'Category created successfully',
-      category
-    }, { status: 201 })
+    return successResponse(category, 'Kateqoriya uğurla yaradıldı', 201)
   } catch (error) {
-    console.error('Create category error:', error)
-    
-    return NextResponse.json(
-      { error: typeof error === 'object' && error && 'message' in error ? (error as any).message : 'Category creation error' },
-      { status: 500 }
-    )
+    logError('POST /api/categories', error)
+    return errorResponse(ErrorMessages.CREATION_FAILED('kateqoriya'), 500)
   } finally {
     await client.end()
   }

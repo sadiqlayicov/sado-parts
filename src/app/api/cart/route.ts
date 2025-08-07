@@ -140,6 +140,20 @@ export async function GET(request: NextRequest) {
         console.log('Cart items table created successfully');
       }
       
+      // Get user discount first
+      let userDiscount = 0;
+      try {
+        const userResult = await dbClient.query(
+          'SELECT "discountPercentage" FROM users WHERE id = $1',
+          [userId]
+        );
+        if (userResult.rows.length > 0) {
+          userDiscount = userResult.rows[0].discountPercentage || 0;
+        }
+      } catch (error) {
+        console.error('Error fetching user discount:', error);
+      }
+
       // Get cart items from database
       console.log('Querying cart items for userId:', userId);
       const result = await dbClient.query(
@@ -150,16 +164,41 @@ export async function GET(request: NextRequest) {
       const userCart = result.rows;
       console.log('Raw cart items from database:', userCart);
       
-      const totalItems = userCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
-      const totalPrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
-      const totalSalePrice = userCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
+      // Recalculate prices based on current user discount
+      const recalculatedCart = userCart.map(item => {
+        const originalPrice = parseFloat(item.price);
+        let finalSalePrice = originalPrice;
+        
+        // Apply current user discount if any
+        if (userDiscount > 0) {
+          finalSalePrice = Math.floor(originalPrice * (1 - userDiscount / 100) * 100) / 100;
+        } else if (parseFloat(item.salePrice) > 0 && parseFloat(item.salePrice) < originalPrice) {
+          // Use stored sale price only if no user discount
+          finalSalePrice = parseFloat(item.salePrice);
+        }
+        
+        const quantity = parseInt(item.quantity);
+        const newTotalPrice = originalPrice * quantity;
+        const newTotalSalePrice = finalSalePrice * quantity;
+        
+        return {
+          ...item,
+          salePrice: finalSalePrice,
+          totalPrice: newTotalPrice,
+          totalSalePrice: newTotalSalePrice
+        };
+      });
+      
+      const totalItems = recalculatedCart.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+      const totalPrice = recalculatedCart.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      const totalSalePrice = recalculatedCart.reduce((sum, item) => sum + parseFloat(item.totalSalePrice), 0);
 
-      console.log('Cart from database - items:', userCart.length, 'totalItems:', totalItems);
+      console.log('Cart from database - items:', recalculatedCart.length, 'totalItems:', totalItems);
 
       const response = {
         success: true,
         cart: {
-          items: userCart,
+          items: recalculatedCart,
           totalItems,
           totalPrice: Math.round(totalPrice * 100) / 100,
           totalSalePrice: Math.round(totalSalePrice * 100) / 100,
@@ -240,14 +279,17 @@ export async function POST(request: NextRequest) {
       console.error('Error fetching user data:', error);
     }
 
-    // Calculate prices
+    // Calculate prices with proper discount logic
     const originalPrice = productInfo.price;
     let finalSalePrice = originalPrice;
     
-    if (productInfo.salePrice && productInfo.salePrice > 0) {
-      finalSalePrice = productInfo.salePrice;
-    } else if (userDiscount > 0) {
+    // Priority: 1. User discount (if any), 2. Product sale price (if no user discount)
+    if (userDiscount > 0) {
+      // Apply user discount to original price
       finalSalePrice = Math.floor(originalPrice * (1 - userDiscount / 100) * 100) / 100;
+    } else if (productInfo.salePrice && productInfo.salePrice > 0) {
+      // Use product sale price only if no user discount
+      finalSalePrice = productInfo.salePrice;
     }
 
     console.log('Price calculation:', { originalPrice, finalSalePrice, productName: productInfo.name });
@@ -430,6 +472,20 @@ export async function PUT(request: NextRequest) {
 
     const cartItem = checkResult.rows[0];
 
+    // Get user discount for proper price calculation
+    let userDiscount = 0;
+    try {
+      const userResult = await dbClient.query(
+        'SELECT "discountPercentage" FROM users WHERE id = $1',
+        [cartItem.userId]
+      );
+      if (userResult.rows.length > 0) {
+        userDiscount = userResult.rows[0].discountPercentage || 0;
+      }
+    } catch (error) {
+      console.error('Error fetching user discount:', error);
+    }
+
     if (quantity <= 0) {
       // Delete item if quantity is 0 or negative
       await dbClient.query(
@@ -438,15 +494,26 @@ export async function PUT(request: NextRequest) {
       );
       console.log('Cart item deleted:', cartItemId);
     } else {
-      // Update quantity
-      const newTotalPrice = parseFloat(cartItem.price) * quantity;
-      const newTotalSalePrice = parseFloat(cartItem.salePrice) * quantity;
+      // Recalculate prices based on current user discount
+      const originalPrice = parseFloat(cartItem.price);
+      let finalSalePrice = originalPrice;
+      
+      // Apply current user discount if any
+      if (userDiscount > 0) {
+        finalSalePrice = Math.floor(originalPrice * (1 - userDiscount / 100) * 100) / 100;
+      } else if (parseFloat(cartItem.salePrice) > 0 && parseFloat(cartItem.salePrice) < originalPrice) {
+        // Use stored sale price only if no user discount
+        finalSalePrice = parseFloat(cartItem.salePrice);
+      }
+      
+      const newTotalPrice = originalPrice * quantity;
+      const newTotalSalePrice = finalSalePrice * quantity;
       
       await dbClient.query(
         `UPDATE cart_items
-         SET quantity = $1, "totalPrice" = $2, "totalSalePrice" = $3, "updatedAt" = CURRENT_TIMESTAMP
-         WHERE id = $4`,
-        [quantity, newTotalPrice, newTotalSalePrice, cartItemId]
+         SET quantity = $1, "salePrice" = $2, "totalPrice" = $3, "totalSalePrice" = $4, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE id = $5`,
+        [quantity, finalSalePrice, newTotalPrice, newTotalSalePrice, cartItemId]
       );
       console.log('Cart item updated:', { cartItemId, quantity, newTotalPrice, newTotalSalePrice });
     }

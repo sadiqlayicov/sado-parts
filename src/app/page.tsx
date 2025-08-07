@@ -198,16 +198,21 @@ export default function HomePage() {
         <div className="flex-1 flex flex-col justify-between min-h-0">
           <div className="min-h-0 flex-1 flex flex-col">
             <div className="font-semibold text-base mb-3 text-center leading-tight overflow-hidden" style={{ minHeight: '2.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.name}</div>
-            <div className="text-center mb-4">
-              {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
-                <div>
-                  <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
-                  <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price)?.toFixed(2)}₼</div>
-                </div>
-              ) : (
-                <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString()}₼</div>
-              )}
-            </div>
+                                <div className="text-center mb-4">
+                      {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
+                        <div>
+                          <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
+                          <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)}₼</div>
+                        </div>
+                      ) : product.salePrice && product.salePrice > 0 ? (
+                        <div>
+                          <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
+                          <div className="text-cyan-400 font-bold text-lg">{product.salePrice?.toLocaleString()}₼</div>
+                        </div>
+                      ) : (
+                        <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString()}₼</div>
+                      )}
+                    </div>
             <div className="text-xs text-gray-400 text-center space-y-1 mb-6">
               <div className="truncate">{product.category?.name || '-'}</div>
               <div className="truncate">Artikul: {product.artikul || product.sku || '-'}</div>
@@ -268,7 +273,12 @@ export default function HomePage() {
                       {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                         <div>
                           <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
-                          <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price)?.toFixed(2)}₼</div>
+                          <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)}₼</div>
+                        </div>
+                      ) : product.salePrice && product.salePrice > 0 ? (
+                        <div>
+                          <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
+                          <div className="text-cyan-400 font-bold text-lg">{product.salePrice?.toLocaleString()}₼</div>
                         </div>
                       ) : (
                         <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString()}₼</div>
