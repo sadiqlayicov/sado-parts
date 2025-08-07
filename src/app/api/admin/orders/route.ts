@@ -12,7 +12,7 @@ const pool = new Pool({
 
 // Get all orders for admin
 export async function GET(request: NextRequest) {
-  let client;
+  let client: any;
   
   try {
     console.log('GET /api/admin/orders called');
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 
 // Update order status
 export async function PUT(request: NextRequest) {
-  let client;
+  let client: any;
   
   try {
     client = await pool.connect();

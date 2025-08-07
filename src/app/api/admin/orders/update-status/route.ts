@@ -11,7 +11,7 @@ const pool = new Pool({
 });
 
 export async function POST(request: NextRequest) {
-  let client;
+  let client: any;
   
   try {
     const { orderId, status } = await request.json();
