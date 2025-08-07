@@ -22,9 +22,20 @@ async function closeClient() {
   }
 }
 
-// Get product info from database
+// Product cache for better performance
+const productCache = new Map<string, any>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Get product info from database with caching
 async function getProductInfo(productId: string) {
   try {
+    // Check cache first
+    const cached = productCache.get(productId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log('Product found in cache:', productId);
+      return cached.data;
+    }
+    
     console.log('Looking up product with ID:', productId);
     
     const dbClient = await getClient();
@@ -45,24 +56,30 @@ async function getProductInfo(productId: string) {
     
     if (result.rows.length > 0) {
       const product = result.rows[0];
-      console.log('Found product from database:', product.name);
-      return {
+      const productInfo = {
         name: product.name,
         price: parseFloat(product.price) || 100,
         salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
         sku: product.sku || product.artikul || `SKU-${productId}`,
         categoryName: product.category_name || 'General'
       };
+      
+      // Cache the result
+      productCache.set(productId, {
+        data: productInfo,
+        timestamp: Date.now()
+      });
+      
+      console.log('Found product from database and cached:', product.name);
+      return productInfo;
     }
     
     console.log('No product found for ID:', productId);
     return null;
-      } catch (error) {
-      console.error('Error in getProductInfo:', error);
-      return null;
-    } finally {
-      await closeClient();
-    }
+  } catch (error) {
+    console.error('Error in getProductInfo:', error);
+    return null;
+  }
 }
 
 // Get user cart
@@ -167,7 +184,12 @@ export async function GET(request: NextRequest) {
 }
 
 // Add item to cart
+// Request deduplication for better performance
+const pendingRequests = new Map<string, Promise<any>>();
+
 export async function POST(request: NextRequest) {
+  let requestKey: string | null = null;
+  
   try {
     const { userId, productId, quantity = 1 } = await request.json();
     
@@ -178,6 +200,15 @@ export async function POST(request: NextRequest) {
         { error: 'İstifadəçi ID və məhsul ID tələb olunur' },
         { status: 400 }
       );
+    }
+
+    // Create a unique key for this request
+    requestKey = `${userId}-${productId}`;
+    
+    // Check if there's already a pending request for this user-product combination
+    if (pendingRequests.has(requestKey)) {
+      console.log('Request already in progress, returning existing promise');
+      return await pendingRequests.get(requestKey);
     }
 
     console.log('Adding to cart:', { userId, productId, quantity });
@@ -323,14 +354,27 @@ export async function POST(request: NextRequest) {
       console.log('Added new cart item:', cartItemData);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Məhsul səbətə əlavə edildi',
       cartItem: cartItemData
     });
 
+    // Clean up pending request
+    if (requestKey) {
+      pendingRequests.delete(requestKey);
+    }
+    
+    return response;
+
   } catch (error) {
     console.error('Add to cart error:', error);
+    
+    // Clean up pending request on error
+    if (requestKey) {
+      pendingRequests.delete(requestKey);
+    }
+    
     return NextResponse.json(
       { error: 'Səbətə əlavə etmə zamanı xəta baş verdi' },
       { status: 500 }
@@ -340,8 +384,13 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Quantity update deduplication
+const quantityUpdateRequests = new Map<string, Promise<any>>();
+
 // Update cart item quantity
 export async function PUT(request: NextRequest) {
+  let requestKey: string | null = null;
+  
   try {
     const { cartItemId, quantity } = await request.json();
     
@@ -353,6 +402,15 @@ export async function PUT(request: NextRequest) {
         { error: 'Səbət elementi ID və miqdar tələb olunur' },
         { status: 400 }
       );
+    }
+
+    // Create a unique key for this quantity update request
+    requestKey = `quantity-${cartItemId}`;
+    
+    // Check if there's already a pending quantity update for this cart item
+    if (quantityUpdateRequests.has(requestKey)) {
+      console.log('Quantity update already in progress, returning existing promise');
+      return await quantityUpdateRequests.get(requestKey);
     }
 
     dbClient = await getClient();
@@ -393,13 +451,26 @@ export async function PUT(request: NextRequest) {
       console.log('Cart item updated:', { cartItemId, quantity, newTotalPrice, newTotalSalePrice });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Səbət yeniləndi'
     });
 
+    // Clean up pending request
+    if (requestKey) {
+      quantityUpdateRequests.delete(requestKey);
+    }
+    
+    return response;
+
   } catch (error) {
     console.error('Update cart error:', error);
+    
+    // Clean up pending request on error
+    if (requestKey) {
+      quantityUpdateRequests.delete(requestKey);
+    }
+    
     return NextResponse.json(
       { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
       { status: 500 }

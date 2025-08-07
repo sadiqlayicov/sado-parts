@@ -41,6 +41,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const hasLoadedCart = useRef(false);
+  
+  // Debouncing for add to cart
+  const addToCartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingAddToCart = useRef<Set<string>>(new Set());
+  
+  // Debouncing for quantity updates
+  const quantityUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingQuantityUpdates = useRef<Map<string, number>>(new Map());
 
   // Cart items count
   const cartItemsCount = cartItems.reduce((sum, item) => sum + parseInt(item.quantity.toString()), 0);
@@ -143,14 +151,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Prevent multiple simultaneous requests for the same product
-    if (isLoading) {
-      console.log('Add to cart already in progress, skipping...');
+    // Check if this product is already being added
+    if (pendingAddToCart.current.has(productId)) {
+      console.log('Add to cart already in progress for product:', productId);
       return;
     }
 
-    setIsLoading(true);
-    const optimisticId = `temp-${Date.now()}`;
+    // Add to pending set
+    pendingAddToCart.current.add(productId);
+
+    // Clear existing timeout
+    if (addToCartTimeoutRef.current) {
+      clearTimeout(addToCartTimeoutRef.current);
+    }
+
+    // Set new timeout for debouncing
+    addToCartTimeoutRef.current = setTimeout(async () => {
+      setIsLoading(true);
+      const optimisticId = `temp-${Date.now()}`;
     
     try {
       console.log('Adding to cart:', { productId, quantity, userId: user.id });
@@ -249,7 +267,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       alert('Səbətə əlavə etmə zamanı xəta baş verdi');
     } finally {
       setIsLoading(false);
+      // Remove from pending set
+      pendingAddToCart.current.delete(productId);
     }
+    }, 300); // 300ms debounce delay
   };
 
   const removeFromCart = async (cartItemId: string) => {
@@ -276,29 +297,50 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQuantity = async (cartItemId: string, quantity: number) => {
     if (!user?.id) return;
 
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/cart', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cartItemId, quantity })
-      });
+    // Store the pending update
+    pendingQuantityUpdates.current.set(cartItemId, quantity);
 
-      if (response.ok) {
-        // Update item in local state instead of refreshing
-        setCartItems(prevItems => 
-          prevItems.map(item => 
-            item.id === cartItemId 
-              ? { ...item, quantity, totalPrice: item.price * quantity, totalSalePrice: item.salePrice * quantity }
-              : item
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Update quantity error:', error);
-    } finally {
-      setIsLoading(false);
+    // Clear existing timeout
+    if (quantityUpdateTimeoutRef.current) {
+      clearTimeout(quantityUpdateTimeoutRef.current);
     }
+
+    // Set new timeout for debouncing
+    quantityUpdateTimeoutRef.current = setTimeout(async () => {
+      const finalQuantity = pendingQuantityUpdates.current.get(cartItemId);
+      if (finalQuantity === undefined) return;
+
+      // Optimistic update
+      setCartItems(prevItems => 
+        prevItems.map(item => 
+          item.id === cartItemId 
+            ? { ...item, quantity: finalQuantity, totalPrice: item.price * finalQuantity, totalSalePrice: item.salePrice * finalQuantity }
+            : item
+        )
+      );
+
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/cart', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cartItemId, quantity: finalQuantity })
+        });
+
+        if (!response.ok) {
+          // Revert optimistic update on error
+          await refreshCart();
+        }
+      } catch (error) {
+        console.error('Update quantity error:', error);
+        // Revert optimistic update on error
+        await refreshCart();
+      } finally {
+        setIsLoading(false);
+        // Clear pending update
+        pendingQuantityUpdates.current.delete(cartItemId);
+      }
+    }, 500); // 500ms debounce delay
   };
 
   const clearCart = async () => {
