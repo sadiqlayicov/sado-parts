@@ -84,7 +84,14 @@ export default function AdminOrderDetailsPage() {
       const data = await response.json();
       
       if (data.success) {
-        fetchOrderDetails(); // Refresh order
+        // Optimize: Update local state instead of full refresh
+        setOrder(prevOrder => {
+          if (!prevOrder) return null;
+          return {
+            ...prevOrder,
+            status: status
+          };
+        });
         alert(`Sifariş statusu uğurla ${status === 'approved' ? 'təsdiqləndi' : status === 'rejected' ? 'rədd edildi' : 'dəyişdirildi'}`);
       } else {
         alert('Status yeniləmə zamanı xəta baş verdi');
@@ -112,14 +119,65 @@ export default function AdminOrderDetailsPage() {
       const data = await response.json();
       
       if (data.success) {
-        fetchOrderDetails(); // Refresh order
-        alert('Məhsul sayı uğurla yeniləndi');
+        // Optimize: Update local state instead of full refresh
+        setOrder(prevOrder => {
+          if (!prevOrder) return null;
+          return {
+            ...prevOrder,
+            items: prevOrder.items.map(item => 
+              item.id === itemId 
+                ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity }
+                : item
+            ),
+            totalAmount: data.data.orderTotal
+          };
+        });
+        console.log('Item quantity updated successfully:', { itemId, newQuantity, orderTotal: data.data.orderTotal });
       } else {
         alert('Məhsul sayı yeniləmə zamanı xəta baş verdi');
       }
     } catch (error) {
       console.error('Error updating item quantity:', error);
       alert('Məhsul sayı yeniləmə zamanı xəta baş verdi');
+    }
+  };
+
+  const removeItem = async (itemId: string) => {
+    if (!confirm('Bu məhsulu sifarişdən silmək istədiyinizə əminsiniz?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/orders/remove-item', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId,
+          itemId
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Optimize: Update local state instead of full refresh
+        setOrder(prevOrder => {
+          if (!prevOrder) return null;
+          return {
+            ...prevOrder,
+            items: prevOrder.items.filter(item => item.id !== itemId),
+            totalAmount: data.data.orderTotal
+          };
+        });
+        alert('Məhsul uğurla silindi');
+      } else {
+        alert('Məhsul silmə zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Error removing item:', error);
+      alert('Məhsul silmə zamanı xəta baş verdi');
     }
   };
 
@@ -289,6 +347,12 @@ export default function AdminOrderDetailsPage() {
                         </div>
                         <p className="text-gray-400 text-sm">{item.price.toFixed(2)} ₼</p>
                         <p className="text-cyan-500 font-bold">{item.totalPrice.toFixed(2)} ₼</p>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition"
+                        >
+                          🗑️ Sil
+                        </button>
                       </div>
                     </div>
                   </div>

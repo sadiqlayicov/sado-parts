@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const updatedItem = itemResult.rows[0];
     const newTotalPrice = parseFloat(updatedItem.price) * quantity;
 
-    // Update order total amount
+    // Update order total amount more efficiently
     const orderResult = await dbClient.query(
       `UPDATE orders 
        SET "totalAmount" = (
@@ -73,7 +73,9 @@ export async function POST(request: NextRequest) {
        ),
        "updatedAt" = CURRENT_TIMESTAMP 
        WHERE id = $1 
-       RETURNING id, "totalAmount"`,
+       RETURNING id, "totalAmount", (
+         SELECT COUNT(*) FROM order_items WHERE "orderId" = $1
+       ) as "itemCount"`,
       [orderId]
     );
 
@@ -94,7 +96,8 @@ export async function POST(request: NextRequest) {
         itemId,
         quantity,
         totalPrice: newTotalPrice,
-        orderTotal: updatedOrder.totalAmount
+        orderTotal: updatedOrder.totalAmount,
+        itemCount: parseInt(updatedOrder.itemCount)
       }
     });
 

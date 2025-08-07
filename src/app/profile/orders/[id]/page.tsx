@@ -65,6 +65,17 @@ export default function UserOrderDetailsPage() {
     }
   };
 
+  // Real-time updates for customer view
+  useEffect(() => {
+    if (!order) return;
+    
+    const interval = setInterval(() => {
+      fetchOrderDetails();
+    }, 30000); // Update every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [order?.id]);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':

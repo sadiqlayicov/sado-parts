@@ -1,41 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-// Simple database connection function
+// Connection pool for better performance
+let client: Client | null = null;
+
 async function getClient() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
-  
-  try {
+  if (!client) {
+    client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
     await client.connect();
-    console.log('Database connected successfully');
-    return client;
-  } catch (error) {
-    console.error('Database connection error:', error);
-    throw error;
   }
+  return client;
 }
 
-async function closeClient(client: Client) {
-  try {
-    if (client) {
-      await client.end();
-      console.log('Database connection closed');
-    }
-  } catch (error) {
-    console.error('Error closing database connection:', error);
+async function closeClient() {
+  if (client) {
+    await client.end();
+    client = null;
   }
 }
 
 // Get product info from database
 async function getProductInfo(productId: string) {
-  let dbClient: Client | null = null;
   try {
     console.log('Looking up product with ID:', productId);
     
-    dbClient = await getClient();
+    const dbClient = await getClient();
     
     // Try to find by productId (UUID) first
     let result = await dbClient.query(
@@ -65,14 +57,12 @@ async function getProductInfo(productId: string) {
     
     console.log('No product found for ID:', productId);
     return null;
-  } catch (error) {
-    console.error('Error in getProductInfo:', error);
-    return null;
-  } finally {
-    if (dbClient) {
-      await closeClient(dbClient);
+      } catch (error) {
+      console.error('Error in getProductInfo:', error);
+      return null;
+    } finally {
+      await closeClient();
     }
-  }
 }
 
 // Get user cart
@@ -164,7 +154,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response);
       
     } finally {
-      await closeClient(dbClient);
+      await closeClient();
     }
 
   } catch (error) {
@@ -178,10 +168,10 @@ export async function GET(request: NextRequest) {
 
 // Add item to cart
 export async function POST(request: NextRequest) {
-  let dbClient: Client | null = null;
-  
   try {
     const { userId, productId, quantity = 1 } = await request.json();
+    
+    let dbClient: Client | null = null;
 
     if (!userId || !productId) {
       return NextResponse.json(
@@ -346,18 +336,16 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    if (dbClient) {
-      await closeClient(dbClient);
-    }
+    await closeClient();
   }
 }
 
 // Update cart item quantity
 export async function PUT(request: NextRequest) {
-  let dbClient: Client | null = null;
-  
   try {
     const { cartItemId, quantity } = await request.json();
+    
+    let dbClient: Client | null = null;
     console.log('PUT /api/cart called with:', { cartItemId, quantity });
 
     if (!cartItemId || quantity === undefined) {
@@ -417,9 +405,7 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    if (dbClient) {
-      await closeClient(dbClient);
-    }
+    await closeClient();
   }
 }
 
