@@ -31,10 +31,10 @@ export async function GET(request: NextRequest) {
     `)
 
     return successResponse(result.rows, `${result.rows.length} kateqoriya tapıldı`)
-  } catch (error) {
+  } catch (error: any) {
     logError('GET /api/categories', error)
     
-    if (error.message.includes('Max client connections reached')) {
+    if (error.message?.includes('Max client connections reached')) {
       return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
     }
     
@@ -71,10 +71,10 @@ export async function POST(request: NextRequest) {
     `, [name, description || '', isActive !== false])
 
     return successResponse(result.rows[0], 'Kateqoriya uğurla yaradıldı')
-  } catch (error) {
+  } catch (error: any) {
     logError('POST /api/categories', error)
     
-    if (error.message.includes('Max client connections reached')) {
+    if (error.message?.includes('Max client connections reached')) {
       return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
     }
     
