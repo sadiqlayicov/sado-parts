@@ -151,10 +151,13 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('Update order error:', error);
-    await closeClient();
     return NextResponse.json(
       { error: 'Sifariş yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (dbClient) {
+      await closeClient(dbClient);
+    }
   }
 } 
