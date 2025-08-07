@@ -164,21 +164,16 @@ export async function GET(request: NextRequest) {
       const userCart = result.rows;
       console.log('Raw cart items from database:', userCart);
       
-      // Recalculate prices based on current user discount and fresh product data
+      // Recalculate prices based on current user discount
       const recalculatedCart = await Promise.all(userCart.map(async item => {
         const originalPrice = parseFloat(item.price);
         let finalSalePrice = originalPrice;
         
-        // Get fresh product data to check for product-specific sale prices
-        const freshProductInfo = await getProductInfo(item.productId);
-        
         // Apply current user discount if any
         if (userDiscount > 0) {
           finalSalePrice = Math.floor(originalPrice * (1 - userDiscount / 100) * 100) / 100;
-        } else if (freshProductInfo && freshProductInfo.salePrice && freshProductInfo.salePrice > 0 && freshProductInfo.salePrice < originalPrice) {
-          // Use fresh product sale price only if no user discount
-          finalSalePrice = freshProductInfo.salePrice;
         }
+        // Note: We don't use product salePrice anymore, only user discount
         
         const quantity = parseInt(item.quantity);
         const newTotalPrice = originalPrice * quantity;
@@ -360,7 +355,7 @@ export async function POST(request: NextRequest) {
         [
           newQuantity,
           parseFloat(existingItem.price) * newQuantity,
-          parseFloat(existingItem.salePrice) * newQuantity,
+          parseFloat(existingItem.price) * newQuantity, // totalSalePrice = normal price (no discount at cart level)
           existingItem.id
         ]
       );
@@ -384,14 +379,14 @@ export async function POST(request: NextRequest) {
           productInfo.name,
           'Product description',
           originalPrice,
-          finalSalePrice,
+          originalPrice, // salePrice = normal price (no discount at cart level)
           [], // images array
           10, // stock
           productInfo.sku,
           productInfo.categoryName,
           quantity,
           originalPrice * quantity,
-          finalSalePrice * quantity
+          originalPrice * quantity // totalSalePrice = normal price (no discount at cart level)
         ]
       );
       

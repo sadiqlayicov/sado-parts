@@ -172,10 +172,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate total amount
+    // Calculate total amount - always use normal price, not salePrice
     let totalAmount = 0;
     userCart.forEach((item: any) => {
-      const price = item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price);
+      const price = parseFloat(item.price); // Always use normal price
       totalAmount += price * parseInt(item.quantity);
     });
 
@@ -201,8 +201,8 @@ export async function POST(request: NextRequest) {
         productId: item.productId,
         name: item.name,
         quantity: item.quantity,
-        price: item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price),
-        totalPrice: (item.salePrice ? parseFloat(item.salePrice) : parseFloat(item.price)) * parseInt(item.quantity),
+        price: parseFloat(item.price), // Always use normal price
+        totalPrice: parseFloat(item.price) * parseInt(item.quantity), // Always use normal price
         sku: item.sku,
         categoryName: item.categoryName
       }))
