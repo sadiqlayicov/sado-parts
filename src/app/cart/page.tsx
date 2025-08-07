@@ -35,6 +35,7 @@ export default function CartPage() {
     refreshCart,
     updateQuantity,
     removeFromCart,
+    clearCart,
     isLoading: cartLoading
   } = useCart();
   const router = useRouter();
