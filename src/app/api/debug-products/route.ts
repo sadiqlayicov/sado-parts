@@ -41,7 +41,7 @@ export async function GET() {
     console.error('Debug API error:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   } finally {
     await client.end();
