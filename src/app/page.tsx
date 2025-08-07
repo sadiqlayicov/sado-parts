@@ -27,18 +27,27 @@ export default function HomePage() {
         const productsData = await productsRes.json();
         console.log('Products data:', productsData);
         
-        if (Array.isArray(productsData)) {
+        // Check if response has success and data properties (new API format)
+        if (productsData.success && Array.isArray(productsData.data)) {
+          setProducts(productsData.data);
+          console.log(`Loaded ${productsData.data.length} products`);
+        } else if (Array.isArray(productsData)) {
+          // Fallback for old API format
           setProducts(productsData);
           console.log(`Loaded ${productsData.length} products`);
         } else {
-          console.error('Products data is not an array:', productsData);
+          console.error('Products data is not in expected format:', productsData);
           setProducts([]);
         }
         
         const categoriesRes = await fetch('/api/categories');
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json();
-          if (Array.isArray(categoriesData)) {
+          // Check if response has success and data properties (new API format)
+          if (categoriesData.success && Array.isArray(categoriesData.data)) {
+            setCategories(categoriesData.data);
+          } else if (Array.isArray(categoriesData)) {
+            // Fallback for old API format
             setCategories(categoriesData);
           } else {
             setCategories([]);

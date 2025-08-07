@@ -21,7 +21,13 @@ export default function ProductPage() {
     fetch(`/api/products/${id}`)
       .then(res => res.json())
       .then(data => {
-        setProduct(data);
+        // Check if response has success and data properties (new API format)
+        if (data.success && data.data) {
+          setProduct(data.data);
+        } else {
+          // Fallback for old API format
+          setProduct(data);
+        }
         setLoading(false);
       });
   }, [id]);

@@ -73,11 +73,27 @@ function CatalogPage() {
       try {
         const productsRes = await fetch('/api/products');
         const productsData = await productsRes.json();
-        setProducts(Array.isArray(productsData) ? productsData : []);
+        // Check if response has success and data properties (new API format)
+        if (productsData.success && Array.isArray(productsData.data)) {
+          setProducts(productsData.data);
+        } else if (Array.isArray(productsData)) {
+          // Fallback for old API format
+          setProducts(productsData);
+        } else {
+          setProducts([]);
+        }
 
         const categoriesRes = await fetch('/api/categories');
         const categoriesData = await categoriesRes.json();
-        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        // Check if response has success and data properties (new API format)
+        if (categoriesData.success && Array.isArray(categoriesData.data)) {
+          setCategories(categoriesData.data);
+        } else if (Array.isArray(categoriesData)) {
+          // Fallback for old API format
+          setCategories(categoriesData);
+        } else {
+          setCategories([]);
+        }
       } catch (error) {
         console.error('Ошибка получения данных:', error);
         setProducts([]);
