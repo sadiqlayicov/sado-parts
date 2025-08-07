@@ -31,10 +31,26 @@ export default function HomePage() {
         if (productsData.success && Array.isArray(productsData.data)) {
           setProducts(productsData.data);
           console.log(`Loaded ${productsData.data.length} products`);
+          // Debug: Check first few products for salePrice values
+          if (productsData.data.length > 0) {
+            console.log('First 3 products salePrice values:', productsData.data.slice(0, 3).map((p: any) => ({
+              name: p.name,
+              price: p.price,
+              salePrice: p.salePrice
+            })));
+          }
         } else if (Array.isArray(productsData)) {
           // Fallback for old API format
           setProducts(productsData);
           console.log(`Loaded ${productsData.length} products`);
+          // Debug: Check first few products for salePrice values
+          if (productsData.length > 0) {
+            console.log('First 3 products salePrice values:', productsData.slice(0, 3).map((p: any) => ({
+              name: p.name,
+              price: p.price,
+              salePrice: p.salePrice
+            })));
+          }
         } else {
           console.error('Products data is not in expected format:', productsData);
           setProducts([]);
@@ -195,6 +211,16 @@ export default function HomePage() {
     .slice(0, 5);
 
   function ProductCard({ product, onAddToCart, onToggleWishlist, isWishlisted }: any) {
+    // Debug: Log product price info
+    console.log('ProductCard render:', {
+      name: product.name,
+      price: product.price,
+      salePrice: product.salePrice,
+      isAuthenticated,
+      isApproved,
+      userDiscount: user?.discountPercentage
+    });
+    
     return (
       <div className="bg-[#1e293b] rounded-lg p-3 hover:bg-cyan-900 transition-all duration-300 hover:scale-105 flex flex-col h-96 cursor-pointer group relative">
         <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
