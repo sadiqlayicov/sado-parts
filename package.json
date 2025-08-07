@@ -26,6 +26,7 @@
     "@types/pg": "^8.15.5",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
     "i18next": "^23.0.1",
     "i18next-browser-languagedetector": "^8.2.0",
     "jsonwebtoken": "^9.0.2",

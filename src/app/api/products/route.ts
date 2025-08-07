@@ -1,21 +1,27 @@
 import { NextRequest } from 'next/server'
-import { Client } from 'pg'
+import { Pool } from 'pg'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
+
+// Create a connection pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false
+  } : false,
+  max: 2, // Limit connections
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+})
 
 /**
  * GET - Get all products
  * Fetches all active products with their category information
  */
 export async function GET(request: NextRequest) {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? {
-      rejectUnauthorized: false
-    } : false
-  })
-
+  let client;
+  
   try {
-    await client.connect()
+    client = await pool.connect();
 
     // Get products with categories
     const productsResult = await client.query(`
@@ -70,9 +76,17 @@ export async function GET(request: NextRequest) {
     return successResponse(products, `${products.length} məhsul tapıldı`)
   } catch (error) {
     logError('GET /api/products', error)
+    
+    // Handle specific database errors
+    if (error.message.includes('Max client connections reached')) {
+      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
+    }
+    
     return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
   } finally {
-    await client.end()
+    if (client) {
+      client.release()
+    }
   }
 }
 
@@ -81,13 +95,8 @@ export async function GET(request: NextRequest) {
  * Creates a new product with validation
  */
 export async function POST(request: NextRequest) {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? {
-      rejectUnauthorized: false
-    } : false
-  })
-
+  let client;
+  
   try {
     const body = await request.json()
     const { name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured, artikul, catalogNumber } = body
@@ -98,45 +107,36 @@ export async function POST(request: NextRequest) {
     }
 
     if (!price || isNaN(parseFloat(price))) {
-      return errorResponse(ErrorMessages.INVALID_PRICE, 400)
+      return errorResponse(ErrorMessages.REQUIRED_FIELD('Qiymət'), 400)
     }
 
-    await client.connect()
+    client = await pool.connect();
 
-    const imagesArray = images ? (Array.isArray(images) ? images : [images]) : []
-    
+    // Create product
     const result = await client.query(`
       INSERT INTO products (
-        id, name, description, price, "salePrice", sku, stock, images, 
+        name, description, price, "salePrice", sku, stock, images, 
         "categoryId", "isActive", "isFeatured", artikul, "catalogNumber"
-      ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [
-      name,
-      description,
-      parseFloat(price),
-      salePrice ? parseFloat(salePrice) : null,
-      sku,
-      parseInt(stock) || 0,
-      imagesArray,
-      categoryId,
-      isActive !== undefined ? isActive : true,
-      isFeatured !== undefined ? isFeatured : false,
-      artikul || null,
-      catalogNumber || null
+      name, description, parseFloat(price), salePrice ? parseFloat(salePrice) : null,
+      sku, stock || 0, images || [], categoryId, isActive !== false, isFeatured || false,
+      artikul, catalogNumber
     ])
 
-    const product = result.rows[0]
-
-    return successResponse(
-      { ...product, images: imagesArray },
-      'Məhsul uğurla əlavə olundu',
-      201
-    )
+    return successResponse(result.rows[0], 'Məhsul uğurla yaradıldı')
   } catch (error) {
     logError('POST /api/products', error)
-    return errorResponse(ErrorMessages.CREATION_FAILED('məhsul'), 500)
+    
+    if (error.message.includes('Max client connections reached')) {
+      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
+    }
+    
+    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
   } finally {
-    await client.end()
+    if (client) {
+      client.release()
+    }
   }
 } 
