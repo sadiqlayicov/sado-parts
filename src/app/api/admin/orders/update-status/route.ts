@@ -1,28 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-// Vercel üçün connection pool
-let client: Client | null = null;
-
-async function getClient() {
-  if (!client) {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    await client.connect();
-  }
-  return client;
-}
-
-async function closeClient() {
-  if (client) {
-    await client.end();
-    client = null;
-  }
-}
+// Create a connection pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 2, // Limit connections
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
 export async function POST(request: NextRequest) {
+  let client;
+  
   try {
     const { orderId, status } = await request.json();
     
@@ -35,8 +25,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate status
-    const validStatuses = ['pending', 'completed', 'approved', 'rejected'];
+    // Validate status - include new statuses from the order system
+    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { error: 'Etibarsız status' },
@@ -44,10 +34,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const dbClient = await getClient();
+    client = await pool.connect();
     
     // Update order status
-    const result = await dbClient.query(
+    const result = await client.query(
       `UPDATE orders 
        SET status = $1, "updatedAt" = CURRENT_TIMESTAMP 
        WHERE id = $2 
@@ -75,13 +65,23 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update order status error:', error);
+    
+    if (error.message?.includes('Max client connections reached')) {
+      return NextResponse.json(
+        { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Status yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    await closeClient();
+    if (client) {
+      client.release();
+    }
   }
 } 

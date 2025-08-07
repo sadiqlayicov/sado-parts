@@ -364,6 +364,14 @@ export default function ProfilePage() {
            >
              Sifarişlər ({orders.length})
            </button>
+           <Link
+             href="/profile/orders"
+             className={`flex-1 py-3 px-4 rounded-md font-medium transition text-center ${
+               'bg-blue-500 text-white'
+             }`}
+           >
+             Bütün Sifarişlər
+           </Link>
            <button
              onClick={() => setActiveTab('addresses')}
              className={`flex-1 py-3 px-4 rounded-md font-medium transition ${

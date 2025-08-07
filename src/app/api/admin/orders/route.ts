@@ -1,47 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-// Simple database connection function
-async function getClient() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
-  
-  try {
-    await client.connect();
-    console.log('Database connected successfully');
-    return client;
-  } catch (error) {
-    console.error('Database connection error:', error);
-    throw error;
-  }
-}
-
-async function closeClient(client: Client) {
-  try {
-    if (client) {
-      await client.end();
-      console.log('Database connection closed');
-    }
-  } catch (error) {
-    console.error('Error closing database connection:', error);
-  }
-}
+// Create a connection pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 2, // Limit connections
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
 // Get all orders for admin
 export async function GET(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let client;
   
   try {
     console.log('GET /api/admin/orders called');
 
     // Get orders from database
     try {
-      dbClient = await getClient();
+      client = await pool.connect();
       
       // Get all orders with user information
-      const ordersResult = await dbClient.query(`
+      const ordersResult = await client.query(`
         SELECT 
           o.*,
           u.name as customer_name,
@@ -56,12 +37,12 @@ export async function GET(request: NextRequest) {
 
       // Get order items for each order
       const ordersWithItems = await Promise.all(
-        ordersResult.rows.map(async (order) => {
-          if (!dbClient) {
+        ordersResult.rows.map(async (order: any) => {
+          if (!client) {
             throw new Error('Database client is null');
           }
           
-          const itemsResult = await dbClient.query(`
+          const itemsResult = await client.query(`
             SELECT oi.*, p.name, p.sku, p.artikul, c.name as "categoryName"
             FROM order_items oi
             LEFT JOIN products p ON oi."productId" = p.id
@@ -71,7 +52,7 @@ export async function GET(request: NextRequest) {
 
           return {
             ...order,
-            items: itemsResult.rows.map(item => ({
+            items: itemsResult.rows.map((item: any) => ({
               id: item.id,
               productId: item.productId,
               name: item.name || 'Unknown Product',
@@ -92,33 +73,41 @@ export async function GET(request: NextRequest) {
         orders: ordersWithItems
       });
 
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('Database error:', dbError);
+      
+      if (dbError.message?.includes('Max client connections reached')) {
+        return NextResponse.json(
+          { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
+          { status: 503 }
+        );
+      }
+      
       return NextResponse.json(
         { error: 'Verilənlər bazası xətası' },
         { status: 500 }
       );
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get admin orders error:', error);
     return NextResponse.json(
       { error: 'Sifarişlər əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    if (dbClient) {
-      await closeClient(dbClient);
+    if (client) {
+      client.release();
     }
   }
 }
 
 // Update order status
 export async function PUT(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let client;
   
   try {
-    dbClient = await getClient();
+    client = await pool.connect();
     
     const { orderId, status } = await request.json();
 
@@ -129,7 +118,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const result = await dbClient.query(`
+    const result = await client.query(`
       UPDATE orders 
       SET status = $1, "updatedAt" = NOW()
       WHERE id = $2
@@ -149,15 +138,23 @@ export async function PUT(request: NextRequest) {
       order: result.rows[0]
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update order error:', error);
+    
+    if (error.message?.includes('Max client connections reached')) {
+      return NextResponse.json(
+        { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Sifariş yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    if (dbClient) {
-      await closeClient(dbClient);
+    if (client) {
+      client.release();
     }
   }
 } 

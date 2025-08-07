@@ -77,7 +77,14 @@ export default function AdminOrdersPage() {
       
       if (data.success) {
         fetchAllOrders(); // Refresh orders
-        alert(`Sifariş statusu uğurla ${status === 'approved' ? 'təsdiqləndi' : status === 'rejected' ? 'rədd edildi' : 'dəyişdirildi'}`);
+        const statusMessages = {
+          'confirmed': 'təsdiqləndi',
+          'processing': 'işləməyə başladı',
+          'shipped': 'göndərildi',
+          'delivered': 'çatdırıldı',
+          'cancelled': 'ləğv edildi'
+        };
+        alert(`Sifariş statusu uğurla ${statusMessages[status as keyof typeof statusMessages] || 'dəyişdirildi'}`);
       } else {
         alert('Status yeniləmə zamanı xəta baş verdi');
       }
@@ -90,13 +97,17 @@ export default function AdminOrdersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-1 py-0.5 bg-yellow-500 text-white text-xs rounded-full whitespace-nowrap">Gözləmədə</span>;
-      case 'completed':
-        return <span className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded-full whitespace-nowrap">Təsdiq gözləyir</span>;
-      case 'approved':
-        return <span className="px-1 py-0.5 bg-green-500 text-white text-xs rounded-full whitespace-nowrap">Təsdiqləndi</span>;
-      case 'rejected':
-        return <span className="px-1 py-0.5 bg-red-500 text-white text-xs rounded-full whitespace-nowrap">Rədd edildi</span>;
+        return <span className="px-1 py-0.5 bg-yellow-500 text-white text-xs rounded-full whitespace-nowrap">Gözləyir</span>;
+      case 'confirmed':
+        return <span className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded-full whitespace-nowrap">Təsdiqləndi</span>;
+      case 'processing':
+        return <span className="px-1 py-0.5 bg-purple-500 text-white text-xs rounded-full whitespace-nowrap">İşlənir</span>;
+      case 'shipped':
+        return <span className="px-1 py-0.5 bg-indigo-500 text-white text-xs rounded-full whitespace-nowrap">Göndərildi</span>;
+      case 'delivered':
+        return <span className="px-1 py-0.5 bg-green-500 text-white text-xs rounded-full whitespace-nowrap">Çatdırıldı</span>;
+      case 'cancelled':
+        return <span className="px-1 py-0.5 bg-red-500 text-white text-xs rounded-full whitespace-nowrap">Ləğv edildi</span>;
       default:
         return <span className="px-1 py-0.5 bg-gray-500 text-white text-xs rounded-full whitespace-nowrap">{status}</span>;
     }
@@ -107,16 +118,49 @@ export default function AdminOrdersPage() {
       return (
         <>
           <button
-            onClick={() => updateOrderStatus(order.id, 'approved')}
+            onClick={() => updateOrderStatus(order.id, 'confirmed')}
             className="px-1 py-0.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition whitespace-nowrap"
           >
             Təsdiqlə
           </button>
           <button
-            onClick={() => updateOrderStatus(order.id, 'rejected')}
+            onClick={() => updateOrderStatus(order.id, 'cancelled')}
             className="px-1 py-0.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition whitespace-nowrap"
           >
-            Rədd et
+            Ləğv et
+          </button>
+        </>
+      );
+    } else if (order.status === 'confirmed') {
+      return (
+        <>
+          <button
+            onClick={() => updateOrderStatus(order.id, 'processing')}
+            className="px-1 py-0.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded transition whitespace-nowrap"
+          >
+            İşləməyə başla
+          </button>
+        </>
+      );
+    } else if (order.status === 'processing') {
+      return (
+        <>
+          <button
+            onClick={() => updateOrderStatus(order.id, 'shipped')}
+            className="px-1 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded transition whitespace-nowrap"
+          >
+            Göndər
+          </button>
+        </>
+      );
+    } else if (order.status === 'shipped') {
+      return (
+        <>
+          <button
+            onClick={() => updateOrderStatus(order.id, 'delivered')}
+            className="px-1 py-0.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition whitespace-nowrap"
+          >
+            Çatdırıldı
           </button>
         </>
       );
