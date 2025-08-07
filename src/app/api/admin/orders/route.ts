@@ -1,186 +1,115 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
-// Vercel üçün connection pool
-let client: Client | null = null;
-
+// Simple database connection function
 async function getClient() {
-  if (!client) {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
     await client.connect();
-  }
-  return client;
-}
-
-async function closeClient() {
-  if (client) {
-    await client.end();
-    client = null;
-  }
-}
-
-// Get product info from database by productId
-async function getProductInfo(productId: string) {
-  try {
-    // First try to get from products API (this is more reliable)
-    try {
-      const productsResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/products`);
-      if (productsResponse.ok) {
-        const products = await productsResponse.json();
-        const foundProduct = products.find((p: any) => p.id === productId);
-        if (foundProduct) {
-          return {
-            name: foundProduct.name,
-            price: parseFloat(foundProduct.price) || 100,
-            salePrice: parseFloat(foundProduct.salePrice) || parseFloat(foundProduct.price) || 80,
-            sku: foundProduct.sku || foundProduct.artikul || `SKU-${productId}`,
-            categoryName: foundProduct.category?.name || 'General'
-          };
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching from products API:', error);
-    }
-    
-    // If API fails, try database
-    try {
-      const dbClient = await getClient();
-      
-      // Try to find by productId (UUID) first
-      let result = await dbClient.query(
-        'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.id = $1',
-        [productId]
-      );
-      
-      // If not found by ID, try to find by SKU
-      if (result.rows.length === 0) {
-        result = await dbClient.query(
-          'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p."categoryId" = c.id WHERE p.sku = $1',
-          [productId]
-        );
-      }
-      
-      if (result.rows.length > 0) {
-        const product = result.rows[0];
-        return {
-          name: product.name,
-          price: parseFloat(product.price) || 100,
-          salePrice: parseFloat(product.salePrice) || parseFloat(product.price) || 80,
-          sku: product.sku || product.artikul || `SKU-${productId}`,
-          categoryName: product.category_name || 'General'
-        };
-      }
-    } catch (dbError) {
-      console.error('Error getting product info from database:', dbError);
-    }
-    
-    return null;
+    console.log('Database connected successfully');
+    return client;
   } catch (error) {
-    console.error('Error in getProductInfo:', error);
-    return null;
+    console.error('Database connection error:', error);
+    throw error;
   }
 }
 
+async function closeClient(client: Client) {
+  try {
+    if (client) {
+      await client.end();
+      console.log('Database connection closed');
+    }
+  } catch (error) {
+    console.error('Error closing database connection:', error);
+  }
+}
+
+// Get all orders for admin
 export async function GET(request: NextRequest) {
+  let dbClient: Client | null = null;
+  
   try {
-    const dbClient = await getClient();
-    
-    // Get all orders with user information
-    const ordersResult = await dbClient.query(`
-      SELECT o.*, 
-             u."firstName", u."lastName", u.email, u.phone
-      FROM orders o
-      LEFT JOIN users u ON o."userId" = u.id
-      ORDER BY o."createdAt" DESC
-    `);
+    console.log('GET /api/admin/orders called');
 
-    const orders = ordersResult.rows;
-    console.log('Found orders:', orders.length);
+    // Get orders from database
+    try {
+      dbClient = await getClient();
+      
+      // Get all orders with user information
+      const ordersResult = await dbClient.query(`
+        SELECT 
+          o.*,
+          u.name as customer_name,
+          u.email as customer_email,
+          u.phone as customer_phone
+        FROM orders o
+        LEFT JOIN users u ON o."userId" = u.id
+        ORDER BY o."createdAt" DESC
+      `);
 
-    // Enhance orders with items and customer info
-    const enhancedOrders = await Promise.all(orders.map(async (order: any) => {
-      try {
-        // Get order items
-        const itemsResult = await dbClient.query(
-          'SELECT * FROM order_items WHERE "orderId" = $1',
-          [order.id]
-        );
+      console.log('Found orders:', ordersResult.rows.length);
 
-        const items = itemsResult.rows;
-        console.log(`Order ${order.id} has ${items.length} items`);
-
-        // Enhance items with product information
-        const enhancedItems = await Promise.all(items.map(async (item: any) => {
-          try {
-            const productInfo = await getProductInfo(item.productId);
-            
-            return {
-              id: item.id,
-              productId: item.productId,
-              name: productInfo?.name || `Məhsul ${item.productId}`,
-              quantity: parseInt(item.quantity) || 1,
-              price: parseFloat(item.price) || 0,
-              totalPrice: (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1),
-              sku: productInfo?.sku || item.productId,
-              categoryName: productInfo?.categoryName || 'General'
-            };
-          } catch (itemError) {
-            console.error('Error processing item:', itemError);
-            return {
-              id: item.id,
-              productId: item.productId,
-              name: `Məhsul ${item.productId}`,
-              quantity: parseInt(item.quantity) || 1,
-              price: parseFloat(item.price) || 0,
-              totalPrice: (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1),
-              sku: item.productId,
-              categoryName: 'General'
-            };
+      // Get order items for each order
+      const ordersWithItems = await Promise.all(
+        ordersResult.rows.map(async (order) => {
+          if (!dbClient) {
+            throw new Error('Database client is null');
           }
-        }));
+          
+          const itemsResult = await dbClient.query(`
+            SELECT oi.*, p.name, p.sku, p.artikul, c.name as "categoryName"
+            FROM order_items oi
+            LEFT JOIN products p ON oi."productId" = p.id
+            LEFT JOIN categories c ON p."categoryId" = c.id
+            WHERE oi."orderId" = $1
+          `, [order.id]);
 
-        // Ensure totalAmount is a number
-        const totalAmount = parseFloat(order.totalAmount?.toString() || '0') || 0;
+          return {
+            ...order,
+            items: itemsResult.rows.map(item => ({
+              id: item.id,
+              productId: item.productId,
+              name: item.name || 'Unknown Product',
+              quantity: item.quantity,
+              price: parseFloat(item.price) || 0,
+              totalPrice: (parseFloat(item.price) || 0) * item.quantity,
+              sku: item.sku || item.artikul || 'N/A',
+              categoryName: item.categoryName || 'General'
+            }))
+          };
+        })
+      );
 
-        return {
-          ...order,
-          totalAmount: totalAmount,
-          items: enhancedItems,
-          customerName: order.firstName && order.lastName ? `${order.firstName} ${order.lastName}` : order.email,
-          customerEmail: order.email,
-          customerPhone: order.phone
-        };
-      } catch (orderError) {
-        console.error('Error processing order:', orderError);
-        return {
-          ...order,
-          totalAmount: parseFloat(order.totalAmount?.toString() || '0') || 0,
-          items: [],
-          customerName: order.firstName && order.lastName ? `${order.firstName} ${order.lastName}` : order.email,
-          customerEmail: order.email,
-          customerPhone: order.phone
-        };
-      }
-    }));
+      console.log('Orders with items processed:', ordersWithItems.length);
 
-    console.log('Enhanced orders processed:', enhancedOrders.length);
+      return NextResponse.json({
+        success: true,
+        orders: ordersWithItems
+      });
 
-    return NextResponse.json({
-      success: true,
-      orders: enhancedOrders
-    });
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return NextResponse.json(
+        { error: 'Verilənlər bazası xətası' },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
-    console.error('Get all orders error:', error);
+    console.error('Get admin orders error:', error);
     return NextResponse.json(
-      { error: 'Sifarişləri əldə etmə zamanı xəta baş verdi' },
+      { error: 'Sifarişlər əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    await closeClient();
+    if (dbClient) {
+      await closeClient(dbClient);
+    }
   }
 }
 
