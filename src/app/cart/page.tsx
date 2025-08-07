@@ -24,7 +24,7 @@ interface CartItem {
 }
 
 export default function CartPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { 
     cartItems, 
@@ -36,7 +36,7 @@ export default function CartPage() {
     updateQuantity,
     removeFromCart,
     clearCart,
-    isLoading: cartLoading
+    isLoading
   } = useCart();
   const router = useRouter();
 
@@ -125,7 +125,7 @@ export default function CartPage() {
       return;
     }
     
-    setIsLoading(true);
+    setCheckoutLoading(true);
     
     try {
       // Sifariş yarat
@@ -151,7 +151,7 @@ export default function CartPage() {
       if (data.success) {
         // Sifariş uğurla yaradıldı
         console.log('Order created successfully:', data.order);
-        setIsLoading(false);
+        setCheckoutLoading(false);
         
         // Səbəti təmizləmə - yalnız sifariş tamamlandıqdan sonra
         // Səbəti təmizləmirik, çünki istifadəçi "Alış-verişə davam et" düyməsini basa bilər
@@ -167,12 +167,12 @@ export default function CartPage() {
       
     } catch (error) {
       console.error('Sifariş xətası:', error);
-      setIsLoading(false);
+      setCheckoutLoading(false);
       alert('Sifariş yaratma zamanı xəta baş verdi. Yenidən cəhd edin.');
     }
   };
 
-  if (cartLoading) {
+  if (isLoading) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
         <div className="max-w-4xl mx-auto">
@@ -319,10 +319,10 @@ export default function CartPage() {
             
             <button 
               onClick={handleCheckout}
-              disabled={isLoading}
+              disabled={checkoutLoading}
               className="px-8 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-lg transition disabled:opacity-50 flex-1"
             >
-              {isLoading ? 'Sifariş yaradılır...' : 'Sifariş ver və hesab-faktura al'}
+              {checkoutLoading ? 'Sifariş yaradılır...' : 'Sifariş ver və hesab-faktura al'}
             </button>
           </div>
         </div>

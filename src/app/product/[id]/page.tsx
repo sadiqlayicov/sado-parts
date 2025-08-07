@@ -62,7 +62,7 @@ export default function ProductPage() {
     addToCart(product.id, quantity);
   };
 
-  const discountedPrice = isApproved && !isAdmin ? calculateDiscountedPrice(product.price, product.salePrice) : product.price;
+  const discountedPrice = isApproved && !isAdmin && getDiscountPercentage() > 0 ? calculateDiscountedPrice(product.price, product.salePrice) : (product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? product.salePrice : product.price);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">

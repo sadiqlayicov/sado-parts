@@ -286,6 +286,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQuantity = async (cartItemId: string, quantity: number) => {
     if (!user?.id) return;
 
+    // If quantity is 0 or negative, remove the item instead
+    if (quantity <= 0) {
+      await removeFromCart(cartItemId);
+      return;
+    }
+
     // Store the pending update
     pendingQuantityUpdates.current.set(cartItemId, quantity);
 
@@ -298,6 +304,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     quantityUpdateTimeoutRef.current = setTimeout(async () => {
       const finalQuantity = pendingQuantityUpdates.current.get(cartItemId);
       if (finalQuantity === undefined) return;
+
+      // If quantity became 0 or negative during debounce, remove item
+      if (finalQuantity <= 0) {
+        await removeFromCart(cartItemId);
+        return;
+      }
 
       // Optimistic update - immediately update UI without loading state
       setCartItems(prevItems => 
