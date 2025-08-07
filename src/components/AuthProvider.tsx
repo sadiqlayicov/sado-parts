@@ -227,14 +227,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Расчет цены со скидкой для одобренных пользователей
   const calculateDiscountedPrice = (originalPrice: number, productSalePrice?: number | null): number => {
-    // Priority: 1. User discount (if approved), 2. Product sale price (if no user discount)
+    // Yalnız təsdiqlənmiş və endirim faizi olan istifadəçilər üçün endirim tətbiq et
     if (isApproved && isAuthenticated && user && user.discountPercentage > 0) {
       const discountedPrice = originalPrice * (1 - user.discountPercentage / 100);
       return Math.floor(discountedPrice * 100) / 100; // Сохраняем 2 знака после запятой
-    } else if (productSalePrice && productSalePrice > 0 && productSalePrice < originalPrice) {
-      // Use product sale price only if no user discount
-      return productSalePrice;
     }
+    // Əks halda normal qiyməti qaytar
     return originalPrice;
   };
 

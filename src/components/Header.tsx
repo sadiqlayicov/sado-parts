@@ -238,7 +238,7 @@ export default function Header() {
                     {isAdmin && (
                       <p className="text-xs text-yellow-400">Администратор</p>
                     )}
-                    {isApproved && !isAdmin && (
+                    {isApproved && !isAdmin && getDiscountPercentage() > 0 && (
                       <p className="text-xs text-green-400">Скидка {getDiscountPercentage()}%</p>
                     )}
                     {!isApproved && !isAdmin && (

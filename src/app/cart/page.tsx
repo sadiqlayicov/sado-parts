@@ -25,7 +25,7 @@ interface CartItem {
 
 export default function CartPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isApproved, calculateDiscountedPrice } = useAuth();
   const { 
     cartItems, 
     cartItemsCount, 
@@ -221,10 +221,10 @@ export default function CartPage() {
                   <h3 className="text-lg font-semibold">{item.name}</h3>
                   <p className="text-sm text-gray-300">Artikul: {item.sku}</p>
                   <p className="text-sm text-gray-300">
-                    Qiymət: {item.salePrice < item.price ? (
+                    Qiymət: {isApproved && user && user.discountPercentage > 0 ? (
                       <span>
                         <span className="line-through text-gray-400">{item.price.toLocaleString()}</span>
-                        <span className="text-green-400 ml-2">{item.salePrice.toLocaleString()}</span>
+                        <span className="text-green-400 ml-2">{calculateDiscountedPrice(item.price, null).toLocaleString()}</span>
                       </span>
                     ) : (
                       item.price.toLocaleString()
@@ -254,11 +254,14 @@ export default function CartPage() {
                   
                   <div className="text-right">
                     <div className="text-lg font-semibold">
-                      {item.totalSalePrice.toLocaleString()} ₼
+                      {isApproved && user && user.discountPercentage > 0 ? 
+                        (calculateDiscountedPrice(item.price, null) * item.quantity).toLocaleString() : 
+                        item.totalPrice.toLocaleString()
+                      } ₼
                     </div>
-                    {item.salePrice < item.price && (
+                    {isApproved && user && user.discountPercentage > 0 && (
                       <div className="text-sm text-green-400">
-                        {item.totalPrice - item.totalSalePrice} ₼ qənaət
+                        {item.totalPrice - (calculateDiscountedPrice(item.price, null) * item.quantity)} ₼ qənaət
                       </div>
                     )}
                   </div>
@@ -281,7 +284,7 @@ export default function CartPage() {
                 <span>Məhsullar: {cartItemsCount}</span>
                 <span>Ümumi: {totalPrice.toLocaleString()} ₼</span>
               </div>
-              {savings > 0 && (
+              {isApproved && user && user.discountPercentage > 0 && (
                 <div className="flex justify-between items-center text-green-400">
                   <span>Qənaət:</span>
                   <span>-{savings.toLocaleString()} ₼</span>
@@ -289,7 +292,7 @@ export default function CartPage() {
               )}
               <div className="flex justify-between items-center text-xl font-bold border-t border-white/20 pt-2">
                 <span>Ödəniləcək:</span>
-                <span>{totalSalePrice.toLocaleString()} ₼</span>
+                <span>{isApproved && user && user.discountPercentage > 0 ? totalSalePrice.toLocaleString() : totalPrice.toLocaleString()} ₼</span>
               </div>
             </div>
           </div>

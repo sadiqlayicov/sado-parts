@@ -62,7 +62,7 @@ export default function ProductPage() {
     addToCart(product.id, quantity);
   };
 
-  const discountedPrice = isApproved && !isAdmin && getDiscountPercentage() > 0 ? calculateDiscountedPrice(product.price, product.salePrice) : (product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? product.salePrice : product.price);
+  const discountedPrice = isApproved && !isAdmin && getDiscountPercentage() > 0 ? calculateDiscountedPrice(product.price, product.salePrice) : product.price;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
@@ -79,7 +79,7 @@ export default function ProductPage() {
         </nav>
 
         {/* Discount Banner for Approved Users */}
-        {isApproved && !isAdmin && (
+        {isApproved && !isAdmin && getDiscountPercentage() > 0 && (
           <div className="mb-6 p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-center">
             <h2 className="text-xl font-bold mb-2">🎉 Скидка {getDiscountPercentage()}% для одобренных пользователей!</h2>
             <p>Цена указана с учетом скидки</p>
@@ -176,7 +176,7 @@ export default function ProductPage() {
             {/* Цена */}
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                {isApproved && !isAdmin ? (
+                {isApproved && !isAdmin && getDiscountPercentage() > 0 ? (
                   <>
                     <span className="text-3xl text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
                     <span className="text-4xl font-bold text-green-400">{discountedPrice.toLocaleString()} ₽</span>
@@ -192,7 +192,7 @@ export default function ProductPage() {
               {!isApproved && !isAdmin && (
                 <div className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                   <p className="text-yellow-400 text-sm">
-                    ⏳ После одобрения администратором вы получите скидку на этот товар!
+                    ⏳ После одобрения администратором вы получите доступ к специальным ценам!
                   </p>
                 </div>
               )}

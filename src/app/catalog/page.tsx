@@ -167,7 +167,7 @@ function CatalogPage() {
         <h1 className="text-4xl font-bold mb-8 neon-text">Каталог запчастей</h1>
         
         {/* Discount Banner for Approved Users */}
-        {isApproved && !isAdmin && (
+        {isApproved && !isAdmin && getDiscountPercentage() > 0 && (
           <div className="mb-6 p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-center">
             <h2 className="text-xl font-bold mb-2">🎉 Скидка {getDiscountPercentage()}% для одобренных пользователей!</h2>
             <p>Все цены указаны с учетом скидки</p>
@@ -334,11 +334,6 @@ function CatalogPage() {
                         <>
                           <span className="text-xl text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
                           <span className="text-3xl font-bold text-green-400">{calculateDiscountedPrice(product.price, product.salePrice).toLocaleString()} ₽</span>
-                        </>
-                      ) : product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
-                        <>
-                          <span className="text-xl text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
-                          <span className="text-3xl font-bold text-green-400">{product.salePrice.toLocaleString()} ₽</span>
                         </>
                       ) : (
                         <span className="text-3xl font-bold text-cyan-400">{product.price.toLocaleString()} ₽</span>

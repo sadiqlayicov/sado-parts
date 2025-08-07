@@ -1,0 +1,5 @@
+[33m782fb07[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Endirim problemi həll et - istifadəçi endirimi 0% olduqda endirimli qiymət göstərilməsin
+[33me3733d1[m Səbət və hesab-faktura səhifələrində 'Səbəti Təmizlə' düyməsi əlavə et - köhnə yanlış qiymətləri təmizləmək üçün
+[33mb02752f[m Top Sales bölməsində ProductCard komponentini istifadə et və satış sayını göstər
+[33m9711966[m Fix cart price calculation and categories dropdown: use fresh product data instead of stored salePrice, fix API response parsing
+[33m4ca2cfb[m Temporarily remove salePrice display logic to test discount issue + fix TypeScript error

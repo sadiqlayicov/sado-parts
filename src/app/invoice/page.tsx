@@ -29,7 +29,7 @@ interface Order {
 }
 
 function InvoiceContent() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isApproved, calculateDiscountedPrice } = useAuth();
   const searchParams = useSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -250,8 +250,22 @@ function InvoiceContent() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-gray-300 text-center">{item.quantity}</td>
-                      <td className="py-3 px-4 text-gray-300 text-right">{(item.price || 0).toFixed(2)} ₼</td>
-                      <td className="py-3 px-4 text-cyan-400 font-semibold text-right">{(item.totalPrice || 0).toFixed(2)} ₼</td>
+                      <td className="py-3 px-4 text-gray-300 text-right">
+                        {isApproved && user && user.discountPercentage > 0 ? (
+                          <div>
+                            <div className="line-through text-gray-400">{(item.price || 0).toFixed(2)}</div>
+                            <div className="text-green-400">{calculateDiscountedPrice(item.price || 0, null).toFixed(2)}</div>
+                          </div>
+                        ) : (
+                          (item.price || 0).toFixed(2)
+                        )} ₼
+                      </td>
+                      <td className="py-3 px-4 text-cyan-400 font-semibold text-right">
+                        {isApproved && user && user.discountPercentage > 0 ? 
+                          (calculateDiscountedPrice(item.price || 0, null) * item.quantity).toFixed(2) : 
+                          (item.totalPrice || 0).toFixed(2)
+                        } ₼
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -261,10 +275,19 @@ function InvoiceContent() {
 
           {/* Total */}
           <div className="text-right mb-8">
+            {isApproved && user && user.discountPercentage > 0 && (
+              <div className="text-lg text-gray-400 mb-2">
+                Ümumi (endirimsiz): {(parseFloat(order.totalAmount?.toString() || '0') / (1 - user.discountPercentage / 100)).toFixed(2)} ₼
+              </div>
+            )}
             <div className="text-2xl font-bold text-cyan-500">
               Ümumi: {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼
             </div>
-            <p className="text-gray-400 text-sm mt-1">Endirim daxil edilmiş qiymət</p>
+            {isApproved && user && user.discountPercentage > 0 ? (
+              <p className="text-green-400 text-sm mt-1">Endirim daxil edilmiş qiymət ({user.discountPercentage}% endirim)</p>
+            ) : (
+              <p className="text-gray-400 text-sm mt-1">Normal qiymət</p>
+            )}
           </div>
 
           {/* Notes */}

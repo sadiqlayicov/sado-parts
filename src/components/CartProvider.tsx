@@ -39,7 +39,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isApproved } = useAuth();
   const hasLoadedCart = useRef(false);
   
   // Debouncing for add to cart
@@ -62,9 +62,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return sum + (isNaN(itemTotal) ? 0 : itemTotal);
   }, 0);
   
+  // Endirim yalnız təsdiqlənmiş istifadəçilər üçün
+  const { calculateDiscountedPrice } = useAuth();
+  
   const totalSalePrice = safeCartItems.reduce((sum, item) => {
-    const itemTotal = typeof item.totalSalePrice === 'string' ? parseFloat(item.totalSalePrice) : item.totalSalePrice;
-    return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+    const itemTotal = typeof item.totalPrice === 'string' ? parseFloat(item.totalPrice) : item.totalPrice;
+    const discountedPrice = isApproved && isAuthenticated && user && user.discountPercentage > 0 
+      ? calculateDiscountedPrice(itemTotal / item.quantity, null) * item.quantity
+      : itemTotal;
+    return sum + (isNaN(discountedPrice) ? 0 : discountedPrice);
   }, 0);
   
   const savings = totalPrice - totalSalePrice;
