@@ -110,7 +110,7 @@ function InvoiceContent() {
         }
         
         alert('Sifariş uğurla tamamlandı! Admin təsdiqi gözləyir.');
-        window.location.href = '/profile';
+        window.location.href = '/';
       } else {
         alert('Sifariş tamamlama zamanı xəta baş verdi.');
       }
@@ -281,10 +281,10 @@ function InvoiceContent() {
           
           {(order.status === 'completed' || order.status === 'approved' || order.status === 'rejected') && (
             <Link
-              href="/profile"
+              href="/"
               className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition"
             >
-              Profilə qayıt
+              Ana səhifəyə qayıt
             </Link>
           )}
           
