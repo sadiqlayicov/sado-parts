@@ -80,6 +80,37 @@ function InvoiceContent() {
     window.print();
   };
 
+  const clearCart = async () => {
+    if (!user?.id) return;
+    
+    if (!confirm('Səbəti tamamilə təmizləmək istədiyinizə əminsiniz?')) {
+      return;
+    }
+    
+    try {
+      console.log('Clearing cart for user:', user.id);
+      const response = await fetch('/api/cart/clear', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      
+      if (response.ok) {
+        console.log('Cart cleared successfully');
+        alert('Səbət uğurla təmizləndi');
+        window.location.href = '/cart';
+      } else {
+        console.error('Failed to clear cart');
+        alert('Səbəti təmizləmə zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Səbət təmizləmə xətası:', error);
+      alert('Səbəti təmizləmə zamanı xəta baş verdi');
+    }
+  };
+
   const completeOrder = async () => {
     if (!order) return;
     
@@ -277,6 +308,15 @@ function InvoiceContent() {
             >
               Alış-verişə davam et
             </Link>
+          )}
+          
+          {order.status === 'pending' && (
+            <button
+              onClick={clearCart}
+              className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition"
+            >
+              Səbəti Təmizlə
+            </button>
           )}
           
           {(order.status === 'completed' || order.status === 'approved' || order.status === 'rejected') && (

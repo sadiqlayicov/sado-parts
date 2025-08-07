@@ -71,6 +71,37 @@ export default function CartPage() {
     }
   };
 
+  const handleClearCart = async () => {
+    if (!user?.id) return;
+    
+    if (!confirm('Səbəti tamamilə təmizləmək istədiyinizə əminsiniz?')) {
+      return;
+    }
+    
+    try {
+      console.log('Clearing cart for user:', user.id);
+      const response = await fetch('/api/cart/clear', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      
+      if (response.ok) {
+        console.log('Cart cleared successfully');
+        await refreshCart(); // Səbəti yenilə
+        alert('Səbət uğurla təmizləndi');
+      } else {
+        console.error('Failed to clear cart');
+        alert('Səbəti təmizləmə zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Səbət təmizləmə xətası:', error);
+      alert('Səbəti təmizləmə zamanı xəta baş verdi');
+    }
+  };
+
   const handleCheckout = async () => {
     if (!user?.id || cartItems.length === 0) {
       alert('Səbət məlumatları tapılmadı');
@@ -278,6 +309,13 @@ export default function CartPage() {
             >
               Mənim profilim
             </Link>
+            
+            <button 
+              onClick={handleClearCart}
+              className="px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 font-semibold text-center transition"
+            >
+              Səbəti Təmizlə
+            </button>
             
             <button 
               onClick={handleCheckout}
