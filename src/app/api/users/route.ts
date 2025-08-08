@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
         u.country,
         u.city,
         u.address,
+        u."discountPercentage",
         u."createdAt",
         u."updatedAt",
         COUNT(o.id) as orders_count,
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
       FROM users u
       LEFT JOIN orders o ON u.id = o."userId"
       ${whereClause}
-      GROUP BY u.id, u.email, u.name, u.phone, u.role, u."isApproved", u."firstName", u."lastName", u.inn, u.country, u.city, u.address, u."createdAt", u."updatedAt"
+      GROUP BY u.id, u.email, u.name, u.phone, u.role, u."isApproved", u."firstName", u."lastName", u.inn, u.country, u.city, u.address, u."discountPercentage", u."createdAt", u."updatedAt"
       ORDER BY u."createdAt" DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
