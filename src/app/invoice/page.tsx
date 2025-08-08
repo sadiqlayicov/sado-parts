@@ -38,50 +38,168 @@ function InvoiceContent() {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Function to convert number to Russian text
+  const numberToRussianText = (num: number): string => {
+    const units = ['', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
+    const teens = ['десять', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать', 'пятнадцать', 'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать'];
+    const tens = ['', '', 'двадцать', 'тридцать', 'сорок', 'пятьдесят', 'шестьдесят', 'семьдесят', 'восемьдесят', 'девяносто'];
+    const hundreds = ['', 'сто', 'двести', 'триста', 'четыреста', 'пятьсот', 'шестьсот', 'семьсот', 'восемьсот', 'девятьсот'];
+    
+    if (num === 0) return 'ноль';
+    
+    let rubles = Math.floor(num);
+    let kopecks = Math.round((num - rubles) * 100);
+    
+    let result = '';
+    
+    if (rubles > 0) {
+      if (rubles >= 1000) {
+        const thousands = Math.floor(rubles / 1000);
+        if (thousands === 1) {
+          result += 'одна тысяча ';
+        } else if (thousands < 5) {
+          result += numberToRussianText(thousands) + ' тысячи ';
+        } else {
+          result += numberToRussianText(thousands) + ' тысяч ';
+        }
+        rubles %= 1000;
+      }
+      
+      if (rubles >= 100) {
+        result += hundreds[Math.floor(rubles / 100)] + ' ';
+        rubles %= 100;
+      }
+      
+      if (rubles >= 20) {
+        result += tens[Math.floor(rubles / 10)] + ' ';
+        rubles %= 10;
+      } else if (rubles >= 10) {
+        result += teens[rubles - 10] + ' ';
+        rubles = 0;
+      }
+      
+      if (rubles > 0) {
+        result += units[rubles] + ' ';
+      }
+      
+      // Proper grammar for rubles
+      const originalRubles = Math.floor(num);
+      const lastDigit = originalRubles % 10;
+      const lastTwoDigits = originalRubles % 100;
+      
+      if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        result += 'рублей ';
+      } else if (lastDigit === 1) {
+        result += 'рубль ';
+      } else if (lastDigit >= 2 && lastDigit <= 4) {
+        result += 'рубля ';
+      } else {
+        result += 'рублей ';
+      }
+    }
+    
+    if (kopecks > 0) {
+      if (kopecks >= 20) {
+        result += tens[Math.floor(kopecks / 10)] + ' ';
+        kopecks %= 10;
+      } else if (kopecks >= 10) {
+        result += teens[kopecks - 10] + ' ';
+        kopecks = 0;
+      }
+      
+      if (kopecks > 0) {
+        result += units[kopecks] + ' ';
+      }
+      
+      // Proper grammar for kopecks
+      const originalKopecks = Math.round((num - Math.floor(num)) * 100);
+      const lastDigit = originalKopecks % 10;
+      const lastTwoDigits = originalKopecks % 100;
+      
+      if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        result += 'копеек';
+      } else if (lastDigit === 1) {
+        result += 'копейка';
+      } else if (lastDigit >= 2 && lastDigit <= 4) {
+        result += 'копейки';
+      } else {
+        result += 'копеек';
+      }
+    } else {
+      result += '00 копеек';
+    }
+    
+    return result.trim();
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
 
-    const createInvoiceFromCart = () => {
-      if (!cartItems || cartItems.length === 0) {
-        setError('Səbətdə məhsul yoxdur');
+    const loadOrderData = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('orderId');
+
+      if (orderId) {
+        // Load order from API
+        try {
+          const response = await fetch(`/api/orders/${orderId}`);
+          if (response.ok) {
+            const orderData = await response.json();
+            // API returns array, so take first item
+            const order = Array.isArray(orderData) ? orderData[0] : orderData.order;
+            setOrder(order);
+            setLoading(false);
+          } else {
+            setError('Sifariş tapılmadı');
+            setLoading(false);
+          }
+        } catch (error) {
+          setError('Sifariş yüklənərkən xəta baş verdi');
+          setLoading(false);
+        }
+      } else {
+        // Create invoice from cart (fallback)
+        if (!cartItems || cartItems.length === 0) {
+          setError('Səbətdə məhsul yoxdur');
+          setLoading(false);
+          return;
+        }
+
+        const timestamp = Date.now();
+        const orderNumber = `SIF-${String(timestamp).slice(-8)}`;
+
+        const invoiceOrder: Order = {
+          id: `invoice-${timestamp}`,
+          orderNumber: orderNumber,
+          status: 'pending',
+          totalAmount: isApproved && user && user.discountPercentage > 0 ? totalSalePrice : totalPrice,
+          currency: 'RUB',
+          notes: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          items: cartItems.map((item, index) => ({
+            id: `item-${index}`,
+            productId: item.productId,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            totalPrice: isApproved && user && user.discountPercentage > 0 ? 
+              calculateDiscountedPrice(item.price, null) * item.quantity : 
+              item.totalPrice,
+            sku: item.sku,
+            categoryName: item.categoryName
+          }))
+        };
+
+        setOrder(invoiceOrder);
         setLoading(false);
-        return;
       }
-
-      const timestamp = Date.now();
-      const orderNumber = `SIF-${String(timestamp).slice(-8)}`;
-
-      const invoiceOrder: Order = {
-        id: `invoice-${timestamp}`,
-        orderNumber: orderNumber,
-        status: 'pending',
-        totalAmount: isApproved && user && user.discountPercentage > 0 ? totalSalePrice : totalPrice,
-        currency: 'RUB',
-        notes: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        items: cartItems.map((item, index) => ({
-          id: `item-${index}`,
-          productId: item.productId,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          totalPrice: isApproved && user && user.discountPercentage > 0 ? 
-            calculateDiscountedPrice(item.price, null) * item.quantity : 
-            item.totalPrice,
-          sku: item.sku,
-          categoryName: item.categoryName
-        }))
-      };
-
-      setOrder(invoiceOrder);
-      setLoading(false);
     };
 
-    createInvoiceFromCart();
+    loadOrderData();
   }, [cartItems, isAuthenticated, isApproved, user, totalPrice, totalSalePrice, calculateDiscountedPrice, router]);
 
   const printInvoice = () => {
@@ -98,20 +216,42 @@ function InvoiceContent() {
     setIsSubmitting(true);
     
     try {
+      console.log('Starting checkout process...');
+      console.log('User ID:', user.id);
+      console.log('cart items count:', cartItems.length);
+      console.log('cart items:', cartItems);
+      console.log('Valid cart items:', cartItems.filter(item => item && item.productId && item.name));
+      
+      const orderData = {
+        userId: user.id,
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          totalPrice: item.totalPrice,
+          sku: item.sku || '',
+          categoryName: item.categoryName || ''
+        })),
+        totalAmount: order.totalAmount,
+        notes: order.notes || '',
+        orderNumber: order.orderNumber
+      };
+      
+      console.log('Order data being sent:', orderData);
+      
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: user.id,
-          items: order.items,
-          totalAmount: order.totalAmount,
-          notes: order.notes || '',
-          orderNumber: order.orderNumber
-        }),
+        body: JSON.stringify(orderData),
       });
 
+      console.log('Order response status:', response.status);
+      const responseData = await response.json();
+      console.log('Order response data:', responseData);
+      
       if (response.ok) {
         setIsConfirmed(true);
         // Clear cart after successful order
@@ -123,7 +263,8 @@ function InvoiceContent() {
           body: JSON.stringify({ userId: user.id }),
         });
       } else {
-        setError('Sifariş təsdiqlənərkən xəta baş verdi');
+        console.error('Order creation failed:', responseData.error);
+        setError(`Sifariş xatası: ${responseData.error || 'Sifariş təsdiqlənərkən xəta baş verdi'}`);
       }
     } catch (error) {
       console.error('Order confirmation error:', error);
@@ -181,7 +322,15 @@ function InvoiceContent() {
     );
   }
 
-  const currentDate = new Date().toLocaleDateString('ru-RU');
+  const currentDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }) : new Date().toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
   const totalAmount = order.totalAmount;
   const totalAmountText = totalAmount.toLocaleString('ru-RU', { 
     minimumFractionDigits: 2, 
@@ -258,41 +407,59 @@ function InvoiceContent() {
 
       {/* Invoice Content */}
       <div className="max-w-4xl mx-auto p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">SADO-PARTS</h1>
-          <p className="text-gray-600">Запчасти для вилочных погрузчиков в Москве</p>
-          <p className="text-gray-600">Интернет-магазин премиум-класса</p>
+        {/* Header with Logo and Bank Details */}
+        <div className="flex justify-between items-start mb-8">
+          {/* Logo */}
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mr-3">
+              <span className="text-white font-bold text-lg">B</span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-black">BILAL-PARTS</h1>
+            </div>
+          </div>
+
+          {/* Bank Details */}
+          <div className="text-right text-sm">
+            <div className="border border-gray-300 p-3 mb-3">
+              <p><strong>ООО "Банк Точка" г. Москва</strong></p>
+              <p>БИК: 044525104</p>
+              <p>Сч. №: 30101810745374525104</p>
+            </div>
+            <div className="border border-gray-300 p-3">
+              <p><strong>Банк получателя</strong></p>
+              <p>ИНН: 9718265289</p>
+              <p>КПП: 772301001</p>
+              <p>Сч. №: 40702810620000183270</p>
+              <p><strong>ООО "БИЛАЛ-ПАРТС"</strong></p>
+            </div>
+            <div className="mt-3">
+              <p><strong>Получатель:</strong></p>
+              <p className="border-b border-gray-300 min-h-[20px]"></p>
+            </div>
+          </div>
         </div>
 
-        {/* Invoice Info */}
+        {/* Invoice Title */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold">Счет на оплату № {order.orderNumber} от {currentDate}</h2>
+        </div>
+
+        {/* Supplier and Buyer Info */}
         <div className="grid grid-cols-2 gap-8 mb-8">
           <div>
             <h3 className="font-bold text-lg mb-4">Поставщик:</h3>
-            <p className="font-semibold">ООО "САДО-ПАРТС"</p>
-            <p>ИНН: 1234567890</p>
-            <p>КПП: 123456789</p>
-            <p>Адрес: г. Москва, ул. Примерная, д. 123</p>
-            <p>Телефон: +7 (495) 123-45-67</p>
-            <p>Email: info@sado-parts.ru</p>
+            <p className="font-semibold">ООО "БИЛАЛ-ПАРТС"</p>
+            <p>ИНН: 9718265289</p>
+            <p>КПП: 772301001</p>
+            <p>109383, Город Москва, вн.тер. г. Муниципальный Округ Печатники, проезд Батюнинский, дом 11, строение 1,</p>
+            <p><strong>(исполнитель):</strong> тел.: +7 (499)391-05-02</p>
           </div>
           <div>
             <h3 className="font-bold text-lg mb-4">Покупатель:</h3>
-            <p className="font-semibold">{user?.name || 'Физическое лицо'}</p>
-            <p>Email: {user?.email || 'Не указан'}</p>
-            <p>Телефон: {(user as any)?.phone || 'Не указан'}</p>
-            <p>Адрес: {(user as any)?.address || 'Не указан'}</p>
-          </div>
-        </div>
-
-        {/* Invoice Details */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
-          <div>
-            <p><strong>Счет-фактура №:</strong> {order.orderNumber}</p>
-            <p><strong>Дата:</strong> {currentDate}</p>
-          </div>
-          <div className="text-right">
-            <p><strong>Статус:</strong> Ожидает подтверждения</p>
+            <p className="border-b border-gray-300 min-h-[20px] mb-2"></p>
+            <p><strong>(заказчик):</strong></p>
+            <p className="border-b border-gray-300 min-h-[20px]"></p>
           </div>
         </div>
 
@@ -301,29 +468,25 @@ function InvoiceContent() {
           <table className="w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-4 py-2 text-left">№</th>
-                <th className="border border-gray-300 px-4 py-2 text-left">Наименование</th>
-                <th className="border border-gray-300 px-4 py-2 text-left">Артикул</th>
-                <th className="border border-gray-300 px-4 py-2 text-left">Категория</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">Кол-во</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Цена (₽)</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Сумма (₽)</th>
+                <th className="border border-gray-300 p-2 text-left">№</th>
+                <th className="border border-gray-300 p-2 text-left">Товар (Услуга)</th>
+                <th className="border border-gray-300 p-2 text-left">Код</th>
+                <th className="border border-gray-300 p-2 text-left">Кол-во</th>
+                <th className="border border-gray-300 p-2 text-left">Ед.</th>
+                <th className="border border-gray-300 p-2 text-left">Цена</th>
+                <th className="border border-gray-300 p-2 text-left">Сумма</th>
               </tr>
             </thead>
             <tbody>
               {order.items.map((item, index) => (
                 <tr key={item.id}>
-                  <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
-                  <td className="border border-gray-300 px-4 py-2">{item.name}</td>
-                  <td className="border border-gray-300 px-4 py-2">{item.sku}</td>
-                  <td className="border border-gray-300 px-4 py-2">{item.categoryName}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">
-                    {item.price.toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">
-                    {item.totalPrice.toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
-                  </td>
+                  <td className="border border-gray-300 p-2">{index + 1}</td>
+                  <td className="border border-gray-300 p-2">{item.name}</td>
+                  <td className="border border-gray-300 p-2">{item.sku}</td>
+                  <td className="border border-gray-300 p-2">{item.quantity}</td>
+                  <td className="border border-gray-300 p-2">шт.</td>
+                  <td className="border border-gray-300 p-2">{item.price.toLocaleString('ru-RU')} ₽</td>
+                  <td className="border border-gray-300 p-2">{item.totalPrice.toLocaleString('ru-RU')} ₽</td>
                 </tr>
               ))}
             </tbody>
@@ -331,42 +494,62 @@ function InvoiceContent() {
         </div>
 
         {/* Summary */}
-        <div className="text-right mb-8">
-          <div className="inline-block text-left">
-            <p className="text-lg"><strong>Итого:</strong> {totalAmountText} ₽</p>
-            {savings > 0 && (
-              <p className="text-green-600">Скидка: {savings.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ₽</p>
-            )}
+        <div className="mb-8">
+          <div className="flex justify-end">
+            <div className="w-64">
+              <div className="flex justify-between border-b border-gray-300 py-2">
+                <span><strong>Итого:</strong></span>
+                <span>{totalAmountText} ₽</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-300 py-2">
+                <span>Без налога (НДС):</span>
+                <span>{totalAmountText} ₽</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span><strong>Всего к оплате:</strong></span>
+                <span><strong>{totalAmountText} ₽</strong></span>
+              </div>
+            </div>
+          </div>
+          <div className="text-center mt-4">
+            <p>Всего наименований {order.items.length}, на сумму {totalAmountText} ₽</p>
+            <p className="font-semibold">{numberToRussianText(totalAmount)}</p>
           </div>
         </div>
 
-        {/* Terms */}
-        <div className="mb-8 text-sm text-gray-600">
-          <h4 className="font-bold mb-2">Условия поставки:</h4>
-          <ul className="list-disc list-inside space-y-1">
-            <li>Срок поставки: 1-3 рабочих дня</li>
-            <li>Способ оплаты: наличными при получении или банковской картой</li>
-            <li>Гарантия: согласно техническим условиям производителя</li>
-            <li>Возврат: в течение 14 дней при сохранении товарного вида</li>
-          </ul>
+        {/* Terms and Conditions */}
+        <div className="mb-8 text-sm">
+          <p>Оплата данного счета означает согласие с условиями поставки товара.</p>
+          <p>Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе.</p>
+          <p>Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.</p>
         </div>
 
-        {/* Signature Section */}
-        <div className="grid grid-cols-2 gap-8">
-          <div>
-            <p className="mb-8">Подпись поставщика: _________________</p>
-            <p>Дата: {currentDate}</p>
+        {/* Signatures */}
+        <div className="flex justify-between">
+          <div className="w-48">
+            <div className="border-b border-gray-300 mb-2 min-h-[30px]"></div>
+            <p><strong>Руководитель</strong></p>
+            <p>подпись</p>
+            <p className="mt-4">Гасанов Р. Д.</p>
+            <p>расшифровка подписи</p>
           </div>
-          <div>
-            <p className="mb-8">Подпись покупателя: _________________</p>
-            <p>Дата: {currentDate}</p>
+          <div className="w-48">
+            <div className="border-b border-gray-300 mb-2 min-h-[30px]"></div>
+            <p><strong>Бухгалтер</strong></p>
+            <p>подпись</p>
+            <p className="mt-4">Гасанов Р. Д.</p>
+            <p>расшифровка подписи</p>
+          </div>
+          <div className="w-48">
+            <div className="border border-gray-300 h-16 flex items-center justify-center">
+              <p className="text-sm">М.П.</p>
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-12 text-center text-sm text-gray-500">
-          <p>Спасибо за ваш заказ!</p>
-          <p>По всем вопросам обращайтесь: +7 (495) 123-45-67</p>
+        <div className="text-right mt-8">
+          <p className="text-sm">Лаиджов Садиг</p>
         </div>
       </div>
     </div>

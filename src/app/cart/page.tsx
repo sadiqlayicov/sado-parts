@@ -104,7 +104,7 @@ export default function CartPage() {
 
   const handleCheckout = async () => {
     if (!user?.id || cartItems.length === 0) {
-      alert('Səbət məlumatları tapılmadı');
+      alert('Данные корзины не найдены');
       return;
     }
     
@@ -121,18 +121,43 @@ export default function CartPage() {
     console.log('Valid cart items:', validCartItems);
     
     if (validCartItems.length === 0) {
-      alert('Səbətdə düzgün məhsul məlumatları yoxdur');
+      alert('В корзине нет корректных данных о товарах');
       return;
     }
     
     setCheckoutLoading(true);
     
     try {
+      // Generate order number
+      const orderNumber = `SADO-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      
+      // Calculate total amount
+      const totalAmount = isApproved && user && user.discountPercentage > 0 
+        ? totalSalePrice 
+        : totalPrice;
+      
+      // Transform cart items to order items format
+      const items = validCartItems.map(item => ({
+        productId: item.productId,
+        name: item.name,
+        sku: item.sku,
+        categoryName: item.categoryName,
+        quantity: item.quantity,
+        price: isApproved && user && user.discountPercentage > 0 
+          ? calculateDiscountedPrice(item.price, null)
+          : item.price,
+        totalPrice: isApproved && user && user.discountPercentage > 0 
+          ? calculateDiscountedPrice(item.price, null) * item.quantity
+          : item.totalPrice
+      }));
+      
       // Sifariş yarat
       const requestBody = {
         userId: user.id,
-        notes: 'Səbətdən yaradılmış sifariş',
-        cartItems: validCartItems // Yalnız düzgün cart items-ləri göndər
+        items: items,
+        totalAmount: totalAmount,
+        notes: 'Заказ создан из корзины',
+        orderNumber: orderNumber
       };
       
       console.log('Sending order request with body:', requestBody);
@@ -162,13 +187,13 @@ export default function CartPage() {
         
       } else {
         console.error('Order creation failed:', data.error);
-        throw new Error(data.error || 'Sifariş yaratma xətası');
+        throw new Error(data.error || 'Ошибка создания заказа');
       }
       
     } catch (error) {
       console.error('Sifariş xətası:', error);
       setCheckoutLoading(false);
-      alert('Sifariş yaratma zamanı xəta baş verdi. Yenidən cəhd edin.');
+      alert('Произошла ошибка при создании заказа. Попробуйте еще раз.');
     }
   };
 
@@ -176,9 +201,9 @@ export default function CartPage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8 neon-text">Səbət</h1>
+          <h1 className="text-4xl font-bold mb-8 neon-text">Корзина</h1>
           <div className="bg-white/10 rounded-xl p-8 text-center shadow-lg">
-            <div className="text-2xl">Yüklənir...</div>
+            <div className="text-2xl">Загрузка...</div>
           </div>
         </div>
       </main>
@@ -189,17 +214,17 @@ export default function CartPage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8 neon-text">Səbət</h1>
+          <h1 className="text-4xl font-bold mb-8 neon-text">Корзина</h1>
           
           <div className="bg-white/10 rounded-xl p-8 text-center shadow-lg">
             <div className="text-6xl mb-4">🛒</div>
-            <h2 className="text-2xl font-semibold mb-4">Səbət boşdur</h2>
-            <p className="text-lg mb-6">Sifariş vermək üçün kataloqdan məhsul əlavə edin</p>
+            <h2 className="text-2xl font-semibold mb-4">Корзина пуста</h2>
+            <p className="text-lg mb-6">Добавьте товары из каталога для оформления заказа</p>
             <Link 
               href="/catalog" 
               className="px-8 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-lg transition"
             >
-              Kataloqa keç
+              Перейти в каталог
             </Link>
           </div>
         </div>
@@ -210,7 +235,7 @@ export default function CartPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8 neon-text">Səbət</h1>
+        <h1 className="text-4xl font-bold mb-8 neon-text">Корзина</h1>
         
         <div className="bg-white/10 rounded-xl p-6 shadow-lg">
           {/* Məhsullar siyahısı */}
@@ -219,18 +244,18 @@ export default function CartPage() {
               <div key={item.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold">{item.name}</h3>
-                  <p className="text-sm text-gray-300">Artikul: {item.sku}</p>
+                  <p className="text-sm text-gray-300">Артикул: {item.sku}</p>
                   <p className="text-sm text-gray-300">
-                    Qiymət: {isApproved && user && user.discountPercentage > 0 ? (
+                    Цена: {isApproved && user && user.discountPercentage > 0 ? (
                       <span>
                         <span className="line-through text-gray-400">{item.price.toLocaleString()}</span>
                         <span className="text-green-400 ml-2">{calculateDiscountedPrice(item.price, null).toLocaleString()}</span>
                       </span>
                     ) : (
                       item.price.toLocaleString()
-                    )} ₼
+                    )} ₽
                   </p>
-                  <p className="text-sm text-gray-300">Kateqoriya: {item.categoryName}</p>
+                  <p className="text-sm text-gray-300">Категория: {item.categoryName}</p>
                 </div>
                 
                 <div className="flex items-center gap-4">
@@ -257,11 +282,11 @@ export default function CartPage() {
                       {isApproved && user && user.discountPercentage > 0 ? 
                         (calculateDiscountedPrice(item.price, null) * item.quantity).toLocaleString() : 
                         item.totalPrice.toLocaleString()
-                      } ₼
+                      } ₽
                     </div>
                     {isApproved && user && user.discountPercentage > 0 && (
                       <div className="text-sm text-green-400">
-                        {item.totalPrice - (calculateDiscountedPrice(item.price, null) * item.quantity)} ₼ qənaət
+                        {item.totalPrice - (calculateDiscountedPrice(item.price, null) * item.quantity)} ₽ экономия
                       </div>
                     )}
                   </div>
@@ -281,18 +306,18 @@ export default function CartPage() {
           <div className="border-t border-white/20 pt-6 mb-6">
             <div className="space-y-2">
               <div className="flex justify-between items-center text-lg">
-                <span>Məhsullar: {cartItemsCount}</span>
-                <span>Ümumi: {totalPrice.toLocaleString()} ₼</span>
+                <span>Товары: {cartItemsCount}</span>
+                <span>Итого: {totalPrice.toLocaleString()} ₽</span>
               </div>
               {isApproved && user && user.discountPercentage > 0 && (
                 <div className="flex justify-between items-center text-green-400">
-                  <span>Qənaət:</span>
-                  <span>-{savings.toLocaleString()} ₼</span>
+                  <span>Экономия:</span>
+                  <span>-{savings.toLocaleString()} ₽</span>
                 </div>
               )}
               <div className="flex justify-between items-center text-xl font-bold border-t border-white/20 pt-2">
-                <span>Ödəniləcək:</span>
-                <span>{isApproved && user && user.discountPercentage > 0 ? totalSalePrice.toLocaleString() : totalPrice.toLocaleString()} ₼</span>
+                <span>К оплате:</span>
+                <span>{isApproved && user && user.discountPercentage > 0 ? totalSalePrice.toLocaleString() : totalPrice.toLocaleString()} ₽</span>
               </div>
             </div>
           </div>
@@ -303,21 +328,21 @@ export default function CartPage() {
               href="/catalog" 
               className="px-6 py-3 rounded-lg bg-white/10 hover:bg-cyan-600 font-semibold text-center transition"
             >
-              Alış-verişə davam et
+              Продолжить покупки
             </Link>
             
             <Link 
               href="/profile" 
               className="px-6 py-3 rounded-lg bg-white/10 hover:bg-cyan-600 font-semibold text-center transition"
             >
-              Mənim profilim
+              Мой профиль
             </Link>
             
             <button 
               onClick={handleClearCart}
               className="px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 font-semibold text-center transition"
             >
-              Səbəti Təmizlə
+              Очистить корзину
             </button>
             
             <button 
@@ -325,7 +350,7 @@ export default function CartPage() {
               disabled={checkoutLoading}
               className="px-8 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-lg transition disabled:opacity-50 flex-1"
             >
-              {checkoutLoading ? 'Sifariş yaradılır...' : 'Sifariş ver və hesab-faktura al'}
+              {checkoutLoading ? 'Создание заказа...' : 'Оформить заказ и получить счет'}
             </button>
           </div>
         </div>

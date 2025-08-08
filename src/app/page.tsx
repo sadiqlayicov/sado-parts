@@ -68,15 +68,24 @@ export default function HomePage() {
           } else {
             setCategories([]);
           }
-        } else {
-          setCategories([]);
         }
+        
+        // Fetch top sellers
+        const topSellersRes = await fetch('/api/analytics/top-sellers');
+        if (topSellersRes.ok) {
+          const topSellersData = await topSellersRes.json();
+          if (topSellersData.success && Array.isArray(topSellersData.data)) {
+            setTopSellers(topSellersData.data);
+          }
+        }
+        
       } catch (error) {
         console.error('Error fetching data:', error);
         setProducts([]);
         setCategories([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchData();
   }, []);
@@ -198,6 +207,59 @@ export default function HomePage() {
     });
   };
 
+  const handleAddToCart = async (product: any) => {
+    if (!isAuthenticated) {
+      alert('Пожалуйста, войдите в систему для добавления товаров в корзину');
+      return;
+    }
+    
+    try {
+      await addToCart(product);
+      alert('Товар добавлен в корзину!');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Ошибка при добавлении товара в корзину');
+    }
+  };
+
+  const toggleWishlist = async (productId: string) => {
+    if (!isAuthenticated) {
+      alert('Пожалуйста, войдите в систему для добавления товаров в избранное');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId })
+      });
+      
+      if (response.ok) {
+        setWishlist(prev => 
+          prev.includes(productId) 
+            ? prev.filter(id => id !== productId)
+            : [...prev, productId]
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+    }
+  };
+
+  const getLatestProducts = () => {
+    return products
+      .filter(product => product.isActive)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, showAllLatestProducts ? products.length : 8);
+  };
+
+  const getTopSellersProducts = () => {
+    return products.filter(product => 
+      topSellers.some(seller => seller.productId === product.id)
+    ).slice(0, 4);
+  };
+
   // Hot Products - son 10 məhsul
   const hotProducts = products.slice(0, 10);
 
@@ -277,109 +339,224 @@ export default function HomePage() {
     );
   }
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <div className="text-2xl">Загрузка...</div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white flex flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold mb-4 text-center">{t('homepage_title')}</h1>
-      <p className="text-lg mb-8 text-center">{t('site_deployed')}</p>
-      <div className="w-full max-w-5xl mx-auto">
-        {/* Top satılanlar bölməsi */}
-        <h2 className="text-2xl font-bold mb-4 text-center">{t('top_sellers')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
-          {topSellers.length === 0 ? (
-            <div className="col-span-full text-center">No top products available</div>
-          ) : (
-            topSellers.map((product: any) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={addToCart}
-                onToggleWishlist={handleWishlist}
-                isWishlisted={wishlist.includes(product.id)}
-              />
-            ))
-          )}
-        </div>
-        {/* Ən son əlavə olunan məhsullar */}
-        <h2 className="text-2xl font-bold mb-4 text-center">{t('latest_products')}</h2>
-        {loading ? (
-          <div className="text-center text-lg">Loading...</div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-lg text-gray-400 mb-4">No products available</div>
-            <div className="text-sm text-gray-500 mb-4">
-              This might be due to:
-              <ul className="list-disc list-inside mt-2 text-left max-w-md mx-auto">
-                <li>Database connection issues</li>
-                <li>No products in the database</li>
-                <li>Products are not active</li>
-                <li>API endpoint errors</li>
-              </ul>
-            </div>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white"
-            >
-              Refresh Page
-            </button>
+    <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Hero Section */}
+        <section className="text-center mb-16">
+          <h1 className="text-6xl font-bold mb-6 neon-text">
+            SADO-PARTS
+          </h1>
+          <p className="text-xl mb-8 text-gray-300">
+            Запчасти для вилочных погрузчиков в Москве
+          </p>
+          <p className="text-lg mb-8 text-gray-400">
+            Интернет-магазин премиум-класса
+          </p>
+          <Link 
+            href="/catalog" 
+            className="px-8 py-4 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-xl transition"
+          >
+            Перейти в каталог
+          </Link>
+        </section>
+
+        {/* Categories Section */}
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold mb-8 text-center">Категории товаров</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {categories.slice(0, 8).map((category) => (
+              <Link 
+                key={category.id} 
+                href={`/catalog?category=${category.id}`}
+                className="bg-white/10 rounded-lg p-6 text-center hover:bg-white/20 transition group"
+              >
+                <div className="text-4xl mb-4 group-hover:scale-110 transition">
+                  {category.name === 'Engine Parts' ? '🔧' :
+                   category.name === 'Transmission' ? '⚙️' :
+                   category.name === 'Brake System' ? '🛑' :
+                   category.name === 'Hydraulic Systems' ? '💧' :
+                   category.name === 'Electrical' ? '⚡' :
+                   category.name === 'Tires & Wheels' ? '🛞' :
+                   category.name === 'Filters' ? '🔍' :
+                   category.name === 'Lubricants' ? '🛢️' : '📦'}
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{category.name}</h3>
+                <p className="text-sm text-gray-400">{category.description}</p>
+              </Link>
+            ))}
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
-              {(showAllLatestProducts ? products : products.slice(0, 20)).map((product: any) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={addToCart}
-                  onToggleWishlist={handleWishlist}
-                  isWishlisted={wishlist.includes(product.id)}
-                />
+        </section>
+
+        {/* Top Sellers Section */}
+        {topSellers.length > 0 && (
+          <section className="mb-16">
+            <h2 className="text-3xl font-bold mb-8 text-center">Топ продаж</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {getTopSellersProducts().map((product) => (
+                <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
+                  <div className="relative mb-4">
+                    {product.images && product.images.length > 0 ? (
+                      <Image
+                        src={product.images[0]}
+                        alt={product.name}
+                        width={200}
+                        height={200}
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center">
+                        <span className="text-4xl">📦</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => toggleWishlist(product.id)}
+                      className={`absolute top-2 right-2 p-2 rounded-full ${
+                        wishlist.includes(product.id) 
+                          ? 'bg-red-500 text-white' 
+                          : 'bg-white/20 text-white hover:bg-white/30'
+                      } transition`}
+                    >
+                      {wishlist.includes(product.id) ? '❤️' : '🤍'}
+                    </button>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+                  <p className="text-sm text-gray-400 mb-2">Артикул: {product.sku}</p>
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      {isApproved && user && user.discountPercentage > 0 ? (
+                        <div>
+                          <span className="line-through text-gray-400 text-sm">
+                            {product.price.toLocaleString()} ₽
+                          </span>
+                          <span className="text-green-400 ml-2 font-semibold">
+                            {calculateDiscountedPrice(product.price, null).toLocaleString()} ₽
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xl font-bold">
+                          {product.price.toLocaleString()} ₽
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      Продано: {topSellers.find(s => s.productId === product.id)?.salesCount || 0}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
+                  >
+                    Добавить в корзину
+                  </button>
+                </div>
               ))}
             </div>
-            {products.length > 20 && (
-              <div className="text-center mb-8">
+          </section>
+        )}
+
+        {/* Latest Products Section */}
+        <section className="mb-16">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Новые поступления</h2>
+            <button
+              onClick={() => setShowAllLatestProducts(!showAllLatestProducts)}
+              className="text-cyan-400 hover:text-cyan-300 transition"
+            >
+              {showAllLatestProducts ? 'Показать меньше' : 'Показать все'}
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {getLatestProducts().map((product) => (
+              <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
+                <div className="relative mb-4">
+                  {product.images && product.images.length > 0 ? (
+                    <Image
+                      src={product.images[0]}
+                      alt={product.name}
+                      width={200}
+                      height={200}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center">
+                      <span className="text-4xl">📦</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => toggleWishlist(product.id)}
+                    className={`absolute top-2 right-2 p-2 rounded-full ${
+                      wishlist.includes(product.id) 
+                        ? 'bg-red-500 text-white' 
+                        : 'bg-white/20 text-white hover:bg-white/30'
+                    } transition`}
+                  >
+                    {wishlist.includes(product.id) ? '❤️' : '🤍'}
+                  </button>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+                <p className="text-sm text-gray-400 mb-2">Артикул: {product.sku}</p>
+                <div className="mb-4">
+                  {isApproved && user && user.discountPercentage > 0 ? (
+                    <div>
+                      <span className="line-through text-gray-400 text-sm">
+                        {product.price.toLocaleString()} ₽
+                      </span>
+                      <span className="text-green-400 ml-2 font-semibold">
+                        {calculateDiscountedPrice(product.price, null).toLocaleString()} ₽
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xl font-bold">
+                      {product.price.toLocaleString()} ₽
+                    </span>
+                  )}
+                </div>
                 <button
-                  onClick={() => setShowAllLatestProducts(!showAllLatestProducts)}
-                  className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold transition-colors duration-200"
+                  onClick={() => handleAddToCart(product)}
+                  className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
                 >
-                  {showAllLatestProducts ? 'Show Less' : 'View All'}
+                  Добавить в корзину
                 </button>
               </div>
-            )}
-          </>
-        )}
-        {/* Hot Products */}
-        <h2 className="text-2xl font-bold mb-4 text-center">{t('hot_products')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
-          {hotProducts.length === 0 ? (
-            <div className="col-span-full text-center">No hot products available</div>
-          ) : (
-            hotProducts.map((product: any) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={addToCart}
-                onToggleWishlist={handleWishlist}
-                isWishlisted={wishlist.includes(product.id)}
-              />
-            ))
-          )}
-        </div>
-        {/* Hot Categories */}
-        <h2 className="text-2xl font-bold mb-4 text-center">{t('hot_categories')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
-                      {mostPopularCategories.length === 0 ? <div className="col-span-full text-center">No hot categories available</div> : mostPopularCategories.map((cat: any) => (
-            <div key={cat.id} className="bg-[#1e293b] rounded-lg p-3 flex flex-col items-center justify-center h-32">
-              <div className="font-semibold text-sm mb-2 text-center">{cat.name}</div>
-              {cat.image && <img src={cat.image} alt={cat.name} className="w-16 h-16 object-cover rounded-full" />}
-              <div className="text-xs text-gray-400 text-center mt-1">{t('product_count')}: {cat.productCount}</div>
+            ))}
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold mb-8 text-center">Почему выбирают нас</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-4xl mb-4">🚚</div>
+              <h3 className="text-xl font-semibold mb-2">Быстрая доставка</h3>
+              <p className="text-gray-400">Доставка по Москве в течение 24 часов</p>
             </div>
-          ))}
-        </div>
+            <div className="text-center">
+              <div className="text-4xl mb-4">✅</div>
+              <h3 className="text-xl font-semibold mb-2">Гарантия качества</h3>
+              <p className="text-gray-400">Все товары с гарантией производителя</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-4">💰</div>
+              <h3 className="text-xl font-semibold mb-2">Лучшие цены</h3>
+              <p className="text-gray-400">Конкурентные цены на все товары</p>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
-    
-
   );
 }

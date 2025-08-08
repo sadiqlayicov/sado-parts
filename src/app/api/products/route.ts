@@ -13,6 +13,17 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 })
 
+// Helper function to handle database errors
+function handleDatabaseError(error: any, operation: string) {
+  logError(operation, error)
+  
+  if (error.message?.includes('Max client connections reached')) {
+    return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
+  }
+  
+  return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
+}
+
 /**
  * GET - Get all products
  * Fetches all active products with their category information
@@ -75,14 +86,7 @@ export async function GET(request: NextRequest) {
 
     return successResponse(products, `${products.length} məhsul tapıldı`)
   } catch (error: any) {
-    logError('GET /api/products', error)
-    
-    // Handle specific database errors
-    if (error.message?.includes('Max client connections reached')) {
-      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
-    }
-    
-    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
+    return handleDatabaseError(error, 'GET /api/products')
   } finally {
     if (client) {
       client.release()
@@ -127,13 +131,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse(result.rows[0], 'Məhsul uğurla yaradıldı')
   } catch (error: any) {
-    logError('POST /api/products', error)
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
-    }
-    
-    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
+    return handleDatabaseError(error, 'POST /api/products')
   } finally {
     if (client) {
       client.release()

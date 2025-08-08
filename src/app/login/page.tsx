@@ -32,10 +32,10 @@ export default function LoginPage() {
       if (success) {
         router.push('/admin');
       } else {
-        setError('Yanlış email və ya şifrə');
+        setError('Неверный email или пароль');
       }
     } catch (error) {
-      setError('Giriş zamanı xəta baş verdi');
+      setError('Произошла ошибка при входе');
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +46,7 @@ export default function LoginPage() {
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/20">
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold mb-2 neon-text">Вход в аккаунт</h2>
-          <p className="text-gray-300">Hesabınıza daxil olun</p>
+          <p className="text-gray-300">Войдите в свой аккаунт</p>
         </div>
 
         {error && (
@@ -82,7 +82,7 @@ export default function LoginPage() {
               required
               disabled={isLoading}
               className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
-              placeholder="Şifrənizi daxil edin"
+              placeholder="Введите ваш пароль"
             />
           </div>
 

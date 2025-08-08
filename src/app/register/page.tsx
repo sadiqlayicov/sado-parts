@@ -201,15 +201,15 @@ export default function RegisterPage() {
 
   const validateForm = () => {
     if (!formData.firstName.trim()) {
-      alert('Ad tələb olunur');
+      alert('Имя обязательно');
       return false;
     }
     if (!formData.lastName.trim()) {
-      alert('Soyad tələb olunur');
+      alert('Фамилия обязательна');
       return false;
     }
     if (!formData.email.trim()) {
-      alert('Email tələb olunur');
+      alert('Email обязателен');
       return false;
     }
     if (!formData.phone.trim()) {
@@ -217,11 +217,11 @@ export default function RegisterPage() {
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      alert('Şifrələr eyni deyil!');
+      alert('Пароли не совпадают!');
       return false;
     }
     if (!formData.terms) {
-      alert('Şərtləri qəbul etməlisiniz');
+      alert('Необходимо принять условия использования');
       return false;
     }
     return true;
@@ -263,7 +263,7 @@ export default function RegisterPage() {
         // Try to parse as JSON, if it fails, show the raw text
         try {
           const errorData = JSON.parse(errorText);
-          alert(errorData.error || 'Qeydiyyat zamanı xəta baş verdi');
+          alert(errorData.error || 'Произошла ошибка при регистрации');
         } catch (parseError) {
           alert('Server xətası: ' + errorText);
         }
@@ -274,7 +274,7 @@ export default function RegisterPage() {
 
       if (data.success) {
         // Show success message briefly, then redirect to home page
-        alert('Qeydiyyat uğurla tamamlandı! Ana səhifəyə yönləndirilirsiniz.');
+        alert('Регистрация успешно завершена! Вы будете перенаправлены на главную страницу.');
         
         // Reset form
         setFormData({
@@ -296,11 +296,11 @@ export default function RegisterPage() {
           router.push('/');
         }, 1000);
       } else {
-        alert(data.error || 'Qeydiyyat zamanı xəta baş verdi');
+        alert(data.error || 'Произошла ошибка при регистрации');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa, bir daha cəhd edin.');
+      alert('Произошла ошибка при регистрации. Пожалуйста, попробуйте еще раз.');
     } finally {
       setIsLoading(false);
     }
@@ -310,14 +310,14 @@ export default function RegisterPage() {
     <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white flex items-center justify-center p-8">
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/20">
         <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold mb-2 neon-text">Qeydiyyatdan Keçin</h2>
-          <p className="text-gray-300">Yeni hesab yaratmaq üçün məlumatlarınızı daxil edin</p>
+          <h2 className="text-3xl font-bold mb-2 neon-text">Регистрация</h2>
+          <p className="text-gray-300">Создайте новый аккаунт</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium mb-2">Ad</label>
+              <label htmlFor="firstName" className="block text-sm font-medium mb-2">Имя</label>
               <input 
                 type="text" 
                 id="firstName" 
@@ -327,11 +327,11 @@ export default function RegisterPage() {
                 required 
                 disabled={isLoading}
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
-                placeholder="Adınızı daxil edin"
+                placeholder="Введите ваше имя"
               />
             </div>
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium mb-2">Soyad</label>
+              <label htmlFor="lastName" className="block text-sm font-medium mb-2">Фамилия</label>
               <input 
                 type="text" 
                 id="lastName" 
@@ -341,13 +341,13 @@ export default function RegisterPage() {
                 required 
                 disabled={isLoading}
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
-                placeholder="Soyadınızı daxil edin"
+                placeholder="Введите вашу фамилию"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">E-poçt Ünvanı</label>
+            <label htmlFor="email" className="block text-sm font-medium mb-2">Email</label>
             <input 
               type="email" 
               id="email" 
@@ -362,7 +362,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium mb-2">Telefon Nömrəsi</label>
+            <label htmlFor="phone" className="block text-sm font-medium mb-2">Телефон</label>
             <input 
               type="tel" 
               id="phone" 
@@ -377,7 +377,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="inn" className="block text-sm font-medium mb-2">VÖEN (İNN)</label>
+            <label htmlFor="inn" className="block text-sm font-medium mb-2">ВОЕН (ИНН)</label>
             <input 
               type="text" 
               id="inn" 
@@ -386,13 +386,13 @@ export default function RegisterPage() {
               onChange={handleInputChange}
               disabled={isLoading}
               className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
-              placeholder="VÖEN nömrənizi daxil edin"
+              placeholder="Введите ваш ВОЕН"
             />
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="country" className="block text-sm font-medium mb-2">Ölkə</label>
+              <label htmlFor="country" className="block text-sm font-medium mb-2">Страна</label>
               <select
                 id="country"
                 name="country"
@@ -405,7 +405,7 @@ export default function RegisterPage() {
                   color: 'white'
                 }}
               >
-                <option value="" style={{ backgroundColor: '#1e293b', color: 'white' }}>Ölkə seçin</option>
+                <option value="" style={{ backgroundColor: '#1e293b', color: 'white' }}>Выберите страну</option>
                 {countries.map((country) => (
                   <option 
                     key={country.name} 
@@ -418,7 +418,7 @@ export default function RegisterPage() {
               </select>
             </div>
             <div>
-              <label htmlFor="city" className="block text-sm font-medium mb-2">Şəhər</label>
+              <label htmlFor="city" className="block text-sm font-medium mb-2">Город</label>
               <select
                 id="city"
                 name="city"
@@ -431,7 +431,7 @@ export default function RegisterPage() {
                   color: 'white'
                 }}
               >
-                <option value="" style={{ backgroundColor: '#1e293b', color: 'white' }}>Şəhər seçin</option>
+                <option value="" style={{ backgroundColor: '#1e293b', color: 'white' }}>Выберите город</option>
                 {formData.country && getCitiesForCountry(formData.country).map((city) => (
                   <option 
                     key={city} 
@@ -446,7 +446,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="address" className="block text-sm font-medium mb-2">Ünvan</label>
+            <label htmlFor="address" className="block text-sm font-medium mb-2">Адрес</label>
             <textarea
               id="address"
               name="address"
@@ -455,13 +455,13 @@ export default function RegisterPage() {
               rows={3}
               disabled={isLoading}
               className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50 resize-none"
-              placeholder="Ünvanınızı daxil edin"
+              placeholder="Введите ваш адрес"
             />
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">Şifrə</label>
+              <label htmlFor="password" className="block text-sm font-medium mb-2">Пароль</label>
               <input 
                 type="password" 
                 id="password" 
@@ -471,11 +471,11 @@ export default function RegisterPage() {
                 required 
                 disabled={isLoading}
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
-                placeholder="Şifrənizi daxil edin"
+                placeholder="Введите ваш пароль"
               />
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">Şifrəni Təsdiqlə</label>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">Подтвердите пароль</label>
               <input 
                 type="password" 
                 id="confirmPassword" 
@@ -485,7 +485,7 @@ export default function RegisterPage() {
                 required 
                 disabled={isLoading}
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
-                placeholder="Şifrənizi təkrar daxil edin"
+                placeholder="Повторите ваш пароль"
               />
             </div>
           </div>
@@ -505,7 +505,7 @@ export default function RegisterPage() {
             </div>
             <div className="ml-3 text-sm">
               <label htmlFor="terms" className="font-medium text-gray-300">
-                Şərtləri və Qaydaları qəbul edirəm
+                Я принимаю условия использования
               </label>
             </div>
           </div>
@@ -522,10 +522,10 @@ export default function RegisterPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Qeydiyyat edilir...
+                  Регистрация...
                 </div>
               ) : (
-                'Qeydiyyatdan Keç'
+                'Зарегистрироваться'
               )}
             </button>
           </div>
@@ -533,9 +533,9 @@ export default function RegisterPage() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-300">
-            Artıq hesabınız var?{' '}
+            У вас уже есть аккаунт?{' '}
             <a href="/login" className="text-cyan-400 hover:text-cyan-300 font-medium">
-              Daxil olun
+              Войти
             </a>
           </p>
         </div>

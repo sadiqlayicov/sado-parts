@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="az">
+    <html lang="ru">
       <head>
         <link rel="icon" href="/favicon.ico" />
         <meta name="yandex-verification" content="" />
