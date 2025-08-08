@@ -227,22 +227,23 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white shadow-2xl">
       <div className="max-w-7xl mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-16 lg:h-24">
-          {/* Логотип */}
-          <Link href="/" className="flex items-center gap-2 lg:gap-3">
-            <div className="w-8 h-8 lg:w-12 lg:h-12 bg-cyan-500 rounded-lg lg:rounded-xl flex items-center justify-center">
-              <span className="text-lg lg:text-2xl font-bold">S</span>
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-lg lg:text-2xl font-bold neon-text">{siteName}</h1>
-              <p className="text-xs text-cyan-300">Запчасти для погрузчиков</p>
-            </div>
-            <div className="sm:hidden">
-              <h1 className="text-sm font-bold neon-text">{siteName}</h1>
-            </div>
-          </Link>
+          {/* Логотип - Sol tərəfdə */}
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2 lg:gap-3">
+              <div className="w-8 h-8 lg:w-12 lg:h-12 bg-cyan-500 rounded-lg lg:rounded-xl flex items-center justify-center">
+                <span className="text-lg lg:text-2xl font-bold">S</span>
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-lg lg:text-2xl font-bold neon-text">{siteName}</h1>
+                <p className="text-xs text-cyan-300">Запчасти для погрузчиков</p>
+              </div>
+              <div className="sm:hidden">
+                <h1 className="text-sm font-bold neon-text">{siteName}</h1>
+              </div>
+            </Link>
 
-          {/* Поиск */}
-          <div className="hidden lg:flex flex-1 max-w-md mx-8 relative" ref={searchRef}>
+            {/* Поиск - Logo-nun yanında */}
+            <div className="hidden lg:flex flex-1 max-w-md relative" ref={searchRef}>
             <div className="relative w-full">
               <input
                 ref={searchInputRef}
@@ -275,12 +276,15 @@ export default function Header() {
 
             {/* Результаты поиска */}
             {showSearchResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-2 max-h-96 overflow-y-auto z-50">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-2 max-h-96 overflow-y-auto z-50 min-w-[400px]">
+                <div className="text-sm text-gray-400 px-4 py-2 border-b border-gray-600">
+                  Найдено товаров: {searchResults.length}
+                </div>
                 {searchResults.map((product) => (
                   <div
                     key={product.id}
                     onClick={() => handleSearchResultClick(product)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-cyan-600/20 cursor-pointer transition"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-cyan-600/20 cursor-pointer transition border-b border-gray-700 last:border-b-0"
                   >
                     <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
                       {product.images && product.images.length > 0 ? (
@@ -297,7 +301,7 @@ export default function Header() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium text-white truncate">{product.name}</h4>
-                      <div className="flex flex-wrap gap-2 mt-1">
+                      <div className="flex flex-wrap gap-1 mt-1">
                         {product.sku && (
                           <span className="text-xs bg-cyan-600/20 text-cyan-300 px-2 py-1 rounded">
                             SKU: {product.sku}
@@ -336,6 +340,7 @@ export default function Header() {
               </div>
             )}
           </div>
+        </div>
 
           {/* Навигация */}
           <nav className="hidden lg:flex items-center gap-8">
@@ -727,11 +732,14 @@ export default function Header() {
           {/* Мобильные результаты поиска */}
           {searchResults.length > 0 && (
             <div className="mt-3 max-h-80 overflow-y-auto">
+              <div className="text-sm text-gray-400 px-3 py-2 border-b border-gray-600">
+                Найдено товаров: {searchResults.length}
+              </div>
               {searchResults.map((product) => (
                 <div
                   key={product.id}
                   onClick={() => handleSearchResultClick(product)}
-                  className="flex items-center gap-2 p-2 bg-white/5 rounded-lg hover:bg-cyan-600/20 cursor-pointer transition mb-2"
+                  className="flex items-center gap-2 p-2 bg-white/5 rounded-lg hover:bg-cyan-600/20 cursor-pointer transition mb-2 border-b border-gray-700 last:border-b-0"
                 >
                   <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
                     {product.images && product.images.length > 0 ? (
