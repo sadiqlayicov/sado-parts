@@ -251,7 +251,7 @@ export default function AdminOrdersPage() {
                         </div>
                       </td>
                       <td className="py-3 px-3 text-cyan-400 font-semibold">
-                        <div className="text-sm">{(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼</div>
+                        <div className="text-sm">{(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₽</div>
                         <div className="text-xs text-gray-400 mt-1">Endirimli qiymət</div>
                       </td>
                       <td className="py-3 px-3">

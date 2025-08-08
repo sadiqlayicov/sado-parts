@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (isAdmin !== null) {
-      whereConditions.push(`u."isAdmin" = $${paramIndex}`);
-      queryParams.push(isAdmin === 'true');
+      whereConditions.push(`u.role = $${paramIndex}`);
+      queryParams.push(isAdmin === 'true' ? 'ADMIN' : 'CUSTOMER');
       paramIndex++;
     }
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         u.email,
         u.name,
         u.phone,
-        u."isAdmin",
+        u.role,
         u."isApproved",
         u."firstName",
         u."lastName",
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       FROM users u
       LEFT JOIN orders o ON u.id = o."userId"
       ${whereClause}
-      GROUP BY u.id, u.email, u.name, u.phone, u."isAdmin", u."isApproved", u."firstName", u."lastName", u.inn, u.country, u.city, u.address, u."createdAt", u."updatedAt"
+      GROUP BY u.id, u.email, u.name, u.phone, u.role, u."isApproved", u."firstName", u."lastName", u.inn, u.country, u.city, u.address, u."createdAt", u."updatedAt"
       ORDER BY u."createdAt" DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
         name: user.name || 'User',
         phone: user.phone || '—',
-        isAdmin: user.isAdmin,
+        isAdmin: user.role === 'ADMIN',
         isApproved: user.isApproved,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
         city: user.city || '—',
         inn: user.inn || '—',
         address: user.address || '—',
-        role: user.isAdmin ? 'admin' : 'customer'
+        role: user.role === 'ADMIN' ? 'admin' : 'customer'
       };
     });
 
@@ -176,10 +176,10 @@ export async function POST(request: NextRequest) {
 
     // Create user
     const user = await client.query(`
-      INSERT INTO users (email, name, phone, "isAdmin", "isApproved", password)
+      INSERT INTO users (email, name, phone, role, "isApproved", password)
       VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, email, name, phone, "isAdmin", "isApproved"
-    `, [email, name || 'User', phone, isAdmin || false, isApproved !== false, 'temp_password']);
+      RETURNING id, email, name, phone, role, "isApproved"
+    `, [email, name || 'User', phone, isAdmin ? 'ADMIN' : 'CUSTOMER', isApproved !== false, 'temp_password']);
 
     return NextResponse.json({
       success: true,
