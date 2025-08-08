@@ -186,7 +186,10 @@ export async function GET(
       
       console.log('Final order with items:', orderWithItems);
 
-      return NextResponse.json([orderWithItems]); // Return as array to match expected format
+      return NextResponse.json({
+        success: true,
+        order: orderWithItems
+      });
 
     } catch (dbError) {
       console.error('Database error:', dbError);
