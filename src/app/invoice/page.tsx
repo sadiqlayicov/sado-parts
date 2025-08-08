@@ -225,14 +225,7 @@ function InvoiceContent({ order, companySettings }: {
       return;
     }
 
-    // Get the invoice content
-    const invoiceContent = document.querySelector('.invoice-content');
-    if (!invoiceContent) {
-      alert('Содержимое счета не найдено');
-      return;
-    }
-
-    // Create print-friendly HTML
+    // Create print-friendly HTML with proper styling
     const printHTML = `
       <!DOCTYPE html>
       <html>
@@ -240,26 +233,260 @@ function InvoiceContent({ order, companySettings }: {
           <title>Счет-фактура ${order?.orderNumber || ''}</title>
           <style>
             @media print {
-              body { margin: 0; padding: 20px; }
+              body { margin: 0; padding: 0; }
               .no-print { display: none !important; }
               .print-only { display: block !important; }
-              @page { margin: 1cm; }
+              @page { 
+                margin: 1.5cm; 
+                size: A4;
+              }
             }
-            body { font-family: Arial, sans-serif; }
-            .invoice-container { max-width: 800px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .company-info { margin-bottom: 20px; }
-            .order-info { margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f5f5f5; }
-            .total { font-weight: bold; text-align: right; }
-            .footer { margin-top: 30px; text-align: center; }
+            
+            body { 
+              font-family: 'Times New Roman', serif; 
+              font-size: 12px;
+              line-height: 1.4;
+              color: #000;
+              background: white;
+            }
+            
+            .invoice-container { 
+              max-width: 100%; 
+              margin: 0 auto; 
+              padding: 20px;
+            }
+            
+            .header { 
+              text-align: center; 
+              margin-bottom: 30px; 
+              border-bottom: 2px solid #000;
+              padding-bottom: 20px;
+            }
+            
+            .company-info { 
+              margin-bottom: 20px; 
+            }
+            
+            .order-info { 
+              margin-bottom: 20px; 
+            }
+            
+            .parties-section {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 30px;
+            }
+            
+            .supplier, .buyer {
+              width: 48%;
+            }
+            
+            .supplier h3, .buyer h3 {
+              font-size: 14px;
+              font-weight: bold;
+              margin-bottom: 10px;
+              border-bottom: 1px solid #000;
+              padding-bottom: 5px;
+            }
+            
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin: 20px 0; 
+              font-size: 11px;
+            }
+            
+            th, td { 
+              border: 1px solid #000; 
+              padding: 6px; 
+              text-align: left; 
+              vertical-align: top;
+            }
+            
+            th { 
+              background-color: #f0f0f0; 
+              font-weight: bold;
+              text-align: center;
+            }
+            
+            .total-section {
+              margin-top: 20px;
+              text-align: right;
+            }
+            
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 5px;
+              padding: 5px 0;
+            }
+            
+            .total-row.final {
+              font-weight: bold;
+              border-top: 2px solid #000;
+              padding-top: 10px;
+              margin-top: 10px;
+            }
+            
+            .amount-in-words {
+              text-align: center;
+              margin: 20px 0;
+              font-style: italic;
+            }
+            
+            .terms {
+              margin-top: 30px;
+              font-size: 10px;
+              line-height: 1.3;
+            }
+            
+            .signatures {
+              display: flex;
+              justify-content: space-between;
+              margin-top: 50px;
+            }
+            
+            .signature-box {
+              text-align: center;
+              width: 45%;
+            }
+            
+            .signature-line {
+              border-bottom: 1px solid #000;
+              width: 200px;
+              margin: 20px auto 5px;
+            }
+            
+            .footer { 
+              margin-top: 30px; 
+              text-align: center; 
+              font-size: 10px;
+            }
+            
+            .invoice-title {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+            
+            .invoice-number {
+              font-size: 14px;
+              margin-bottom: 5px;
+            }
+            
+            .invoice-date {
+              font-size: 14px;
+            }
           </style>
         </head>
         <body>
           <div class="invoice-container">
-            ${invoiceContent.innerHTML}
+            <!-- Header -->
+            <div class="header">
+              <div class="invoice-title">СЧЕТ-ФАКТУРА</div>
+              <div class="invoice-number">№ ${order?.orderNumber || 'N/A'}</div>
+              <div class="invoice-date">от ${order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
+            </div>
+
+            <!-- Parties Information -->
+            <div class="parties-section">
+              <div class="supplier">
+                <h3>Поставщик:</h3>
+                <p>${companySettings.companyName}</p>
+                <p>${companySettings.companyAddress}</p>
+                <p>ИНН: ${companySettings.inn}</p>
+                <p>КПП: ${companySettings.kpp}</p>
+                <p>БИК: ${companySettings.bik}</p>
+                <p>Счет №: ${companySettings.accountNumber}</p>
+                <p>Банк: ${companySettings.bankName}</p>
+                <p>БИК банка: ${companySettings.bankBik}</p>
+                <p>Корр. счет: ${companySettings.bankAccountNumber}</p>
+              </div>
+              <div class="buyer">
+                <h3>Покупатель:</h3>
+                <p>${(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}</p>
+                <p>ИНН: ${(user as any)?.inn || 'Не указан'}</p>
+                <p>Страна: ${(user as any)?.country || 'Не указана'}</p>
+                <p>Город: ${(user as any)?.city || 'Не указан'}</p>
+                <p>Адрес: ${(user as any)?.address || 'Не указан'}</p>
+              </div>
+            </div>
+
+            <!-- Products Table -->
+            <table>
+              <thead>
+                <tr>
+                  <th>№</th>
+                  <th>Товар (Услуга)</th>
+                  <th>Код</th>
+                  <th>Кол-во</th>
+                  <th>Ед.</th>
+                  <th>Цена</th>
+                  <th>Сумма</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${order?.items.map((item, index) => `
+                  <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.sku}</td>
+                    <td>${item.quantity}</td>
+                    <td>шт.</td>
+                    <td>${item.price.toLocaleString('ru-RU')} ₽</td>
+                    <td>${item.totalPrice.toLocaleString('ru-RU')} ₽</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <!-- Summary -->
+            <div class="total-section">
+              <div class="total-row">
+                <span><strong>Итого:</strong></span>
+                <span>${order?.totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</span>
+              </div>
+              <div class="total-row">
+                <span>Без налога (НДС):</span>
+                <span>${order?.totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</span>
+              </div>
+              <div class="total-row final">
+                <span><strong>Всего к оплате:</strong></span>
+                <span><strong>${order?.totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</strong></span>
+              </div>
+            </div>
+
+            <!-- Amount in Words -->
+            <div class="amount-in-words">
+              <p>Всего наименований ${order?.items.length}, на сумму ${order?.totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</p>
+              <p><strong>${numberToRussianText(order?.totalAmount || 0)}</strong></p>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="terms">
+              <p>Оплата данного счета означает согласие с условиями поставки товара.</p>
+              <p>Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе.</p>
+              <p>Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.</p>
+            </div>
+
+            <!-- Signatures -->
+            <div class="signatures">
+              <div class="signature-box">
+                <p><strong>Руководитель</strong></p>
+                <div class="signature-line"></div>
+                <p>${companySettings.directorName}</p>
+              </div>
+              <div class="signature-box">
+                <p><strong>Бухгалтер</strong></p>
+                <div class="signature-line"></div>
+                <p>${companySettings.accountantName}</p>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              <p>Лаиджов Садиг</p>
+            </div>
           </div>
         </body>
       </html>
