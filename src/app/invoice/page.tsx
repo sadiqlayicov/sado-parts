@@ -384,6 +384,8 @@ function InvoiceContent({ order, companySettings }: {
             <!-- Header -->
             <div class="header">
               <div class="invoice-title">СЧЕТ-ФАКТУРА</div>
+              <div class="invoice-number">№ ${order?.orderNumber || 'N/A'}</div>
+              <div class="invoice-date">от ${order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
             </div>
 
             <!-- Parties Information -->
