@@ -49,7 +49,7 @@ export default function Header() {
     }
     window.addEventListener('storage', updateWishlist);
     window.addEventListener('wishlistChanged', updateWishlist);
-    updateWishlist(); // Yalnız useEffect-in içində çağırılır
+    updateWishlist();
     return () => {
       window.removeEventListener('storage', updateWishlist);
       window.removeEventListener('wishlistChanged', updateWishlist);
@@ -85,11 +85,9 @@ export default function Header() {
         const categoriesRes = await fetch('/api/categories');
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json();
-          // Check if response has success and data properties (new API format)
           if (categoriesData.success && Array.isArray(categoriesData.data)) {
             setCategories(categoriesData.data);
           } else if (Array.isArray(categoriesData)) {
-            // Fallback for old API format
             setCategories(categoriesData);
           } else {
             setCategories([]);
@@ -97,10 +95,10 @@ export default function Header() {
         } else {
           setCategories([]);
         }
-              } catch (error) {
-          console.error('Ошибка получения категорий:', error);
-          setCategories([]);
-        } finally {
+      } catch (error) {
+        console.error('Ошибка получения категорий:', error);
+        setCategories([]);
+      } finally {
         setLoading(false);
       }
     }
@@ -124,7 +122,6 @@ export default function Header() {
 
     setSearchLoading(true);
     try {
-      // Use the main products API with filtering
       const response = await fetch('/api/products');
       if (response.ok) {
         const data = await response.json();
@@ -136,14 +133,13 @@ export default function Header() {
           allProducts = data;
         }
         
-        // Filter products locally
         const filteredProducts = allProducts.filter((product: any) => 
           product.name?.toLowerCase().includes(query.toLowerCase()) ||
           product.sku?.toLowerCase().includes(query.toLowerCase()) ||
           product.artikul?.toLowerCase().includes(query.toLowerCase()) ||
           product.catalogNumber?.toLowerCase().includes(query.toLowerCase()) ||
           product.description?.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 10); // Limit to 10 results
+        ).slice(0, 10);
         
         setSearchResults(filteredProducts);
         setShowSearchResults(true);
@@ -221,29 +217,26 @@ export default function Header() {
     };
   }, [showCategories]);
 
-
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white shadow-2xl">
       <div className="max-w-7xl mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-16 lg:h-24">
-          {/* Логотип - Sol tərəfdə */}
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 lg:gap-3">
-              <div className="w-8 h-8 lg:w-12 lg:h-12 bg-cyan-500 rounded-lg lg:rounded-xl flex items-center justify-center">
-                <span className="text-lg lg:text-2xl font-bold">S</span>
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-lg lg:text-2xl font-bold neon-text">{siteName}</h1>
-                <p className="text-xs text-cyan-300">Запчасти для погрузчиков</p>
-              </div>
-              <div className="sm:hidden">
-                <h1 className="text-sm font-bold neon-text">{siteName}</h1>
-              </div>
-            </Link>
+          {/* Логотип - Sol küncdə */}
+          <Link href="/" className="flex items-center gap-2 lg:gap-3">
+            <div className="w-8 h-8 lg:w-12 lg:h-12 bg-cyan-500 rounded-lg lg:rounded-xl flex items-center justify-center">
+              <span className="text-lg lg:text-2xl font-bold">S</span>
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-lg lg:text-2xl font-bold neon-text">{siteName}</h1>
+              <p className="text-xs text-cyan-300">Запчасти для погрузчиков</p>
+            </div>
+            <div className="sm:hidden">
+              <h1 className="text-sm font-bold neon-text">{siteName}</h1>
+            </div>
+          </Link>
 
-            {/* Поиск - Logo-nun yanında */}
-            <div className="hidden lg:flex flex-1 max-w-md relative" ref={searchRef}>
+          {/* Поиск - Mərkəzdə geniş */}
+          <div className="hidden lg:flex flex-1 max-w-2xl mx-8 relative" ref={searchRef}>
             <div className="relative w-full">
               <input
                 ref={searchInputRef}
@@ -251,13 +244,13 @@ export default function Header() {
                 placeholder="Поиск товаров, артикулов, каталогов..."
                 value={searchQuery}
                 onChange={handleSearchInputChange}
-                className="w-full px-4 py-2 pl-10 pr-10 bg-white/10 backdrop-blur-sm border border-cyan-500/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full px-4 py-2 pl-10 pr-10 bg-white/20 backdrop-blur-sm border border-cyan-500/50 rounded-lg text-black placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent font-medium"
               />
               <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
                 {searchLoading ? (
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-400"></div>
                 ) : (
-                  <svg className="w-3 h-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 )}
@@ -265,7 +258,7 @@ export default function Header() {
               {searchQuery && (
                 <button
                   onClick={clearSearch}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-800"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -340,7 +333,6 @@ export default function Header() {
               </div>
             )}
           </div>
-        </div>
 
           {/* Навигация */}
           <nav className="hidden lg:flex items-center gap-8">
@@ -440,8 +432,8 @@ export default function Header() {
             )}
           </nav>
 
-                      {/* Правые элементы */}
-            <div className="flex items-center gap-2 lg:gap-4">
+          {/* Правые элементы */}
+          <div className="flex items-center gap-2 lg:gap-4">
             {/* Пользователь */}
             <div className="relative hidden lg:block">
               {isAuthenticated ? (
@@ -563,6 +555,7 @@ export default function Header() {
                 )}
               </div>
             </Link>
+            
             {/* Wishlist düyməsi */}
             <button
               onClick={() => router.push('/wishlist')}
@@ -576,6 +569,7 @@ export default function Header() {
                 </span>
               )}
             </button>
+            
             <div className="hidden sm:block">
               <LanguageSwitcher />
             </div>
@@ -700,14 +694,14 @@ export default function Header() {
       {showSearchResults && (
         <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-3">
           <div className="relative">
-                          <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Поиск товаров, артикулов, каталогов..."
-                value={searchQuery}
-                onChange={handleSearchInputChange}
-                className="w-full px-3 py-2 pl-8 pr-8 bg-white/10 backdrop-blur-sm border border-cyan-500/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
-              />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Поиск товаров, артикулов, каталогов..."
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              className="w-full px-3 py-2 pl-8 pr-8 bg-white/10 backdrop-blur-sm border border-cyan-500/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+            />
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
               {searchLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
@@ -794,10 +788,9 @@ export default function Header() {
           )}
         </div>
       )}
-
     </header>
   );
-} 
+}
 
 // WishlistProductCard komponenti
 function WishlistProductCard({ productId, onClose }: { productId: string, onClose: () => void }) {

@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { Client } from 'pg';
+import { getPrismaClient } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
-
+  let prisma;
+  
   try {
-    await client.connect();
+    prisma = await getPrismaClient();
     
     const { email, password } = await request.json();
 
@@ -20,22 +17,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user with actual database schema
-    const result = await client.query(
-      `SELECT id, email, password, "firstName", "lastName", role, "isApproved", "isActive"
-       FROM users 
-       WHERE email = $1`,
-      [email]
-    );
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return NextResponse.json(
         { error: 'İstifadəçi tapılmadı' },
         { status: 401 }
       );
     }
-    
-    const user = result.rows[0];
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -54,34 +46,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is active
-    if (!user.isActive) {
-      return NextResponse.json(
-        { error: 'Hesabınız bloklanıb' },
-        { status: 401 }
-      );
-    }
-
-    // Return user data (without password) and convert role to isAdmin
+    // Return user data (without password)
     const { password: passwordField, ...userWithoutPassword } = user;
-    const isAdmin = user.role === 'ADMIN';
-    
+
     return NextResponse.json({
       success: true,
-      message: 'Uğurla daxil oldunuz',
       user: {
         ...userWithoutPassword,
-        isAdmin,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
-      },
+        name: user.name || 'User'
+      }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Daxil olma xətası' },
+      { error: 'Daxil olma zamanı xəta baş verdi' },
       { status: 500 }
     );
   } finally {
-    await client.end();
+    if (prisma && process.env.NODE_ENV === 'production') {
+      await prisma.$disconnect();
+    }
   }
 } 

@@ -1,32 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from 'pg';
-
-// Vercel üçün connection pool
-let client: Client | null = null;
-
-async function getClient() {
-  if (!client) {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    await client.connect();
-  }
-  return client;
-}
-
-async function closeClient() {
-  if (client) {
-    await client.end();
-    client = null;
-  }
-}
+import { getPrismaClient } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let prisma;
   
   try {
-    dbClient = await getClient();
+    prisma = await getPrismaClient();
     
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -37,157 +16,162 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    const whereConditions = [];
-    const queryParams = [];
-    let paramIndex = 1;
+    // Build where conditions
+    const where: any = {};
 
     if (search) {
-      whereConditions.push(`(email ILIKE $${paramIndex} OR "firstName" ILIKE $${paramIndex} OR "lastName" ILIKE $${paramIndex} OR phone ILIKE $${paramIndex})`);
-      queryParams.push(`%${search}%`);
-      paramIndex++;
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } }
+      ];
     }
 
     if (isAdmin !== null) {
-      whereConditions.push(`role = $${paramIndex}`);
-      queryParams.push(isAdmin === 'true' ? 'ADMIN' : 'CUSTOMER');
-      paramIndex++;
+      where.isAdmin = isAdmin === 'true';
     }
 
     if (isApproved !== null) {
-      whereConditions.push(`"isApproved" = $${paramIndex}`);
-      queryParams.push(isApproved === 'true');
-      paramIndex++;
+      where.isApproved = isApproved === 'true';
     }
 
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-
-    // Get users with actual database schema
-    const usersQuery = `
-      SELECT id, email, "firstName", "lastName", phone, inn, address, country, city, role, "isApproved", "discountPercentage", "createdAt", "updatedAt"
-      FROM users 
-      ${whereClause}
-      ORDER BY "createdAt" DESC
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `;
-    
-    // Get total count
-    const countQuery = `
-      SELECT COUNT(*) as total
-      FROM users 
-      ${whereClause}
-    `;
-
-    const [usersResult, countResult] = await Promise.all([
-      dbClient.query(usersQuery, [...queryParams, limit, skip]),
-      dbClient.query(countQuery, queryParams)
+    // Get users with count
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
+        },
+        include: {
+          orders: {
+            select: {
+              id: true,
+              totalAmount: true
+            }
+          }
+        }
+      }),
+      prisma.user.count({ where })
     ]);
 
-    // Transform users to include name, isAdmin, and discount for frontend compatibility
-    const users = usersResult.rows.map(user => ({
-      ...user,
-      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
-      isAdmin: user.role === 'ADMIN',
-      discount: user.isApproved ? 0 : 0,
-      discountPercentage: user.discountPercentage || 0,
-      ordersCount: 0,
-      totalSpent: 0,
-      lastLogin: user.updatedAt,
-      registrationDate: user.createdAt,
-      country: user.country || '—',
-      city: user.city || '—',
-      inn: user.inn || '—',
-      address: user.address || '—'
-    }));
-
-    const total = parseInt(countResult.rows[0].total);
+    // Transform users for frontend compatibility
+    const transformedUsers = users.map(user => {
+      const ordersCount = user.orders.length;
+      const totalSpent = user.orders.reduce((sum, order) => sum + order.totalAmount, 0);
+      
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name || 'User',
+        phone: user.phone || '—',
+        isAdmin: user.isAdmin,
+        isApproved: user.isApproved,
+        discount: user.isApproved ? 0 : 0,
+        discountPercentage: 0,
+        ordersCount,
+        totalSpent,
+        lastLogin: user.updatedAt,
+        registrationDate: user.createdAt,
+        country: '—',
+        city: '—',
+        inn: '—',
+        address: '—'
+      };
+    });
 
     return NextResponse.json({
-      users,
+      users: transformedUsers,
       pagination: {
         page,
         limit,
         total,
         pages: Math.ceil(total / limit)
       }
-    })
-  } catch (error) {
-    console.error('Get users error:', error)
-    await closeClient();
+    });
+  } catch (error: any) {
+    console.error('Users API error:', error);
     return NextResponse.json(
-      { error: 'İstifadəçi məlumatlarını əldə etmə zamanı xəta baş verdi' },
+      { error: 'İstifadəçiləri yükləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (prisma && process.env.NODE_ENV === 'production') {
+      await prisma.$disconnect();
+    }
   }
 }
 
-// POST - Create new user (admin only)
 export async function POST(request: NextRequest) {
-  let dbClient: Client | null = null;
+  let prisma;
   
   try {
-    dbClient = await getClient();
+    prisma = await getPrismaClient();
     
-    const body = await request.json()
-    const { email, password, firstName, lastName, isAdmin } = body
+    const body = await request.json();
+    const { email, name, phone, isAdmin, isApproved } = body;
 
-    if (!email || !password) {
+    // Validation
+    if (!email) {
       return NextResponse.json(
-        { error: 'Email və şifrə tələb olunur' },
+        { error: 'Email tələb olunur' },
         { status: 400 }
-      )
+      );
     }
 
     // Check if user exists
-    const existingUser = await dbClient.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email]
-    );
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
 
-    if (existingUser.rows.length > 0) {
+    if (existingUser) {
       return NextResponse.json(
-        { error: 'Bu email artıq istifadə olunub' },
+        { error: 'Bu email ünvanı artıq istifadə olunub' },
         { status: 400 }
-      )
+      );
     }
 
-    // Hash password
-    const bcrypt = await import('bcryptjs');
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user with actual database schema
-    const result = await dbClient.query(
-      `INSERT INTO users (id, email, password, "firstName", "lastName", role, "isApproved", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-       RETURNING id, email, "firstName", "lastName", role, "isApproved"`,
-      [
-        'user-' + Date.now(),
+    // Create user
+    const user = await prisma.user.create({
+      data: {
         email,
-        hashedPassword,
-        firstName || 'User',
-        lastName || 'User',
-        isAdmin ? 'ADMIN' : 'CUSTOMER',
-        isAdmin ? true : true // Bütün yeni müştərilər təsdiqlənmiş olsun
-      ]
-    );
-
-    const user = result.rows[0];
+        name: name || 'User',
+        phone,
+        isAdmin: isAdmin || false,
+        isApproved: isApproved !== false,
+        password: 'temp_password' // Will be changed by user
+      }
+    });
 
     return NextResponse.json({
-      message: 'İstifadəçi uğurla yaradıldı',
+      success: true,
       user: {
         id: user.id,
         email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
-        isAdmin: user.role === 'ADMIN',
+        name: user.name,
+        phone: user.phone,
+        isAdmin: user.isAdmin,
         isApproved: user.isApproved
       }
-    })
-  } catch (error) {
-    console.error('Create user error:', error)
-    await closeClient();
+    });
+  } catch (error: any) {
+    console.error('Create user error:', error);
+    
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Bu email ünvanı artıq istifadə olunub' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'İstifadəçi yaratma xətası' },
+      { error: 'İstifadəçi yaratma zamanı xəta baş verdi' },
       { status: 500 }
-    )
+    );
+  } finally {
+    if (prisma && process.env.NODE_ENV === 'production') {
+      await prisma.$disconnect();
+    }
   }
 } 

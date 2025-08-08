@@ -1,26 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { Client } from 'pg';
+import { getPrismaClient } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
-
+  let prisma;
+  
   try {
-    await client.connect();
+    prisma = await getPrismaClient();
     
     const { 
       email, 
       password, 
-      firstName, 
-      lastName, 
-      phone, 
-      inn, 
-      address, 
-      country, 
-      city 
+      name, 
+      phone 
     } = await request.json();
 
     // Validation
@@ -32,12 +24,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await client.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email]
-    );
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
 
-    if (existingUser.rows.length > 0) {
+    if (existingUser) {
       return NextResponse.json(
         { success: false, error: 'Bu email ünvanı artıq istifadə olunub' },
         { status: 200 }
@@ -47,28 +38,16 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with all fields including country, city, inn, address
-    const result = await client.query(`
-      INSERT INTO users (id, email, password, "firstName", "lastName", phone, inn, address, country, city, role, "isApproved", "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
-      RETURNING id, email, "firstName", "lastName", phone, inn, address, country, city, "isApproved"
-    `, [
-      email, 
-      hashedPassword, 
-      firstName || 'User', 
-      lastName || 'User', 
-      phone || null, 
-      inn || null,
-      address || null,
-      country || null,
-      city || null,
-      'CUSTOMER', 
-      true, // Approved by default as requested
-    ]);
-
-    const user = result.rows[0];
-
-    await client.end();
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: name || 'User',
+        phone,
+        isApproved: true, // Approved by default as requested
+      }
+    });
 
     return NextResponse.json(
       {
@@ -77,23 +56,30 @@ export async function POST(request: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
+          name: user.name,
           phone: user.phone,
-          inn: user.inn,
-          address: user.address,
-          country: user.country,
-          city: user.city,
           isApproved: true,
         },
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Registration error:', error);
-    await client.end();
+  } catch (error: any) {
+    console.error('Register error:', error);
+    
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { success: false, error: 'Bu email ünvanı artıq istifadə olunub' },
+        { status: 200 }
+      );
+    }
+    
     return NextResponse.json(
-      { success: false, error: 'Qeydiyyat xətası' },
+      { success: false, error: 'Qeydiyyat zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (prisma && process.env.NODE_ENV === 'production') {
+      await prisma.$disconnect();
+    }
   }
 } 
