@@ -218,7 +218,61 @@ function InvoiceContent({ order, companySettings }: {
   }, [cartItems, isAuthenticated, isApproved, user, totalPrice, totalSalePrice, calculateDiscountedPrice, router]);
 
   const printInvoice = () => {
-    window.print();
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Пожалуйста, разрешите всплывающие окна для печати');
+      return;
+    }
+
+    // Get the invoice content
+    const invoiceContent = document.querySelector('.invoice-content');
+    if (!invoiceContent) {
+      alert('Содержимое счета не найдено');
+      return;
+    }
+
+    // Create print-friendly HTML
+    const printHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Счет-фактура ${order?.orderNumber || ''}</title>
+          <style>
+            @media print {
+              body { margin: 0; padding: 20px; }
+              .no-print { display: none !important; }
+              .print-only { display: block !important; }
+              @page { margin: 1cm; }
+            }
+            body { font-family: Arial, sans-serif; }
+            .invoice-container { max-width: 800px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .company-info { margin-bottom: 20px; }
+            .order-info { margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f5f5f5; }
+            .total { font-weight: bold; text-align: right; }
+            .footer { margin-top: 30px; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-container">
+            ${invoiceContent.innerHTML}
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      printWindow.print();
+      printWindow.close();
+    };
   };
 
   const continueShopping = () => {
@@ -421,7 +475,7 @@ function InvoiceContent({ order, companySettings }: {
       </div>
 
       {/* Invoice Content */}
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="invoice-content max-w-4xl mx-auto p-8">
         {/* Company Information */}
         <div className="flex justify-between items-start mb-8">
           <div>
