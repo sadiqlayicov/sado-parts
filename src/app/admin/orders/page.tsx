@@ -235,15 +235,9 @@ export default function AdminOrdersPage() {
                       <td className="py-3 px-3 text-gray-300">
                         <div className="w-[180px]">
                           <div className="font-medium text-white text-xs truncate">
-                            {order.customerName || 
-                             (order.customerFirstName && order.customerLastName ? 
-                               `${order.customerFirstName} ${order.customerLastName}` : 
-                               'Müştəri')}
+                            {order.customerName || 'Müştəri'}
                           </div>
                           <div className="text-xs text-gray-400 mt-1 truncate">{order.customerEmail}</div>
-                          {order.customerPhone && (
-                            <div className="text-xs text-gray-400 mt-1">📞 {order.customerPhone}</div>
-                          )}
                         </div>
                       </td>
                       <td className="py-3 px-3 text-gray-300">
@@ -252,10 +246,7 @@ export default function AdminOrdersPage() {
                             INN: {order.customerInn || 'Təyin edilməyib'}
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
-                            {order.items.length} məhsul
-                          </div>
-                          <div className="text-xs text-cyan-400 mt-1 font-medium">
-                            {order.items.reduce((sum, item) => sum + item.quantity, 0)} ədəd ümumi
+                            {order.items?.length || 0} məhsul
                           </div>
                         </div>
                       </td>
