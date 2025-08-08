@@ -718,8 +718,6 @@ function InvoiceContent({ order, companySettings }: {
           </div>
           <div className="text-right">
             <h2 className="text-3xl font-bold text-blue-600 mb-4">СЧЕТ-ФАКТУРА</h2>
-            <p className="text-gray-600 mb-1">№ {order?.orderNumber || 'N/A'}</p>
-            <p className="text-gray-600 mb-1">от {order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</p>
           </div>
         </div>
 

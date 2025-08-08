@@ -48,13 +48,27 @@ export default function AdminOrdersPage() {
 
   const fetchAllOrders = async () => {
     try {
+      console.log('Fetching admin orders...');
       const response = await fetch('/api/admin/orders', {
         cache: 'no-store'
       });
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+      
       const data = await response.json();
+      console.log('API Response data:', data);
       
       if (data.success) {
         setOrders(data.orders);
+        console.log('Orders set successfully:', data.orders.length);
+      } else {
+        console.error('API returned success: false:', data);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
