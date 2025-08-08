@@ -155,13 +155,24 @@ export default function OrdersPage() {
               const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
               
               return (
-                <div key={order.id} className="bg-white shadow rounded-lg overflow-hidden">
+                <div 
+                  key={order.id} 
+                  className="bg-white shadow rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200"
+                  onClick={() => router.push(`/invoice?orderId=${order.id}`)}
+                  title="Sifarişin detallarını görmək üçün klik edin"
+                >
                   {/* Order Header */}
                   <div className="px-6 py-4 border-b border-gray-200">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center space-x-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
+                        <div 
+                          className="cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/invoice?orderId=${order.id}`);
+                          }}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
                             Sifariş #{order.orderNumber}
                           </h3>
                           <p className="text-sm text-gray-500">
@@ -171,11 +182,25 @@ export default function OrdersPage() {
                       </div>
                       
                       <div className="flex items-center space-x-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
+                        <span 
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} cursor-pointer hover:opacity-80 transition-opacity`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/invoice?orderId=${order.id}`);
+                          }}
+                          title="Sifarişin detallarını görmək üçün klik edin"
+                        >
                           {statusInfo.text}
                         </span>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900">
+                        <div 
+                          className="text-right cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/invoice?orderId=${order.id}`);
+                          }}
+                          title="Sifarişin detallarını görmək üçün klik edin"
+                        >
+                          <p className="text-lg font-bold text-gray-900 hover:text-blue-600">
                             {order.totalAmount.toLocaleString('ru-RU')} ₽
                           </p>
                           <p className="text-sm text-gray-500">
@@ -187,8 +212,15 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Order Items */}
-                  <div className="px-6 py-4">
-                    <h4 className="font-medium text-gray-900 mb-3">Məhsullar:</h4>
+                  <div 
+                    className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/invoice?orderId=${order.id}`);
+                    }}
+                    title="Sifarişin detallarını görmək üçün klik edin"
+                  >
+                    <h4 className="font-medium text-gray-900 mb-3 hover:text-blue-600">Məhsullar:</h4>
                     <div className="space-y-3">
                       {order.items.map((item) => (
                         <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
