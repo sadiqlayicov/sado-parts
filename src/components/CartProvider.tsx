@@ -144,7 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = async (productId: string, quantity: number = 1) => {
     if (!user?.id) {
-      alert('Səbətə əlavə etmək üçün daxil olmalısınız');
+      alert('Пожалуйста, войдите в систему для добавления товаров в корзину');
       return;
     }
 

@@ -28,6 +28,14 @@ export default function Header() {
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [showWishlist, setShowWishlist] = useState(false);
 
+  // Search functionality
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   // LocalStorage dəyişəndə və ya başqa tabda dəyişiklik olduqda wishlist-i yenilə
   useEffect(() => {
     function updateWishlist() {
@@ -103,6 +111,83 @@ export default function Header() {
     }
   }, [isAuthenticated, user, refreshUserStatus]);
 
+  // Search functionality
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const response = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.products)) {
+          setSearchResults(data.products);
+          setShowSearchResults(true);
+        } else {
+          setSearchResults([]);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        performSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Handle click outside search results
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false);
+      }
+    }
+
+    if (showSearchResults) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSearchResults]);
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchResultClick = (product: any) => {
+    setShowSearchResults(false);
+    setSearchQuery('');
+    router.push(`/product/${product.id}`);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+  };
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (categoriesRef.current && !categoriesRef.current.contains(event.target as Node)) {
@@ -135,6 +220,102 @@ export default function Header() {
               <p className="text-xs text-cyan-300">Запчасти для погрузчиков</p>
             </div>
           </Link>
+
+          {/* Поиск */}
+          <div className="hidden lg:flex flex-1 max-w-md mx-8 relative" ref={searchRef}>
+            <div className="relative w-full">
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Поиск товаров, артикулов, каталогов..."
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                className="w-full px-4 py-2 pl-10 pr-10 bg-white/10 backdrop-blur-sm border border-cyan-500/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              />
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                {searchLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                )}
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Результаты поиска */}
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-2 max-h-96 overflow-y-auto z-50">
+                {searchResults.map((product) => (
+                  <div
+                    key={product.id}
+                    onClick={() => handleSearchResultClick(product)}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-cyan-600/20 cursor-pointer transition"
+                  >
+                    <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      {product.images && product.images.length > 0 ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-white truncate">{product.name}</h4>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {product.sku && (
+                          <span className="text-xs bg-cyan-600/20 text-cyan-300 px-2 py-1 rounded">
+                            SKU: {product.sku}
+                          </span>
+                        )}
+                        {product.artikul && (
+                          <span className="text-xs bg-blue-600/20 text-blue-300 px-2 py-1 rounded">
+                            Арт: {product.artikul}
+                          </span>
+                        )}
+                        {product.catalogNumber && (
+                          <span className="text-xs bg-green-600/20 text-green-300 px-2 py-1 rounded">
+                            Кат: {product.catalogNumber}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {product.price?.toLocaleString('ru-RU')} ₽
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Нет результатов */}
+            {showSearchResults && searchQuery && searchResults.length === 0 && !searchLoading && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-4 z-50">
+                <div className="text-center text-gray-400">
+                  <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <p>Товар не найден</p>
+                  <p className="text-sm">Попробуйте изменить запрос</p>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Навигация */}
           <nav className="hidden md:flex items-center gap-8">
@@ -319,6 +500,22 @@ export default function Header() {
               )}
             </div>
 
+            {/* Мобильный поиск */}
+            <button
+              onClick={() => {
+                setShowSearchResults(!showSearchResults);
+                if (!showSearchResults) {
+                  setTimeout(() => searchInputRef.current?.focus(), 100);
+                }
+              }}
+              className="lg:hidden w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
+              title="Поиск"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
             {/* Корзина */}
             <Link href="/cart" className="relative">
               <div className="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition">
@@ -348,6 +545,101 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Мобильный поиск */}
+      {showSearchResults && (
+        <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-4">
+          <div className="relative">
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Поиск товаров, артикулов, каталогов..."
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              className="w-full px-4 py-3 pl-10 pr-10 bg-white/10 backdrop-blur-sm border border-cyan-500/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+            />
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+              {searchLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
+              ) : (
+                <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              )}
+            </div>
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Мобильные результаты поиска */}
+          {searchResults.length > 0 && (
+            <div className="mt-4 max-h-96 overflow-y-auto">
+              {searchResults.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => handleSearchResultClick(product)}
+                  className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-cyan-600/20 cursor-pointer transition mb-2"
+                >
+                  <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-white truncate">{product.name}</h4>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {product.sku && (
+                        <span className="text-xs bg-cyan-600/20 text-cyan-300 px-2 py-1 rounded">
+                          SKU: {product.sku}
+                        </span>
+                      )}
+                      {product.artikul && (
+                        <span className="text-xs bg-blue-600/20 text-blue-300 px-2 py-1 rounded">
+                          Арт: {product.artikul}
+                        </span>
+                      )}
+                      {product.catalogNumber && (
+                        <span className="text-xs bg-green-600/20 text-green-300 px-2 py-1 rounded">
+                          Кат: {product.catalogNumber}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {product.price?.toLocaleString('ru-RU')} ₽
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Нет результатов для мобильных */}
+          {searchQuery && searchResults.length === 0 && !searchLoading && (
+            <div className="mt-4 text-center text-gray-400">
+              <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <p>Товар не найден</p>
+              <p className="text-sm">Попробуйте изменить запрос</p>
+            </div>
+          )}
+        </div>
+      )}
 
     </header>
   );

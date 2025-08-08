@@ -81,13 +81,13 @@ export async function GET(request: NextRequest) {
 
   console.log('GET /api/cart called for userId:', userId);
 
-  if (!userId) {
-    console.log('No userId provided');
-    return NextResponse.json(
-      { error: 'İstifadəçi ID tələb olunur' },
-      { status: 400 }
-    );
-  }
+      if (!userId) {
+      console.log('No userId provided');
+      return NextResponse.json(
+        { error: 'Требуется ID пользователя' },
+        { status: 400 }
+      );
+    }
 
   let client;
   
@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
 
     if (!userId || !productId) {
       return NextResponse.json(
-        { error: 'İstifadəçi ID və məhsul ID tələb olunur' },
+        { error: 'Требуется ID пользователя и ID товара' },
         { status: 400 }
       );
     }
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
     if (!productInfo) {
       console.log('Product not found:', productId);
       return NextResponse.json(
-        { error: 'Məhsul tapılmadı' },
+        { error: 'Товар не найден' },
         { status: 404 }
       );
     }
@@ -378,7 +378,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
-      message: 'Məhsul səbətə əlavə edildi',
+      message: 'Товар добавлен в корзину',
       cartItem: cartItemData
     });
     
@@ -389,13 +389,13 @@ export async function POST(request: NextRequest) {
     
     if (error.message?.includes('Max client connections reached')) {
       return NextResponse.json(
-        { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
+        { error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
         { status: 503 }
       );
     }
     
     return NextResponse.json(
-      { error: 'Səbətə əlavə etmə zamanı xəta baş verdi' },
+      { error: 'Произошла ошибка при добавлении в корзину' },
       { status: 500 }
     );
   } finally {
@@ -415,7 +415,7 @@ export async function PUT(request: NextRequest) {
 
     if (!cartItemId || quantity === undefined) {
       return NextResponse.json(
-        { error: 'Səbət elementi ID və miqdar tələb olunur' },
+        { error: 'Требуется ID элемента корзины и количество' },
         { status: 400 }
       );
     }
@@ -430,7 +430,7 @@ export async function PUT(request: NextRequest) {
 
     if (checkResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Səbət elementi tapılmadı' },
+        { error: 'Элемент корзины не найден' },
         { status: 404 }
       );
     }
@@ -485,7 +485,7 @@ export async function PUT(request: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
-      message: 'Səbət yeniləndi'
+      message: 'Корзина обновлена'
     });
     
     return response;
@@ -495,13 +495,13 @@ export async function PUT(request: NextRequest) {
     
     if (error.message?.includes('Max client connections reached')) {
       return NextResponse.json(
-        { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
+        { error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
         { status: 503 }
       );
     }
     
     return NextResponse.json(
-      { error: 'Səbəti yeniləmə zamanı xəta baş verdi' },
+      { error: 'Произошла ошибка при обновлении корзины' },
       { status: 500 }
     );
   } finally {
@@ -531,7 +531,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!finalCartItemId) {
       return NextResponse.json(
-        { error: 'Səbət elementi ID tələb olunur' },
+        { error: 'Требуется ID элемента корзины' },
         { status: 400 }
       );
     }
@@ -543,7 +543,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Məhsul səbətdən silindi'
+      message: 'Товар удален из корзины'
     });
 
   } catch (error: any) {
@@ -551,13 +551,13 @@ export async function DELETE(request: NextRequest) {
     
     if (error.message?.includes('Max client connections reached')) {
       return NextResponse.json(
-        { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
+        { error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
         { status: 503 }
       );
     }
     
     return NextResponse.json(
-      { error: 'Səbətdən silmə zamanı xəta baş verdi' },
+      { error: 'Произошла ошибка при удалении из корзины' },
       { status: 500 }
     );
   } finally {
