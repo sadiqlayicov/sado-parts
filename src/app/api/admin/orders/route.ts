@@ -22,41 +22,16 @@ export async function GET(request: NextRequest) {
       client = await pool.connect();
       console.log('Database connected successfully');
       
-      // First, check if orders table exists
-      const tableCheck = await client.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'orders'
-        );
+      // Simple query first - just get orders without joins
+      console.log('Executing simple orders query...');
+      const simpleOrdersResult = await client.query(`
+        SELECT * FROM orders ORDER BY "createdAt" DESC LIMIT 10
       `);
       
-      if (!tableCheck.rows[0].exists) {
-        console.error('Orders table does not exist');
-        return NextResponse.json(
-          { error: 'Orders table does not exist' },
-          { status: 500 }
-        );
-      }
-
-      // Check if order_items table exists
-      const itemsTableCheck = await client.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'order_items'
-        );
-      `);
+      console.log('Simple query successful, found orders:', simpleOrdersResult.rows.length);
       
-      if (!itemsTableCheck.rows[0].exists) {
-        console.error('Order_items table does not exist');
-        return NextResponse.json(
-          { error: 'Order_items table does not exist' },
-          { status: 500 }
-        );
-      }
-      
-      // Get all orders with user information
+      // Now try with user join
+      console.log('Executing orders with user join...');
       const ordersResult = await client.query(`
         SELECT 
           o.*,
@@ -71,36 +46,45 @@ export async function GET(request: NextRequest) {
         ORDER BY o."createdAt" DESC
       `);
 
-      console.log('Found orders:', ordersResult.rows.length);
+      console.log('Orders with user data found:', ordersResult.rows.length);
 
-      // Get order items for each order
+      // Get order items for each order (simplified)
+      console.log('Getting order items...');
       const ordersWithItems = await Promise.all(
         ordersResult.rows.map(async (order: any) => {
           if (!client) {
             throw new Error('Database client is null');
           }
           
-          const itemsResult = await client.query(`
-            SELECT oi.*, p.name, p.sku, p.artikul, c.name as "categoryName"
-            FROM order_items oi
-            LEFT JOIN products p ON oi."productId" = p.id
-            LEFT JOIN categories c ON p."categoryId" = c.id
-            WHERE oi."orderId" = $1
-          `, [order.id]);
+          try {
+            const itemsResult = await client.query(`
+              SELECT oi.*, p.name, p.sku, p.artikul, c.name as "categoryName"
+              FROM order_items oi
+              LEFT JOIN products p ON oi."productId" = p.id
+              LEFT JOIN categories c ON p."categoryId" = c.id
+              WHERE oi."orderId" = $1
+            `, [order.id]);
 
-          return {
-            ...order,
-            items: itemsResult.rows.map((item: any) => ({
-              id: item.id,
-              productId: item.productId,
-              name: item.name || 'Unknown Product',
-              quantity: item.quantity,
-              price: parseFloat(item.price) || 0,
-              totalPrice: (parseFloat(item.price) || 0) * item.quantity,
-              sku: item.sku || item.artikul || 'N/A',
-              categoryName: item.categoryName || 'General'
-            }))
-          };
+            return {
+              ...order,
+              items: itemsResult.rows.map((item: any) => ({
+                id: item.id,
+                productId: item.productId,
+                name: item.name || 'Unknown Product',
+                quantity: item.quantity,
+                price: parseFloat(item.price) || 0,
+                totalPrice: (parseFloat(item.price) || 0) * item.quantity,
+                sku: item.sku || item.artikul || 'N/A',
+                categoryName: item.categoryName || 'General'
+              }))
+            };
+          } catch (itemError: any) {
+            console.error(`Error getting items for order ${order.id}:`, itemError.message);
+            return {
+              ...order,
+              items: []
+            };
+          }
         })
       );
 
