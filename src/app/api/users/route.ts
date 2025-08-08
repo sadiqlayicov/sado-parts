@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         discount: user.isApproved ? 0 : 0,
-        discountPercentage: 0,
+        discountPercentage: user.discountPercentage || 0,
         ordersCount: parseInt(user.orders_count) || 0,
         totalSpent: parseFloat(user.total_spent) || 0,
         lastLogin: user.updatedAt,
