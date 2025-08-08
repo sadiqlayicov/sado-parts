@@ -244,7 +244,7 @@ export default function Header() {
                 placeholder="Поиск товаров, артикулов, каталогов..."
                 value={searchQuery}
                 onChange={handleSearchInputChange}
-                className="w-full px-4 py-3 pl-12 pr-12 bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg font-medium text-base"
+                className="w-full px-4 py-3 pl-12 pr-12 bg-[#0f172a] text-cyan-100 placeholder-gray-400 border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg font-medium text-base"
               />
               <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
                 {searchLoading ? (
@@ -700,7 +700,7 @@ export default function Header() {
               placeholder="Поиск товаров, артикулов, каталогов..."
               value={searchQuery}
               onChange={handleSearchInputChange}
-              className="w-full px-3 py-2 pl-8 pr-8 bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg text-sm"
+              className="w-full px-3 py-2 pl-8 pr-8 bg-[#0f172a] text-cyan-100 placeholder-gray-400 border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg text-sm"
             />
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
               {searchLoading ? (
