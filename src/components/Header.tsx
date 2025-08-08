@@ -236,7 +236,7 @@ export default function Header() {
           </Link>
 
           {/* Поиск - Mərkəzdə geniş */}
-          <div className="hidden lg:flex flex-1 max-w-2xl mx-8 relative" ref={searchRef}>
+          <div className="hidden lg:flex flex-1 max-w-4xl mx-8 relative" ref={searchRef}>
             <div className="relative w-full">
               <input
                 ref={searchInputRef}
@@ -244,7 +244,7 @@ export default function Header() {
                 placeholder="Поиск товаров, артикулов, каталогов..."
                 value={searchQuery}
                 onChange={handleSearchInputChange}
-                className="w-full px-4 py-2 pl-10 pr-10 bg-white/20 backdrop-blur-sm border border-cyan-500/50 rounded-lg text-black placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent font-medium"
+                className="w-full px-4 py-3 pl-12 pr-12 bg-white/90 backdrop-blur-sm border border-cyan-500/50 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent font-medium text-base shadow-lg"
               />
               <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
                 {searchLoading ? (
