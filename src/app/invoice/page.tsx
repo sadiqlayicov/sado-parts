@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useCart } from '@/components/CartProvider';
 import { useRouter } from 'next/navigation';
@@ -547,7 +547,7 @@ function InvoiceContent({ order, companySettings }: {
   );
 }
 
-export default function InvoicePage() {
+function InvoicePageContent() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -620,4 +620,16 @@ export default function InvoicePage() {
   }
 
   return <InvoiceContent order={order} companySettings={companySettings} />;
+}
+
+export default function InvoicePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <InvoicePageContent />
+    </Suspense>
+  );
 } 
