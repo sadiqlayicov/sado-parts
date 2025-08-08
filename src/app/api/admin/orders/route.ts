@@ -27,33 +27,98 @@ export async function GET(request: NextRequest) {
       const countResult = await client.query('SELECT COUNT(*) FROM orders');
       console.log('Total orders in database:', countResult.rows[0].count);
       
-      // Simple query to get orders without joins
-      console.log('Executing simple orders query...');
-      const simpleOrdersResult = await client.query(`
-        SELECT id, "orderNumber", status, "totalAmount", "createdAt", "userId"
-        FROM orders 
-        ORDER BY "createdAt" DESC 
-        LIMIT 10
+      // Get orders with user information
+      console.log('Executing orders with user join...');
+      const ordersResult = await client.query(`
+        SELECT 
+          o.id,
+          o."orderNumber",
+          o.status,
+          o."totalAmount",
+          o."createdAt",
+          o."userId",
+          u.name as customer_name,
+          u.email as customer_email,
+          u.phone as customer_phone,
+          u.inn as customer_inn,
+          u.firstName as customer_first_name,
+          u.lastName as customer_last_name
+        FROM orders o
+        LEFT JOIN users u ON o."userId" = u.id
+        ORDER BY o."createdAt" DESC
       `);
       
-      console.log('Simple query successful, found orders:', simpleOrdersResult.rows.length);
+      console.log('Orders with user data found:', ordersResult.rows.length);
       
-      // Return simple data first
+      // Get order items for each order
+      console.log('Getting order items...');
+      const ordersWithItems = await Promise.all(
+        ordersResult.rows.map(async (order: any) => {
+          if (!client) {
+            throw new Error('Database client is null');
+          }
+          
+          try {
+            const itemsResult = await client.query(`
+              SELECT oi.*, p.name, p.sku, p.artikul, c.name as "categoryName"
+              FROM order_items oi
+              LEFT JOIN products p ON oi."productId" = p.id
+              LEFT JOIN categories c ON p."categoryId" = c.id
+              WHERE oi."orderId" = $1
+            `, [order.id]);
+
+            return {
+              id: order.id,
+              orderNumber: order.orderNumber,
+              status: order.status,
+              totalAmount: parseFloat(order.totalAmount) || 0,
+              createdAt: order.createdAt,
+              userId: order.userId,
+              items: itemsResult.rows.map((item: any) => ({
+                id: item.id,
+                productId: item.productId,
+                name: item.name || 'Unknown Product',
+                quantity: item.quantity,
+                price: parseFloat(item.price) || 0,
+                totalPrice: (parseFloat(item.price) || 0) * item.quantity,
+                sku: item.sku || item.artikul || 'N/A',
+                categoryName: item.categoryName || 'General'
+              })),
+              customerName: order.customer_name || 
+                           (order.customer_first_name && order.customer_last_name ? 
+                             `${order.customer_first_name} ${order.customer_last_name}` : 
+                             'Müştəri'),
+              customerEmail: order.customer_email || 'email@example.com',
+              customerPhone: order.customer_phone || '',
+              customerInn: order.customer_inn || ''
+            };
+          } catch (itemError: any) {
+            console.error(`Error getting items for order ${order.id}:`, itemError.message);
+            return {
+              id: order.id,
+              orderNumber: order.orderNumber,
+              status: order.status,
+              totalAmount: parseFloat(order.totalAmount) || 0,
+              createdAt: order.createdAt,
+              userId: order.userId,
+              items: [],
+              customerName: order.customer_name || 
+                           (order.customer_first_name && order.customer_last_name ? 
+                             `${order.customer_first_name} ${order.customer_last_name}` : 
+                             'Müştəri'),
+              customerEmail: order.customer_email || 'email@example.com',
+              customerPhone: order.customer_phone || '',
+              customerInn: order.customer_inn || ''
+            };
+          }
+        })
+      );
+
+      console.log('Orders with items processed:', ordersWithItems.length);
+
       return NextResponse.json({
         success: true,
-        orders: simpleOrdersResult.rows.map((order: any) => ({
-          id: order.id,
-          orderNumber: order.orderNumber,
-          status: order.status,
-          totalAmount: parseFloat(order.totalAmount) || 0,
-          createdAt: order.createdAt,
-          userId: order.userId,
-          items: [], // Empty items for now
-          customerName: 'Müştəri',
-          customerEmail: 'email@example.com',
-          customerPhone: '',
-          customerInn: ''
-        }))
+        orders: ordersWithItems
       });
 
     } catch (dbError: any) {

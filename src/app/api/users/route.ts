@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrismaClient } from '@/lib/prisma';
+import { Pool } from 'pg';
+
+// Create a connection pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 2, // Limit connections
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
 export async function GET(request: NextRequest) {
-  let prisma;
+  let client: any;
   
   try {
-    prisma = await getPrismaClient();
+    console.log('GET /api/users called');
     
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -16,51 +25,80 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
+    client = await pool.connect();
+    console.log('Database connected successfully');
+
     // Build where conditions
-    const where: any = {};
+    let whereConditions = [];
+    let queryParams = [];
+    let paramIndex = 1;
 
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } }
-      ];
+      whereConditions.push(`(u.email ILIKE $${paramIndex} OR u.name ILIKE $${paramIndex} OR u.phone ILIKE $${paramIndex})`);
+      queryParams.push(`%${search}%`);
+      paramIndex++;
     }
 
     if (isAdmin !== null) {
-      where.isAdmin = isAdmin === 'true';
+      whereConditions.push(`u."isAdmin" = $${paramIndex}`);
+      queryParams.push(isAdmin === 'true');
+      paramIndex++;
     }
 
     if (isApproved !== null) {
-      where.isApproved = isApproved === 'true';
+      whereConditions.push(`u."isApproved" = $${paramIndex}`);
+      queryParams.push(isApproved === 'true');
+      paramIndex++;
     }
 
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
     // Get users with count
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: {
-          createdAt: 'desc'
-        },
-        include: {
-          orders: {
-            select: {
-              id: true,
-              totalAmount: true
-            }
-          }
-        }
-      }),
-      prisma.user.count({ where })
+    const usersQuery = `
+      SELECT 
+        u.id,
+        u.email,
+        u.name,
+        u.phone,
+        u."isAdmin",
+        u."isApproved",
+        u."firstName",
+        u."lastName",
+        u.inn,
+        u.country,
+        u.city,
+        u.address,
+        u."createdAt",
+        u."updatedAt",
+        COUNT(o.id) as orders_count,
+        COALESCE(SUM(o."totalAmount"), 0) as total_spent
+      FROM users u
+      LEFT JOIN orders o ON u.id = o."userId"
+      ${whereClause}
+      GROUP BY u.id, u.email, u.name, u.phone, u."isAdmin", u."isApproved", u."firstName", u."lastName", u.inn, u.country, u.city, u.address, u."createdAt", u."updatedAt"
+      ORDER BY u."createdAt" DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(DISTINCT u.id) as total
+      FROM users u
+      ${whereClause}
+    `;
+
+    queryParams.push(limit, skip);
+
+    console.log('Executing users query...');
+    const [usersResult, countResult] = await Promise.all([
+      client.query(usersQuery, queryParams),
+      client.query(countQuery, queryParams.slice(0, -2))
     ]);
 
+    console.log('Users found:', usersResult.rows.length);
+    console.log('Total users:', countResult.rows[0].total);
+
     // Transform users for frontend compatibility
-    const transformedUsers = users.map(user => {
-      const ordersCount = user.orders.length;
-      const totalSpent = user.orders.reduce((sum, order) => sum + order.totalAmount, 0);
-      
+    const transformedUsers = usersResult.rows.map((user: any) => {
       return {
         id: user.id,
         email: user.email,
@@ -68,16 +106,19 @@ export async function GET(request: NextRequest) {
         phone: user.phone || '—',
         isAdmin: user.isAdmin,
         isApproved: user.isApproved,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         discount: user.isApproved ? 0 : 0,
         discountPercentage: 0,
-        ordersCount,
-        totalSpent,
+        ordersCount: parseInt(user.orders_count) || 0,
+        totalSpent: parseFloat(user.total_spent) || 0,
         lastLogin: user.updatedAt,
         registrationDate: user.createdAt,
-        country: '—',
-        city: '—',
-        inn: '—',
-        address: '—'
+        country: user.country || '—',
+        city: user.city || '—',
+        inn: user.inn || '—',
+        address: user.address || '—',
+        role: user.isAdmin ? 'admin' : 'customer'
       };
     });
 
@@ -86,8 +127,8 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total,
-        pages: Math.ceil(total / limit)
+        total: parseInt(countResult.rows[0].total),
+        pages: Math.ceil(parseInt(countResult.rows[0].total) / limit)
       }
     });
   } catch (error: any) {
@@ -97,17 +138,17 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    if (prisma && process.env.NODE_ENV === 'production') {
-      await prisma.$disconnect();
+    if (client) {
+      client.release();
     }
   }
 }
 
 export async function POST(request: NextRequest) {
-  let prisma;
+  let client: any;
   
   try {
-    prisma = await getPrismaClient();
+    client = await pool.connect();
     
     const body = await request.json();
     const { email, name, phone, isAdmin, isApproved } = body;
@@ -121,11 +162,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const existingUser = await client.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
 
-    if (existingUser) {
+    if (existingUser.rows.length > 0) {
       return NextResponse.json(
         { error: 'Bu email ünvanı artıq istifadə olunub' },
         { status: 400 }
@@ -133,32 +175,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name: name || 'User',
-        phone,
-        isAdmin: isAdmin || false,
-        isApproved: isApproved !== false,
-        password: 'temp_password' // Will be changed by user
-      }
-    });
+    const user = await client.query(`
+      INSERT INTO users (email, name, phone, "isAdmin", "isApproved", password)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, email, name, phone, "isAdmin", "isApproved"
+    `, [email, name || 'User', phone, isAdmin || false, isApproved !== false, 'temp_password']);
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        isAdmin: user.isAdmin,
-        isApproved: user.isApproved
-      }
+      user: user.rows[0]
     });
   } catch (error: any) {
     console.error('Create user error:', error);
     
-    if (error.code === 'P2002') {
+    if (error.code === '23505') { // Unique constraint violation
       return NextResponse.json(
         { error: 'Bu email ünvanı artıq istifadə olunub' },
         { status: 400 }
@@ -170,8 +200,8 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    if (prisma && process.env.NODE_ENV === 'production') {
-      await prisma.$disconnect();
+    if (client) {
+      client.release();
     }
   }
 } 
