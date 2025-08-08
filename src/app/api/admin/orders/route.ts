@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
           u.email as customer_email,
           u.phone as customer_phone,
           u.inn as customer_inn,
-          u.firstName as customer_first_name,
-          u.lastName as customer_last_name
+          u."firstName" as customer_first_name,
+          u."lastName" as customer_last_name
         FROM orders o
         LEFT JOIN users u ON o."userId" = u.id
         ORDER BY o."createdAt" DESC
