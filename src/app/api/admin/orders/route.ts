@@ -20,6 +20,41 @@ export async function GET(request: NextRequest) {
     // Get orders from database
     try {
       client = await pool.connect();
+      console.log('Database connected successfully');
+      
+      // First, check if orders table exists
+      const tableCheck = await client.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'orders'
+        );
+      `);
+      
+      if (!tableCheck.rows[0].exists) {
+        console.error('Orders table does not exist');
+        return NextResponse.json(
+          { error: 'Orders table does not exist' },
+          { status: 500 }
+        );
+      }
+
+      // Check if order_items table exists
+      const itemsTableCheck = await client.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'order_items'
+        );
+      `);
+      
+      if (!itemsTableCheck.rows[0].exists) {
+        console.error('Order_items table does not exist');
+        return NextResponse.json(
+          { error: 'Order_items table does not exist' },
+          { status: 500 }
+        );
+      }
       
       // Get all orders with user information
       const ordersResult = await client.query(`
@@ -77,7 +112,13 @@ export async function GET(request: NextRequest) {
       });
 
     } catch (dbError: any) {
-      console.error('Database error:', dbError);
+      console.error('Database error details:', {
+        message: dbError.message,
+        code: dbError.code,
+        detail: dbError.detail,
+        hint: dbError.hint,
+        where: dbError.where
+      });
       
       if (dbError.message?.includes('Max client connections reached')) {
         return NextResponse.json(
@@ -86,8 +127,22 @@ export async function GET(request: NextRequest) {
         );
       }
       
+      if (dbError.message?.includes('relation "orders" does not exist')) {
+        return NextResponse.json(
+          { error: 'Orders table does not exist in database' },
+          { status: 500 }
+        );
+      }
+      
+      if (dbError.message?.includes('relation "order_items" does not exist')) {
+        return NextResponse.json(
+          { error: 'Order_items table does not exist in database' },
+          { status: 500 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: 'Verilənlər bazası xətası' },
+        { error: `Verilənlər bazası xətası: ${dbError.message}` },
         { status: 500 }
       );
     }
