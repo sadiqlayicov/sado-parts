@@ -236,7 +236,7 @@ export default function Header() {
           </Link>
 
           {/* Поиск - Mərkəzdə geniş */}
-          <div className="hidden lg:flex flex-1 max-w-6xl mx-8 relative" ref={searchRef}>
+          <div className="hidden lg:flex flex-1 max-w-7xl mx-8 relative" ref={searchRef}>
             <div className="relative w-full">
               <input
                 ref={searchInputRef}
