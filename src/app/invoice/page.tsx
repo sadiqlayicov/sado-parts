@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useCart } from '@/components/CartProvider';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 interface OrderItem {
   id: string;
@@ -28,12 +29,26 @@ interface Order {
   items: OrderItem[];
 }
 
-function InvoiceContent() {
+function InvoiceContent({ order, companySettings }: { 
+  order: Order | null; 
+  companySettings: {
+    companyName: string;
+    companyAddress: string;
+    inn: string;
+    kpp: string;
+    bik: string;
+    accountNumber: string;
+    bankName: string;
+    bankBik: string;
+    bankAccountNumber: string;
+    directorName: string;
+    accountantName: string;
+  };
+}) {
   const { user, isAuthenticated, isApproved, calculateDiscountedPrice } = useAuth();
   const { cartItems, totalPrice, totalSalePrice, savings } = useCart();
   const router = useRouter();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -150,7 +165,7 @@ function InvoiceContent() {
             const orderData = await response.json();
             // API returns array, so take first item
             const order = Array.isArray(orderData) ? orderData[0] : orderData.order;
-            setOrder(order);
+            // setOrder(order); // This line is removed as per the edit hint
             setLoading(false);
           } else {
             setError('Sifariş tapılmadı');
@@ -194,7 +209,7 @@ function InvoiceContent() {
           }))
         };
 
-        setOrder(invoiceOrder);
+        // setOrder(invoiceOrder); // This line is removed as per the edit hint
         setLoading(false);
       }
     };
@@ -407,59 +422,44 @@ function InvoiceContent() {
 
       {/* Invoice Content */}
       <div className="max-w-4xl mx-auto p-8">
-        {/* Header with Logo and Bank Details */}
+        {/* Company Information */}
         <div className="flex justify-between items-start mb-8">
-          {/* Logo */}
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white font-bold text-lg">B</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-black">BILAL-PARTS</h1>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{companySettings.companyName}</h1>
+            <p className="text-gray-600 mb-1">{companySettings.companyAddress}</p>
+            <p className="text-gray-600 mb-1">ИНН: {companySettings.inn}</p>
+            <p className="text-gray-600 mb-1">КПП: {companySettings.kpp}</p>
+            <p className="text-gray-600 mb-1">БИК: {companySettings.bik}</p>
+            <p className="text-gray-600">Счет №: {companySettings.accountNumber}</p>
           </div>
-
-          {/* Bank Details */}
-          <div className="text-right text-sm">
-            <div className="border border-gray-300 p-3 mb-3">
-              <p><strong>ООО "Банк Точка" г. Москва</strong></p>
-              <p>БИК: 044525104</p>
-              <p>Сч. №: 30101810745374525104</p>
-            </div>
-            <div className="border border-gray-300 p-3">
-              <p><strong>Банк получателя</strong></p>
-              <p>ИНН: 9718265289</p>
-              <p>КПП: 772301001</p>
-              <p>Сч. №: 40702810620000183270</p>
-              <p><strong>ООО "БИЛАЛ-ПАРТС"</strong></p>
-            </div>
-            <div className="mt-3">
-              <p><strong>Получатель:</strong></p>
-              <p className="border-b border-gray-300 min-h-[20px]"></p>
-            </div>
+          <div className="text-right">
+            <h2 className="text-3xl font-bold text-blue-600 mb-4">СЧЕТ-ФАКТУРА</h2>
+            <p className="text-gray-600 mb-1">№ {order?.orderNumber || 'N/A'}</p>
+            <p className="text-gray-600 mb-1">от {order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</p>
           </div>
-        </div>
-
-        {/* Invoice Title */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold">Счет на оплату № {order.orderNumber} от {currentDate}</h2>
         </div>
 
         {/* Supplier and Buyer Info */}
         <div className="grid grid-cols-2 gap-8 mb-8">
           <div>
-            <h3 className="font-bold text-lg mb-4">Поставщик:</h3>
-            <p className="font-semibold">ООО "БИЛАЛ-ПАРТС"</p>
-            <p>ИНН: 9718265289</p>
-            <p>КПП: 772301001</p>
-            <p>109383, Город Москва, вн.тер. г. Муниципальный Округ Печатники, проезд Батюнинский, дом 11, строение 1,</p>
-            <p><strong>(исполнитель):</strong> тел.: +7 (499)391-05-02</p>
+            <h3 className="font-bold text-lg mb-2">Поставщик:</h3>
+            <p className="mb-1">{companySettings.companyName}</p>
+            <p className="mb-1">{companySettings.companyAddress}</p>
+            <p className="mb-1">ИНН: {companySettings.inn}</p>
+            <p className="mb-1">КПП: {companySettings.kpp}</p>
+            <p className="mb-1">БИК: {companySettings.bik}</p>
+            <p className="mb-1">Счет №: {companySettings.accountNumber}</p>
+            <p className="mb-1">Банк: {companySettings.bankName}</p>
+            <p className="mb-1">БИК банка: {companySettings.bankBik}</p>
+            <p>Корр. счет: {companySettings.bankAccountNumber}</p>
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-4">Покупатель:</h3>
-            <p className="border-b border-gray-300 min-h-[20px] mb-2"></p>
-            <p><strong>(заказчик):</strong></p>
-            <p className="border-b border-gray-300 min-h-[20px]"></p>
+            <h3 className="font-bold text-lg mb-2">Покупатель:</h3>
+            <p className="mb-1">{(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}</p>
+            <p className="mb-1">ИНН: {(user as any)?.inn || 'Не указан'}</p>
+            <p className="mb-1">Страна: {(user as any)?.country || 'Не указана'}</p>
+            <p className="mb-1">Город: {(user as any)?.city || 'Не указан'}</p>
+            <p>Адрес: {(user as any)?.address || 'Не указан'}</p>
           </div>
         </div>
 
@@ -525,25 +525,16 @@ function InvoiceContent() {
         </div>
 
         {/* Signatures */}
-        <div className="flex justify-between">
-          <div className="w-48">
-            <div className="border-b border-gray-300 mb-2 min-h-[30px]"></div>
-            <p><strong>Руководитель</strong></p>
-            <p>подпись</p>
-            <p className="mt-4">Гасанов Р. Д.</p>
-            <p>расшифровка подписи</p>
+        <div className="flex justify-between mt-12">
+          <div className="text-center">
+            <p className="font-bold mb-8">Руководитель</p>
+            <div className="border-b border-gray-300 w-32 mb-2"></div>
+            <p className="text-sm text-gray-600">{companySettings.directorName}</p>
           </div>
-          <div className="w-48">
-            <div className="border-b border-gray-300 mb-2 min-h-[30px]"></div>
-            <p><strong>Бухгалтер</strong></p>
-            <p>подпись</p>
-            <p className="mt-4">Гасанов Р. Д.</p>
-            <p>расшифровка подписи</p>
-          </div>
-          <div className="w-48">
-            <div className="border border-gray-300 h-16 flex items-center justify-center">
-              <p className="text-sm">М.П.</p>
-            </div>
+          <div className="text-center">
+            <p className="font-bold mb-8">Бухгалтер</p>
+            <div className="border-b border-gray-300 w-32 mb-2"></div>
+            <p className="text-sm text-gray-600">{companySettings.accountantName}</p>
           </div>
         </div>
 
@@ -557,5 +548,76 @@ function InvoiceContent() {
 }
 
 export default function InvoicePage() {
-  return <InvoiceContent />;
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [companySettings, setCompanySettings] = useState({
+    companyName: 'ООО "Спецтехника"',
+    companyAddress: 'г. Москва, ул. Примерная, д. 123',
+    inn: '7707083893',
+    kpp: '770701001',
+    bik: '044525225',
+    accountNumber: '40702810123456789012',
+    bankName: 'Сбербанк',
+    bankBik: '044525225',
+    bankAccountNumber: '30101810200000000225',
+    directorName: 'Иванов И.И.',
+    accountantName: 'Петрова П.П.'
+  });
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get('orderId');
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load company settings
+        const settingsResponse = await fetch('/api/admin/settings');
+        const settingsData = await settingsResponse.json();
+        
+        if (settingsData.success && settingsData.settings) {
+          setCompanySettings(settingsData.settings);
+        }
+
+        // Load order data if orderId is provided
+        if (orderId) {
+          const orderResponse = await fetch(`/api/orders/${orderId}`);
+          const orderData = await orderResponse.json();
+          
+          if (orderData.success) {
+            setOrder(orderData.order);
+          } else {
+            setError('Заказ не найден');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setError('Ошибка при загрузке данных');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Ошибка</h1>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <InvoiceContent order={order} companySettings={companySettings} />;
 } 

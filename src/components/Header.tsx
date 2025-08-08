@@ -14,6 +14,7 @@ export default function Header() {
   const { user, isAuthenticated, isRegistered, isApproved, isAdmin, login, register, logout, getDiscountPercentage, refreshUserStatus, clearCachedData } = useAuth();
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [siteName, setSiteName] = useState('Sado-Parts');
   
   const [showCategories, setShowCategories] = useState(false);
   const [showBrands, setShowBrands] = useState(false);
@@ -42,6 +43,24 @@ export default function Header() {
       window.removeEventListener('storage', updateWishlist);
       window.removeEventListener('wishlistChanged', updateWishlist);
     };
+  }, []);
+
+  // Load site settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch('/api/admin/settings');
+        const data = await response.json();
+        
+        if (data.success && data.settings && data.settings.siteName) {
+          setSiteName(data.settings.siteName);
+        }
+      } catch (error) {
+        console.error('Error loading site settings:', error);
+      }
+    };
+
+    loadSettings();
   }, []);
 
   const brands = [
@@ -112,7 +131,7 @@ export default function Header() {
               <span className="text-2xl font-bold">S</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold neon-text">Sado-Parts</h1>
+              <h1 className="text-2xl font-bold neon-text">{siteName}</h1>
               <p className="text-xs text-cyan-300">Запчасти для погрузчиков</p>
             </div>
           </Link>
