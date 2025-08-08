@@ -384,6 +384,8 @@ function InvoiceContent({ order, companySettings }: {
             <!-- Header -->
             <div class="header">
               <div class="invoice-title">СЧЕТ-ФАКТУРА</div>
+              <div class="invoice-number">№ ${order?.orderNumber || 'N/A'}</div>
+              <div class="invoice-date">от ${order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
             </div>
 
             <!-- Parties Information -->
@@ -644,15 +646,15 @@ function InvoiceContent({ order, companySettings }: {
             Sifarişiniz uğurla qeydə alındı və admin tərəfindən təsdiqlənməyi gözləyir.
           </p>
           <div className="space-y-3">
-                         <button
-               onClick={() => {
-                 console.log('Navigating to orders page...');
-                 router.push('/profile/orders');
-               }}
-               className="w-full bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
-             >
-               Sifarişlərimə bax
-             </button>
+                                                   <button
+                onClick={() => {
+                  console.log('Navigating to profile orders tab...');
+                  router.push('/profile?tab=orders');
+                }}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
+              >
+                Sifarişlərimə bax
+              </button>
             <button
               onClick={continueShopping}
               className="w-full bg-gray-600 text-white px-6 py-3 rounded hover:bg-gray-700"

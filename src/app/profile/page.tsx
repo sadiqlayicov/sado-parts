@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Profile {
   id: string;
@@ -77,6 +77,7 @@ export default function ProfilePage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -84,10 +85,16 @@ export default function ProfilePage() {
       return;
     }
 
+    // Check for tab parameter in URL
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['profile', 'orders', 'addresses'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+
     if (user?.id) {
       fetchUserData();
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.id, searchParams]);
 
   const fetchUserData = async () => {
     try {
