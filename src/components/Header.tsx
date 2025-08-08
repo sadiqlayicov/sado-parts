@@ -219,7 +219,7 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white shadow-2xl">
-      <div className="max-w-7xl mx-auto px-4 lg:px-6">
+      <div className="w-full px-4 lg:px-6">
         <div className="flex items-center justify-between h-16 lg:h-24">
           {/* Логотип - Sol küncdə */}
           <Link href="/" className="flex items-center gap-2 lg:gap-3">
@@ -236,7 +236,7 @@ export default function Header() {
           </Link>
 
           {/* Поиск - Mərkəzdə geniş */}
-          <div className="hidden lg:flex flex-1 max-w-7xl mx-8 relative" ref={searchRef}>
+          <div className="hidden lg:flex flex-1 max-w-4xl mx-4 relative" ref={searchRef}>
             <div className="relative w-full">
               <input
                 ref={searchInputRef}
@@ -335,7 +335,7 @@ export default function Header() {
           </div>
 
           {/* Навигация */}
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-4">
             <Link href="/">{t('home')}</Link>
             
             {/* Категории */}
@@ -433,7 +433,7 @@ export default function Header() {
           </nav>
 
           {/* Правые элементы */}
-          <div className="flex items-center gap-2 lg:gap-4">
+          <div className="flex items-center gap-2 lg:gap-2">
             {/* Пользователь */}
             <div className="relative hidden lg:block">
               {isAuthenticated ? (
