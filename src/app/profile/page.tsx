@@ -55,29 +55,7 @@ interface OrderItem {
   createdAt: string;
 }
 
-interface OrderDetails {
-  id: string;
-  orderNumber: string;
-  status: string;
-  totalAmount: number;
-  currency: string;
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    inn: string;
-    address: string;
-    country: string;
-    city: string;
-  };
-  items: OrderItem[];
-}
+
 
 interface Address {
   id: string;
@@ -98,9 +76,6 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [loadingOrder, setLoadingOrder] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -171,75 +146,13 @@ export default function ProfilePage() {
   };
 
   const handleOrderClick = async (orderId: string) => {
-    setLoadingOrder(true);
-    try {
-      const response = await fetch(`/api/orders/${orderId}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setSelectedOrder(data.order);
-        setShowOrderModal(true);
-      } else {
-        alert('Сведения о заказе не загружены');
-      }
-    } catch (error) {
-      console.error('Ошибка при получении деталей заказа:', error);
-      alert('Сведения о заказе не загружены');
-    } finally {
-      setLoadingOrder(false);
-    }
+    // Navigate to invoice page to view order details
+    router.push(`/invoice?orderId=${orderId}`);
   };
 
-  const closeOrderModal = () => {
-    setShowOrderModal(false);
-    setSelectedOrder(null);
-  };
 
-  const printOrder = (order: Order) => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Заказ ${order.orderNumber}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .order-info { margin-bottom: 20px; }
-          .total { font-weight: bold; margin-top: 20px; }
-          .footer { text-align: center; margin-top: 30px; color: #666; }
-          .status { color: #007bff; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>Sado-Parts</h1>
-          <h2>Детали заказа</h2>
-        </div>
-        
-        <div class="order-info">
-          <h3>Номер заказа: ${order.orderNumber}</h3>
-          <p><strong>Дата:</strong> ${new Date(order.createdAt).toLocaleDateString('ru-RU')}</p>
-          <p><strong>Статус:</strong> <span class="status">${getStatusText(order.status)}</span></p>
-          <p><strong>Количество товаров:</strong> ${order.itemsCount}</p>
-        </div>
-        
-        <div class="total">
-          <h3>Общая сумма: ${(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ${order.currency}</h3>
-        </div>
-        
-        <div class="footer">
-          <p>Спасибо за заказ!</p>
-          <p>Sado-Parts - Запчасти для погрузчиков</p>
-        </div>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
-  };
+
+
 
   if (loading) {
     return (
@@ -280,14 +193,6 @@ export default function ProfilePage() {
           >
             Заказы ({orders.length})
           </button>
-          <Link
-            href="/profile/orders"
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition text-center ${
-              'bg-blue-500 text-white'
-            }`}
-          >
-            Все заказы
-          </Link>
           <button
             onClick={() => setActiveTab('addresses')}
             className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
@@ -397,9 +302,10 @@ export default function ProfilePage() {
                       className="bg-[#0f172a] rounded-lg p-6 cursor-pointer hover:bg-[#1e293b] transition-all duration-200 border border-transparent hover:border-cyan-500/30"
                       onClick={() => handleOrderClick(order.id)}
                       onDoubleClick={() => handleOrderClick(order.id)}
+                      title="Sifarişin detallarını görmək üçün klik edin"
                     >
                       <div className="flex justify-between items-start">
-                        <div>
+                        <div className="flex-1">
                           <h3 className="text-lg font-semibold text-white mb-2">
                             Заказ #{order.orderNumber}
                           </h3>
@@ -417,6 +323,21 @@ export default function ProfilePage() {
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                             {getStatusText(order.status)}
                           </span>
+                        </div>
+                        <div className="ml-4 flex items-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOrderClick(order.id);
+                            }}
+                            className="p-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-full transition-colors"
+                            title="Sifarişin detallarını görmək üçün klik edin"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                     </div>
