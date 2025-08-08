@@ -124,15 +124,29 @@ export default function Header() {
 
     setSearchLoading(true);
     try {
-      const response = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
+      // Use the main products API with filtering
+      const response = await fetch('/api/products');
       if (response.ok) {
         const data = await response.json();
-        if (data.success && Array.isArray(data.products)) {
-          setSearchResults(data.products);
-          setShowSearchResults(true);
-        } else {
-          setSearchResults([]);
+        let allProducts = [];
+        
+        if (data.success && Array.isArray(data.data)) {
+          allProducts = data.data;
+        } else if (Array.isArray(data)) {
+          allProducts = data;
         }
+        
+        // Filter products locally
+        const filteredProducts = allProducts.filter((product: any) => 
+          product.name?.toLowerCase().includes(query.toLowerCase()) ||
+          product.sku?.toLowerCase().includes(query.toLowerCase()) ||
+          product.artikul?.toLowerCase().includes(query.toLowerCase()) ||
+          product.catalogNumber?.toLowerCase().includes(query.toLowerCase()) ||
+          product.description?.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 10); // Limit to 10 results
+        
+        setSearchResults(filteredProducts);
+        setShowSearchResults(true);
       } else {
         setSearchResults([]);
       }
@@ -211,16 +225,19 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white shadow-2xl">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between h-24">
+      <div className="max-w-7xl mx-auto px-4 lg:px-6">
+        <div className="flex items-center justify-between h-16 lg:h-24">
           {/* Логотип */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-cyan-500 rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold">S</span>
+          <Link href="/" className="flex items-center gap-2 lg:gap-3">
+            <div className="w-8 h-8 lg:w-12 lg:h-12 bg-cyan-500 rounded-lg lg:rounded-xl flex items-center justify-center">
+              <span className="text-lg lg:text-2xl font-bold">S</span>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold neon-text">{siteName}</h1>
+            <div className="hidden sm:block">
+              <h1 className="text-lg lg:text-2xl font-bold neon-text">{siteName}</h1>
               <p className="text-xs text-cyan-300">Запчасти для погрузчиков</p>
+            </div>
+            <div className="sm:hidden">
+              <h1 className="text-sm font-bold neon-text">{siteName}</h1>
             </div>
           </Link>
 
@@ -235,11 +252,11 @@ export default function Header() {
                 onChange={handleSearchInputChange}
                 className="w-full px-4 py-2 pl-10 pr-10 bg-white/10 backdrop-blur-sm border border-cyan-500/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               />
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+              <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
                 {searchLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-400"></div>
                 ) : (
-                  <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 )}
@@ -247,9 +264,9 @@ export default function Header() {
               {searchQuery && (
                 <button
                   onClick={clearSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -321,7 +338,7 @@ export default function Header() {
           </div>
 
           {/* Навигация */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-8">
             <Link href="/">{t('home')}</Link>
             
             {/* Категории */}
@@ -418,10 +435,10 @@ export default function Header() {
             )}
           </nav>
 
-          {/* Правые элементы */}
-          <div className="flex items-center gap-4">
+                      {/* Правые элементы */}
+            <div className="flex items-center gap-2 lg:gap-4">
             {/* Пользователь */}
-            <div className="relative">
+            <div className="relative hidden lg:block">
               {isAuthenticated ? (
                 <div className="flex items-center gap-3">
                   <div className="text-right">
@@ -506,10 +523,10 @@ export default function Header() {
             {/* Мобильное меню */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
+              className="lg:hidden w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
               title="Меню"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -522,20 +539,20 @@ export default function Header() {
                   setTimeout(() => searchInputRef.current?.focus(), 100);
                 }
               }}
-              className="lg:hidden w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
+              className="lg:hidden w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
               title="Поиск"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
 
             {/* Корзина */}
             <Link href="/cart" className="relative">
-              <div className="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition">
-                <span className="text-lg">🛒</span>
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition">
+                <span className="text-sm lg:text-lg">🛒</span>
                 {cartItemsCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center">
                     {cartItemsCount}
                   </span>
                 )}
@@ -544,24 +561,26 @@ export default function Header() {
             {/* Wishlist düyməsi */}
             <button
               onClick={() => router.push('/wishlist')}
-              className="relative w-10 h-10 bg-pink-500 rounded-lg flex items-center justify-center hover:bg-pink-600 transition"
+              className="relative w-8 h-8 lg:w-10 lg:h-10 bg-pink-500 rounded-lg flex items-center justify-center hover:bg-pink-600 transition"
               title="Wishlist"
             >
-              <span className="text-lg">♥</span>
+              <span className="text-sm lg:text-lg">♥</span>
               {wishlist.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center">
                   {wishlist.length}
                 </span>
               )}
             </button>
-            <LanguageSwitcher />
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Мобильное меню */}
       {showMobileMenu && (
-        <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-4">
+        <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-3">
           <nav className="space-y-4">
             <Link 
               href="/" 
@@ -674,16 +693,16 @@ export default function Header() {
 
       {/* Мобильный поиск */}
       {showSearchResults && (
-        <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-4">
+        <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-3">
           <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Поиск товаров, артикулов, каталогов..."
-              value={searchQuery}
-              onChange={handleSearchInputChange}
-              className="w-full px-4 py-3 pl-10 pr-10 bg-white/10 backdrop-blur-sm border border-cyan-500/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            />
+                          <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Поиск товаров, артикулов, каталогов..."
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                className="w-full px-3 py-2 pl-8 pr-8 bg-white/10 backdrop-blur-sm border border-cyan-500/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+              />
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
               {searchLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
@@ -707,12 +726,12 @@ export default function Header() {
 
           {/* Мобильные результаты поиска */}
           {searchResults.length > 0 && (
-            <div className="mt-4 max-h-96 overflow-y-auto">
+            <div className="mt-3 max-h-80 overflow-y-auto">
               {searchResults.map((product) => (
                 <div
                   key={product.id}
                   onClick={() => handleSearchResultClick(product)}
-                  className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-cyan-600/20 cursor-pointer transition mb-2"
+                  className="flex items-center gap-2 p-2 bg-white/5 rounded-lg hover:bg-cyan-600/20 cursor-pointer transition mb-2"
                 >
                   <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
                     {product.images && product.images.length > 0 ? (

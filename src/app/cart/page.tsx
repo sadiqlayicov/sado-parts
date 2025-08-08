@@ -164,9 +164,14 @@ export default function CartPage() {
       // Transform cart items to order items format
       const items = validCartItems.map(item => {
         const translatedItem = translateProductData(item);
-        const itemPrice = isApproved && user && user.discountPercentage > 0 
-          ? calculateDiscountedPrice(item.price, item.salePrice)
-          : item.price;
+        let itemPrice = item.price;
+        
+        // Apply discount if user is approved and has discount
+        if (isApproved && user && user.discountPercentage > 0) {
+          itemPrice = item.price * (1 - user.discountPercentage / 100);
+          itemPrice = Math.floor(itemPrice * 100) / 100; // Round to 2 decimal places
+        }
+        
         const itemTotalPrice = itemPrice * item.quantity;
         
         return {
