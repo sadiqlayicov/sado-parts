@@ -63,17 +63,28 @@ export default function OrdersPage() {
   }, [isAuthenticated, user]);
 
   const fetchOrders = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('No user ID available');
+      setError('İstifadəçi məlumatları tapılmadı');
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('Fetching orders for user:', user.id);
       const response = await fetch(`/api/orders?userId=${user.id}`);
+      
+      console.log('Orders response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Orders data:', data);
         setOrders(data.orders || []);
       } else {
-        setError('Sifarişlər yüklənərkən xəta baş verdi');
+        const errorData = await response.json();
+        console.error('Orders API error:', errorData);
+        setError(`Sifarişlər yüklənərkən xəta baş verdi: ${errorData.error || 'Naməlum xəta'}`);
       }
     } catch (error) {
       console.error('Fetch orders error:', error);
@@ -128,7 +139,17 @@ export default function OrdersPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
+                <p className="text-sm text-red-800 font-medium">Xəta baş verdi:</p>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+                <button
+                  onClick={() => {
+                    setError(null);
+                    fetchOrders();
+                  }}
+                  className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                >
+                  Yenidən cəhd edin
+                </button>
               </div>
             </div>
           </div>

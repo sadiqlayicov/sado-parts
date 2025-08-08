@@ -646,12 +646,15 @@ function InvoiceContent({ order, companySettings }: {
             Sifarişiniz uğurla qeydə alındı və admin tərəfindən təsdiqlənməyi gözləyir.
           </p>
           <div className="space-y-3">
-            <button
-              onClick={() => router.push('/profile/orders')}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
-            >
-              Sifarişlərimə bax
-            </button>
+                         <button
+               onClick={() => {
+                 console.log('Navigating to orders page...');
+                 router.push('/profile/orders');
+               }}
+               className="w-full bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
+             >
+               Sifarişlərimə bax
+             </button>
             <button
               onClick={continueShopping}
               className="w-full bg-gray-600 text-white px-6 py-3 rounded hover:bg-gray-700"
