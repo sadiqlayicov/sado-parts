@@ -25,8 +25,11 @@ interface Order {
   updatedAt: string;
   items: OrderItem[];
   customerName?: string;
+  customerFirstName?: string;
+  customerLastName?: string;
   customerEmail?: string;
   customerPhone?: string;
+  customerInn?: string;
 }
 
 export default function AdminOrdersPage() {
@@ -202,7 +205,7 @@ export default function AdminOrdersPage() {
                   <tr className="border-b border-gray-600">
                     <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[140px]">Sifariş №</th>
                     <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[180px]">Müştəri</th>
-                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[220px]">Məhsullar</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[220px]">INN</th>
                     <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[100px]">Ümumi</th>
                     <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[100px]">Status</th>
                     <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[120px]">Tarix</th>
@@ -217,7 +220,12 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="py-3 px-3 text-gray-300">
                         <div className="w-[180px]">
-                          <div className="font-medium text-white text-xs truncate">{order.customerName || 'Müştəri'}</div>
+                          <div className="font-medium text-white text-xs truncate">
+                            {order.customerName || 
+                             (order.customerFirstName && order.customerLastName ? 
+                               `${order.customerFirstName} ${order.customerLastName}` : 
+                               'Müştəri')}
+                          </div>
                           <div className="text-xs text-gray-400 mt-1 truncate">{order.customerEmail}</div>
                           {order.customerPhone && (
                             <div className="text-xs text-gray-400 mt-1">📞 {order.customerPhone}</div>
@@ -227,11 +235,10 @@ export default function AdminOrdersPage() {
                       <td className="py-3 px-3 text-gray-300">
                         <div className="w-[220px]">
                           <div className="text-xs font-medium text-white">
-                            {order.items.length} məhsul
+                            INN: {order.customerInn || 'Təyin edilməyib'}
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
-                            {order.items.slice(0, 2).map(item => item.name).join(', ')}
-                            {order.items.length > 2 && ` və ${order.items.length - 2} ədəd daha`}
+                            {order.items.length} məhsul
                           </div>
                           <div className="text-xs text-cyan-400 mt-1 font-medium">
                             {order.items.reduce((sum, item) => sum + item.quantity, 0)} ədəd ümumi
