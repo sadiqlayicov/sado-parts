@@ -307,11 +307,11 @@ function CatalogPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {currentProducts.map(product => (
-                <div key={product.id} className="bg-[#1e293b] rounded-xl p-6 shadow-lg hover:scale-105 transition relative group cursor-pointer">
+                <div key={product.id} className="bg-[#1e293b] rounded-lg p-4 shadow-lg hover:scale-105 transition relative group cursor-pointer">
                   <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" />
-                  <div className="w-full h-56 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative z-20">
+                  <div className="w-full h-32 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg mb-3 flex items-center justify-center overflow-hidden relative z-20">
                     {product.images && product.images.length > 0 && product.images[0] ? (
                       <img
                         src={product.images[0]}
@@ -319,43 +319,43 @@ function CatalogPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : null}
-                    <span className="text-white font-bold text-xl" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>
+                    <span className="text-white font-bold text-sm" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>
                       {product.brand || product.name}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
-                  <p className="text-gray-300 text-sm mb-2 line-clamp-2">{product.description}</p>
-                  <p className="text-cyan-300 text-sm mb-2">Artikul: {product.artikul || product.sku || '-'}</p>
-                  <p className="text-cyan-300 text-sm mb-2">Kateqoriya: {product.category?.name || '-'}</p>
-                  <p className="text-cyan-300 text-sm mb-4">Kataloq: {product.catalogNumber || '-'}</p>
-                  <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-sm mb-2 line-clamp-2">{product.name}</h3>
+                  <p className="text-gray-300 text-xs mb-2 line-clamp-2">{product.description}</p>
+                  <p className="text-cyan-300 text-xs mb-1">Арт: {product.artikul || product.sku || '-'}</p>
+                  <p className="text-cyan-300 text-xs mb-1">Кат: {product.category?.name || '-'}</p>
+                  <p className="text-cyan-300 text-xs mb-3">Код: {product.catalogNumber || '-'}</p>
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex flex-col">
                       {isApproved && !isAdmin && getDiscountPercentage() > 0 ? (
                         <>
-                          <span className="text-xl text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
-                          <span className="text-3xl font-bold text-green-400">{calculateDiscountedPrice(product.price, product.salePrice).toLocaleString()} ₽</span>
+                          <span className="text-sm text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
+                          <span className="text-lg font-bold text-green-400">{calculateDiscountedPrice(product.price, product.salePrice).toLocaleString()} ₽</span>
                         </>
                       ) : (
-                        <span className="text-3xl font-bold text-cyan-400">{product.price.toLocaleString()} ₽</span>
+                        <span className="text-lg font-bold text-cyan-400">{product.price.toLocaleString()} ₽</span>
                       )}
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                       product.stock > 10 ? 'bg-green-500 text-white' : 
                       product.stock > 0 ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'
                     }`}>
-                      {product.stock > 0 ? `${product.stock} шт` : 'Нет в наличии'}
+                      {product.stock > 0 ? `${product.stock} шт` : 'Нет'}
                     </span>
                   </div>
-                  <div className="flex gap-2 mt-2 z-20 relative justify-center">
+                  <div className="flex gap-1 mt-2 z-20 relative justify-center">
                     <button
                       onClick={e => { e.stopPropagation(); e.preventDefault(); addToCart(product.id, 1); }}
-                      className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition text-sm"
+                      className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition text-xs"
                     >
-                      Добавить в корзину
+                      В корзину
                     </button>
                     <button
                       onClick={e => { e.stopPropagation(); e.preventDefault(); handleWishlist(product.id); }}
-                      className={`px-4 py-2 rounded-lg text-white font-semibold text-center transition text-sm ${wishlist.includes(product.id) ? 'bg-red-500' : 'bg-white/10 hover:bg-red-500'}`}
+                      className={`px-3 py-1 rounded-lg text-white font-semibold text-center transition text-xs ${wishlist.includes(product.id) ? 'bg-red-500' : 'bg-white/10 hover:bg-red-500'}`}
                       title={wishlist.includes(product.id) ? 'Удалить из избранного' : 'Добавить в избранное'}
                     >
                       ♥
@@ -363,7 +363,7 @@ function CatalogPage() {
                   </div>
                   <Link
                     href={`/product/${product.id}`}
-                    className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition block mt-3 z-20 relative"
+                    className="w-full px-3 py-1 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition block mt-2 z-20 relative text-xs"
                   >
                     Подробнее
                   </Link>

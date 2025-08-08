@@ -36,6 +36,9 @@ export default function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Mobile menu state
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
   // LocalStorage dəyişəndə və ya başqa tabda dəyişiklik olduqda wishlist-i yenilə
   useEffect(() => {
     function updateWishlist() {
@@ -500,6 +503,17 @@ export default function Header() {
               )}
             </div>
 
+            {/* Мобильное меню */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="lg:hidden w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
+              title="Меню"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
             {/* Мобильный поиск */}
             <button
               onClick={() => {
@@ -544,6 +558,119 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Мобильное меню */}
+      {showMobileMenu && (
+        <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-4">
+          <nav className="space-y-4">
+            <Link 
+              href="/" 
+              className="block px-4 py-2 text-white hover:bg-cyan-600 rounded-lg transition"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              {t('home')}
+            </Link>
+            
+            <div className="space-y-2">
+              <div className="px-4 py-2 text-cyan-300 font-semibold">Категории</div>
+              {loading ? (
+                <div className="px-4 py-2 text-sm text-gray-400">Загрузка...</div>
+              ) : categories.length > 0 ? (
+                categories.map(category => (
+                  <Link
+                    key={category.id}
+                    href={`/catalog?category=${category.id}`}
+                    className="block px-4 py-2 text-sm text-white hover:bg-cyan-600 rounded-lg transition ml-4"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    {category.name}
+                  </Link>
+                ))
+              ) : (
+                <div className="px-4 py-2 text-sm text-gray-400 ml-4">Категории не найдены</div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="px-4 py-2 text-cyan-300 font-semibold">Бренды</div>
+              {brands.map(brand => (
+                <Link
+                  key={brand}
+                  href={{ pathname: '/catalog', query: { brand: brand } }}
+                  className="block px-4 py-2 text-sm text-white hover:bg-cyan-600 rounded-lg transition ml-4"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  {brand}
+                </Link>
+              ))}
+            </div>
+
+            <Link 
+              href="/blog" 
+              className="block px-4 py-2 text-white hover:bg-cyan-600 rounded-lg transition"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              {t('blog')}
+            </Link>
+            
+            <Link 
+              href="/contacts" 
+              className="block px-4 py-2 text-white hover:bg-cyan-600 rounded-lg transition"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              {t('contacts')}
+            </Link>
+
+            {isAdmin && (
+              <Link 
+                href="/admin" 
+                className="block px-4 py-2 text-yellow-400 hover:bg-cyan-600 rounded-lg transition"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                {t('adminPanel')}
+              </Link>
+            )}
+
+            {isAuthenticated ? (
+              <div className="space-y-2">
+                <Link 
+                  href="/profile" 
+                  className="block px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  {t('profile')}
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowMobileMenu(false);
+                  }}
+                  className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-semibold transition"
+                >
+                  {t('logout')}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Link 
+                  href="/login" 
+                  className="block px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  {t('login')}
+                </Link>
+                <Link 
+                  href="/register" 
+                  className="block px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-semibold text-center transition"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  {t('register', 'Регистрация')}
+                </Link>
+              </div>
+            )}
+          </nav>
+        </div>
+      )}
 
       {/* Мобильный поиск */}
       {showSearchResults && (
