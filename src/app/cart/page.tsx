@@ -40,6 +40,31 @@ export default function CartPage() {
   } = useCart();
   const router = useRouter();
 
+  // Function to translate product names and categories from Azerbaijani to Russian
+  const translateProductData = (item: any) => {
+    const translations: { [key: string]: string } = {
+      // Product names
+      'Clark Amortizator dəsti': 'Комплект амортизаторов Clark',
+      'Dizel Mühərriklər': 'Дизельные двигатели',
+      'Hydraulic Sistem': 'Гидравлическая система',
+      'Transmission': 'Трансмиссия',
+      'Brake Sistemi': 'Тормозная система',
+      'Electrical Sistem': 'Электрическая система',
+      'Steering Sistem': 'Рулевое управление',
+      'Engine Parts': 'Детали двигателя',
+      'Hydraulic Systems': 'Гидравлические системы',
+      'Tires & Wheels': 'Шины и колеса',
+      'Filters': 'Фильтры',
+      'Lubricants': 'Смазочные материалы'
+    };
+
+    return {
+      ...item,
+      name: translations[item.name] || item.name,
+      categoryName: translations[item.categoryName] || item.categoryName
+    };
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
@@ -137,19 +162,22 @@ export default function CartPage() {
         : totalPrice;
       
       // Transform cart items to order items format
-      const items = validCartItems.map(item => ({
-        productId: item.productId,
-        name: item.name,
-        sku: item.sku,
-        categoryName: item.categoryName,
-        quantity: item.quantity,
-        price: isApproved && user && user.discountPercentage > 0 
-          ? calculateDiscountedPrice(item.price, null)
-          : item.price,
-        totalPrice: isApproved && user && user.discountPercentage > 0 
-          ? calculateDiscountedPrice(item.price, null) * item.quantity
-          : item.totalPrice
-      }));
+      const items = validCartItems.map(item => {
+        const translatedItem = translateProductData(item);
+        return {
+          productId: item.productId,
+          name: translatedItem.name,
+          sku: item.sku,
+          categoryName: translatedItem.categoryName,
+          quantity: item.quantity,
+          price: isApproved && user && user.discountPercentage > 0 
+            ? calculateDiscountedPrice(item.price, null)
+            : item.price,
+          totalPrice: isApproved && user && user.discountPercentage > 0 
+            ? calculateDiscountedPrice(item.price, null) * item.quantity
+            : item.totalPrice
+        };
+      });
       
       // Sifariş yarat
       const requestBody = {
@@ -191,7 +219,7 @@ export default function CartPage() {
       }
       
     } catch (error) {
-      console.error('Sifariş xətası:', error);
+      console.error('Ошибка заказа:', error);
       setCheckoutLoading(false);
       alert('Произошла ошибка при создании заказа. Попробуйте еще раз.');
     }
@@ -240,66 +268,69 @@ export default function CartPage() {
         <div className="bg-white/10 rounded-xl p-6 shadow-lg">
           {/* Məhsullar siyahısı */}
           <div className="space-y-4 mb-6">
-            {cartItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold">{item.name}</h3>
-                  <p className="text-sm text-gray-300">Артикул: {item.sku}</p>
-                  <p className="text-sm text-gray-300">
-                    Цена: {isApproved && user && user.discountPercentage > 0 ? (
-                      <span>
-                        <span className="line-through text-gray-400">{item.price.toLocaleString()}</span>
-                        <span className="text-green-400 ml-2">{calculateDiscountedPrice(item.price, null).toLocaleString()}</span>
-                      </span>
-                    ) : (
-                      item.price.toLocaleString()
-                    )} ₽
-                  </p>
-                  <p className="text-sm text-gray-300">Категория: {item.categoryName}</p>
-                </div>
+            {cartItems.map((item) => {
+              const translatedItem = translateProductData(item);
+              return (
+                <div key={item.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold">{translatedItem.name}</h3>
+                    <p className="text-sm text-gray-300">Артикул: {translatedItem.sku}</p>
+                    <p className="text-sm text-gray-300">
+                      Цена: {isApproved && user && user.discountPercentage > 0 ? (
+                        <span>
+                          <span className="line-through text-gray-400">{translatedItem.price.toLocaleString()}</span>
+                          <span className="text-green-400 ml-2">{calculateDiscountedPrice(translatedItem.price, null).toLocaleString()}</span>
+                        </span>
+                      ) : (
+                        translatedItem.price.toLocaleString()
+                      )} ₽
+                    </p>
+                    <p className="text-sm text-gray-300">Категория: {translatedItem.categoryName}</p>
+                  </div>
                 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                      className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition"
-                    >
-                      -
-                    </button>
-                    <span className="w-12 text-center">{item.quantity}</span>
-                    <button 
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                      disabled={item.quantity >= item.stock}
-                      className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition"
-                    >
-                      +
-                    </button>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="text-lg font-semibold">
-                      {isApproved && user && user.discountPercentage > 0 ? 
-                        (calculateDiscountedPrice(item.price, null) * item.quantity).toLocaleString() : 
-                        item.totalPrice.toLocaleString()
-                      } ₽
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                        className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition"
+                      >
+                        -
+                      </button>
+                      <span className="w-12 text-center">{item.quantity}</span>
+                      <button 
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                        disabled={item.quantity >= item.stock}
+                        className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition"
+                      >
+                        +
+                      </button>
                     </div>
-                    {isApproved && user && user.discountPercentage > 0 && (
-                      <div className="text-sm text-green-400">
-                        {item.totalPrice - (calculateDiscountedPrice(item.price, null) * item.quantity)} ₽ экономия
+                    
+                    <div className="text-right">
+                      <div className="text-lg font-semibold">
+                        {isApproved && user && user.discountPercentage > 0 ? 
+                          (calculateDiscountedPrice(item.price, null) * item.quantity).toLocaleString() : 
+                          item.totalPrice.toLocaleString()
+                        } ₽
                       </div>
-                    )}
+                      {isApproved && user && user.discountPercentage > 0 && (
+                        <div className="text-sm text-green-400">
+                          {item.totalPrice - (calculateDiscountedPrice(item.price, null) * item.quantity)} ₽ экономия
+                        </div>
+                      )}
+                    </div>
+                    
+                    <button 
+                      onClick={() => handleRemoveFromCart(item.id)}
+                      className="text-red-400 hover:text-red-600 transition"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  
-                  <button 
-                    onClick={() => handleRemoveFromCart(item.id)}
-                    className="text-red-400 hover:text-red-600 transition"
-                  >
-                    ✕
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
           {/* Ümumi */}

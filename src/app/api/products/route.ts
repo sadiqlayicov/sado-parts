@@ -18,7 +18,7 @@ function handleDatabaseError(error: any, operation: string) {
   logError(operation, error)
   
   if (error.message?.includes('Max client connections reached')) {
-    return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
+    return errorResponse('Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.', 503)
   }
   
   return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       } : null
     }))
 
-    return successResponse(products, `${products.length} məhsul tapıldı`)
+    return successResponse(products, `${products.length} товаров найдено`)
   } catch (error: any) {
     return handleDatabaseError(error, 'GET /api/products')
   } finally {

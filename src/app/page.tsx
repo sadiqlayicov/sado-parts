@@ -17,6 +17,34 @@ export default function HomePage() {
   const [topSellers, setTopSellers] = useState<any[]>([]);
   const [showAllLatestProducts, setShowAllLatestProducts] = useState(false);
 
+  // Function to translate product names and categories from Azerbaijani to Russian
+  const translateProductData = (product: any) => {
+    const translations: { [key: string]: string } = {
+      // Product names
+      'Clark Amortizator dəsti': 'Комплект амортизаторов Clark',
+      'Dizel Mühərriklər': 'Дизельные двигатели',
+      'Hydraulic Sistem': 'Гидравлическая система',
+      'Transmission': 'Трансмиссия',
+      'Brake Sistemi': 'Тормозная система',
+      'Electrical Sistem': 'Электрическая система',
+      'Steering Sistem': 'Рулевое управление',
+      'Engine Parts': 'Детали двигателя',
+      'Hydraulic Systems': 'Гидравлические системы',
+      'Tires & Wheels': 'Шины и колеса',
+      'Filters': 'Фильтры',
+      'Lubricants': 'Смазочные материалы'
+    };
+
+    return {
+      ...product,
+      name: translations[product.name] || product.name,
+      category: product.category ? {
+        ...product.category,
+        name: translations[product.category.name] || product.category.name
+      } : product.category
+    };
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -405,13 +433,92 @@ export default function HomePage() {
           <section className="mb-16">
             <h2 className="text-3xl font-bold mb-8 text-center">Топ продаж</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {getTopSellersProducts().map((product) => (
+              {getTopSellersProducts().map((product) => {
+                const translatedProduct = translateProductData(product);
+                return (
+                  <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
+                    <div className="relative mb-4">
+                      {translatedProduct.images && translatedProduct.images.length > 0 ? (
+                        <Image
+                          src={translatedProduct.images[0]}
+                          alt={translatedProduct.name}
+                          width={200}
+                          height={200}
+                          className="w-full h-48 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center">
+                          <span className="text-4xl">📦</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => toggleWishlist(product.id)}
+                        className={`absolute top-2 right-2 p-2 rounded-full ${
+                          wishlist.includes(product.id) 
+                            ? 'bg-red-500 text-white' 
+                            : 'bg-white/20 text-white hover:bg-white/30'
+                        } transition`}
+                      >
+                        {wishlist.includes(product.id) ? '❤️' : '🤍'}
+                      </button>
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{translatedProduct.name}</h3>
+                    <p className="text-sm text-gray-400 mb-2">Артикул: {translatedProduct.sku}</p>
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        {isApproved && user && user.discountPercentage > 0 ? (
+                          <div>
+                            <span className="line-through text-gray-400 text-sm">
+                              {translatedProduct.price.toLocaleString()} ₽
+                            </span>
+                            <span className="text-green-400 ml-2 font-semibold">
+                              {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xl font-bold">
+                            {translatedProduct.price.toLocaleString()} ₽
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        Продано: {topSellers.find(s => s.productId === product.id)?.salesCount || 0}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleAddToCart(translatedProduct)}
+                      className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
+                    >
+                      Добавить в корзину
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Latest Products Section */}
+        <section className="mb-16">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Новые поступления</h2>
+            <button
+              onClick={() => setShowAllLatestProducts(!showAllLatestProducts)}
+              className="text-cyan-400 hover:text-cyan-300 transition"
+            >
+              {showAllLatestProducts ? 'Показать меньше' : 'Показать все'}
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {getLatestProducts().map((product) => {
+              const translatedProduct = translateProductData(product);
+              return (
                 <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
                   <div className="relative mb-4">
-                    {product.images && product.images.length > 0 ? (
+                    {translatedProduct.images && translatedProduct.images.length > 0 ? (
                       <Image
-                        src={product.images[0]}
-                        alt={product.name}
+                        src={translatedProduct.images[0]}
+                        alt={translatedProduct.name}
                         width={200}
                         height={200}
                         className="w-full h-48 object-cover rounded-lg"
@@ -432,106 +539,33 @@ export default function HomePage() {
                       {wishlist.includes(product.id) ? '❤️' : '🤍'}
                     </button>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
-                  <p className="text-sm text-gray-400 mb-2">Артикул: {product.sku}</p>
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      {isApproved && user && user.discountPercentage > 0 ? (
-                        <div>
-                          <span className="line-through text-gray-400 text-sm">
-                            {product.price.toLocaleString()} ₽
-                          </span>
-                          <span className="text-green-400 ml-2 font-semibold">
-                            {calculateDiscountedPrice(product.price, null).toLocaleString()} ₽
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xl font-bold">
-                          {product.price.toLocaleString()} ₽
+                  <h3 className="text-lg font-semibold mb-2">{translatedProduct.name}</h3>
+                  <p className="text-sm text-gray-400 mb-2">Артикул: {translatedProduct.sku}</p>
+                  <div className="mb-4">
+                    {isApproved && user && user.discountPercentage > 0 ? (
+                      <div>
+                        <span className="line-through text-gray-400 text-sm">
+                          {translatedProduct.price.toLocaleString()} ₽
                         </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-400">
-                      Продано: {topSellers.find(s => s.productId === product.id)?.salesCount || 0}
-                    </span>
+                        <span className="text-green-400 ml-2 font-semibold">
+                          {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xl font-bold">
+                        {translatedProduct.price.toLocaleString()} ₽
+                      </span>
+                    )}
                   </div>
                   <button
-                    onClick={() => handleAddToCart(product)}
+                    onClick={() => handleAddToCart(translatedProduct)}
                     className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
                   >
                     Добавить в корзину
                   </button>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Latest Products Section */}
-        <section className="mb-16">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Новые поступления</h2>
-            <button
-              onClick={() => setShowAllLatestProducts(!showAllLatestProducts)}
-              className="text-cyan-400 hover:text-cyan-300 transition"
-            >
-              {showAllLatestProducts ? 'Показать меньше' : 'Показать все'}
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {getLatestProducts().map((product) => (
-              <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
-                <div className="relative mb-4">
-                  {product.images && product.images.length > 0 ? (
-                    <Image
-                      src={product.images[0]}
-                      alt={product.name}
-                      width={200}
-                      height={200}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center">
-                      <span className="text-4xl">📦</span>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => toggleWishlist(product.id)}
-                    className={`absolute top-2 right-2 p-2 rounded-full ${
-                      wishlist.includes(product.id) 
-                        ? 'bg-red-500 text-white' 
-                        : 'bg-white/20 text-white hover:bg-white/30'
-                    } transition`}
-                  >
-                    {wishlist.includes(product.id) ? '❤️' : '🤍'}
-                  </button>
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
-                <p className="text-sm text-gray-400 mb-2">Артикул: {product.sku}</p>
-                <div className="mb-4">
-                  {isApproved && user && user.discountPercentage > 0 ? (
-                    <div>
-                      <span className="line-through text-gray-400 text-sm">
-                        {product.price.toLocaleString()} ₽
-                      </span>
-                      <span className="text-green-400 ml-2 font-semibold">
-                        {calculateDiscountedPrice(product.price, null).toLocaleString()} ₽
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-xl font-bold">
-                      {product.price.toLocaleString()} ₽
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleAddToCart(product)}
-                  className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
-                >
-                  Добавить в корзину
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 

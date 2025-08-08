@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   if (!userId) {
     return NextResponse.json(
-      { error: 'İstifadəçi ID tələb olunur' },
+      { error: 'Требуется ID пользователя' },
       { status: 400 }
     );
   }
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
 
     if (!userId || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
-        { error: 'İstifadəçi ID və məhsul siyahısı tələb olunur' },
+        { error: 'Требуется ID пользователя и список товаров' },
         { status: 400 }
       );
     }
@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Sifariş uğurla yaradıldı',
+      message: 'Заказ успешно создан',
       order: {
         ...order,
         items: orderItems
@@ -272,20 +272,20 @@ export async function POST(request: NextRequest) {
     
     if (error.message?.includes('Max client connections reached')) {
       return NextResponse.json(
-        { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
+        { error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
         { status: 503 }
       );
     }
     
     if (error.message?.includes('duplicate key value violates unique constraint')) {
       return NextResponse.json(
-        { error: 'Bu sifariş nömrəsi artıq mövcuddur' },
+        { error: 'Этот номер заказа уже существует' },
         { status: 409 }
       );
     }
     
     return NextResponse.json(
-      { error: 'Sifariş yaradılarkən xəta baş verdi' },
+      { error: 'Произошла ошибка при создании заказа' },
       { status: 500 }
     );
   } finally {
