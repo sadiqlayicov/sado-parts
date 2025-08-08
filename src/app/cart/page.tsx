@@ -164,18 +164,19 @@ export default function CartPage() {
       // Transform cart items to order items format
       const items = validCartItems.map(item => {
         const translatedItem = translateProductData(item);
+        const itemPrice = isApproved && user && user.discountPercentage > 0 
+          ? calculateDiscountedPrice(item.price, item.salePrice)
+          : item.price;
+        const itemTotalPrice = itemPrice * item.quantity;
+        
         return {
           productId: item.productId,
           name: translatedItem.name,
           sku: item.sku,
           categoryName: translatedItem.categoryName,
           quantity: item.quantity,
-          price: isApproved && user && user.discountPercentage > 0 
-            ? calculateDiscountedPrice(item.price, null)
-            : item.price,
-          totalPrice: isApproved && user && user.discountPercentage > 0 
-            ? calculateDiscountedPrice(item.price, null) * item.quantity
-            : item.totalPrice
+          price: itemPrice,
+          totalPrice: itemTotalPrice
         };
       });
       

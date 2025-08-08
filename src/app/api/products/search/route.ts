@@ -33,26 +33,26 @@ export async function GET(request: NextRequest) {
         p.name,
         p.description,
         p.price,
-        p.sale_price,
+        p."salePrice",
         p.sku,
         p.artikul,
-        p.catalog_number,
+        p."catalogNumber",
         p.stock,
         p.images,
-        p.is_active,
-        p.is_featured,
-        p.created_at,
-        p.updated_at,
+        p."isActive",
+        p."isFeatured",
+        p."createdAt",
+        p."updatedAt",
         c.name as category_name
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.is_active = true
+      LEFT JOIN categories c ON p."categoryId" = c.id
+      WHERE p."isActive" = true
         AND (
           LOWER(p.name) LIKE LOWER($1) OR
           LOWER(p.description) LIKE LOWER($1) OR
           LOWER(p.sku) LIKE LOWER($1) OR
           LOWER(p.artikul) LIKE LOWER($1) OR
-          LOWER(p.catalog_number) LIKE LOWER($1) OR
+          LOWER(p."catalogNumber") LIKE LOWER($1) OR
           LOWER(c.name) LIKE LOWER($1)
         )
       ORDER BY 
@@ -60,11 +60,11 @@ export async function GET(request: NextRequest) {
           WHEN LOWER(p.name) LIKE LOWER($1) THEN 1
           WHEN LOWER(p.sku) LIKE LOWER($1) THEN 2
           WHEN LOWER(p.artikul) LIKE LOWER($1) THEN 3
-          WHEN LOWER(p.catalog_number) LIKE LOWER($1) THEN 4
+          WHEN LOWER(p."catalogNumber") LIKE LOWER($1) THEN 4
           ELSE 5
         END,
-        p.is_featured DESC,
-        p.created_at DESC
+        p."isFeatured" DESC,
+        p."createdAt" DESC
       LIMIT 10
     `;
 
@@ -76,17 +76,17 @@ export async function GET(request: NextRequest) {
       name: row.name,
       description: row.description,
       price: parseFloat(row.price),
-      salePrice: row.sale_price ? parseFloat(row.sale_price) : null,
+      salePrice: row.salePrice ? parseFloat(row.salePrice) : null,
       sku: row.sku,
       artikul: row.artikul,
-      catalogNumber: row.catalog_number,
+      catalogNumber: row.catalogNumber,
       stock: parseInt(row.stock),
       images: row.images ? JSON.parse(row.images) : [],
-      isActive: row.is_active,
-      isFeatured: row.is_featured,
+      isActive: row.isActive,
+      isFeatured: row.isFeatured,
       categoryName: row.category_name,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt
     }));
 
     return NextResponse.json({
