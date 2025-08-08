@@ -125,13 +125,13 @@ export async function GET(request: NextRequest) {
     
     if (error.message?.includes('Max client connections reached')) {
       return NextResponse.json(
-        { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
+        { error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
         { status: 503 }
       );
     }
     
     return NextResponse.json(
-      { error: 'Sifariş məlumatları alınmadı' },
+      { error: 'Не удалось получить данные заказов' },
       { status: 500 }
     );
   } finally {
