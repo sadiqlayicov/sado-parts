@@ -79,6 +79,8 @@ export default function AdminOrdersPage() {
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
+      console.log('Updating order status:', { orderId, status });
+      
       const response = await fetch('/api/admin/orders/update-status', {
         method: 'POST',
         headers: {
@@ -90,10 +92,19 @@ export default function AdminOrdersPage() {
         })
       });
       
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success) {
-        fetchAllOrders(); // Refresh orders
+        await fetchAllOrders(); // Refresh orders
         const statusMessages = {
           'confirmed': 'təsdiqləndi',
           'processing': 'işləməyə başladı',
@@ -103,11 +114,12 @@ export default function AdminOrdersPage() {
         };
         alert(`Sifariş statusu uğurla ${statusMessages[status as keyof typeof statusMessages] || 'dəyişdirildi'}`);
       } else {
-        alert('Status yeniləmə zamanı xəta baş verdi');
+        console.error('API returned success: false:', data);
+        alert(`Status yeniləmə zamanı xəta: ${data.error || 'Naməlum xəta'}`);
       }
     } catch (error) {
       console.error('Error updating order status:', error);
-      alert('Status yeniləmə zamanı xəta baş verdi');
+      alert(`Status yeniləmə zamanı xəta baş verdi: ${error instanceof Error ? error.message : 'Naməlum xəta'}`);
     }
   };
 

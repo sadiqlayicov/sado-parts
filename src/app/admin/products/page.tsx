@@ -46,21 +46,44 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
   // Backend kateqoriya əlavə et
   const handleAddCategory = async () => {
     if(newCategory && !categoryList.includes(newCategory)){
-      // Backend-ə göndər
-      const res = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCategory })
-      });
-      if(res.ok){
-        // YENİ: Kateqoriyaları yenidən fetch et
-        const updated = await fetch('/api/categories');
-        const updatedList = await updated.json();
-        setCategoryList(updatedList.map((c:any)=>c.name));
-        setForm(f=>({...f,category:newCategory}));
-        setNewCategory('');
-      } else {
-        alert('Kateqoriya əlavə edilə bilmədi!');
+      try {
+        // Backend-ə göndər
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newCategory })
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Add category error:', errorText);
+          alert(`Kateqoriya əlavə edilə bilmədi: ${errorText}`);
+          return;
+        }
+        
+        const data = await res.json();
+        if (data.success) {
+          // YENİ: Kateqoriyaları yenidən fetch et
+          const updated = await fetch('/api/categories');
+          const updatedData = await updated.json();
+          
+          let updatedList = [];
+          if (updatedData.success && Array.isArray(updatedData.data)) {
+            updatedList = updatedData.data.map((c:any)=>c.name);
+          } else if (Array.isArray(updatedData)) {
+            updatedList = updatedData.map((c:any)=>c.name);
+          }
+          
+          setCategoryList(updatedList);
+          setForm(f=>({...f,category:newCategory}));
+          setNewCategory('');
+          alert('Kateqoriya uğurla əlavə edildi');
+        } else {
+          alert(`Kateqoriya əlavə edilə bilmədi: ${data.error || 'Naməlum xəta'}`);
+        }
+      } catch (error) {
+        console.error('Add category error:', error);
+        alert('Kateqoriya əlavə edilərkən xəta baş verdi');
       }
     }
   };
@@ -172,27 +195,63 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
 
-  useEffect(() => {
+    useEffect(() => {
     async function fetchProductsAndCategories() {
       try {
+        console.log('Fetching products and categories...');
         const [productsRes, categoriesRes] = await Promise.all([
           fetch('/api/products', {
-            headers: {
-              'Cache-Control': 'no-cache'
-            }
+            cache: 'no-store'
           }),
           fetch('/api/categories', {
-            headers: {
-              'Cache-Control': 'no-cache'
-            }
+            cache: 'no-store'
           })
         ]);
+        
+        console.log('Products response status:', productsRes.status);
+        console.log('Categories response status:', categoriesRes.status);
+        
+        if (!productsRes.ok) {
+          const errorText = await productsRes.text();
+          console.error('Products API Error:', errorText);
+          throw new Error(`Products API error: ${productsRes.status}`);
+        }
+        
+        if (!categoriesRes.ok) {
+          const errorText = await categoriesRes.text();
+          console.error('Categories API Error:', errorText);
+          throw new Error(`Categories API error: ${categoriesRes.status}`);
+        }
+        
         const productsData = await productsRes.json();
-        setProducts(Array.isArray(productsData) ? productsData : []);
         const categoriesData = await categoriesRes.json();
-        setCategories(Array.isArray(categoriesData) ? categoriesData.map((c:any)=>c.name) : []);
+        
+        console.log('Products response data:', productsData);
+        console.log('Categories response data:', categoriesData);
+        
+        // Handle products data
+        let productsArray = [];
+        if (productsData.success && Array.isArray(productsData.data)) {
+          productsArray = productsData.data;
+        } else if (Array.isArray(productsData)) {
+          productsArray = productsData;
+        }
+        setProducts(productsArray);
+        
+        // Handle categories data
+        let categoriesArray = [];
+        if (categoriesData.success && Array.isArray(categoriesData.data)) {
+          categoriesArray = categoriesData.data.map((c:any)=>c.name);
+        } else if (Array.isArray(categoriesData)) {
+          categoriesArray = categoriesData.map((c:any)=>c.name);
+        }
+        setCategories(categoriesArray);
+        
+        console.log('Products set:', productsArray.length);
+        console.log('Categories set:', categoriesArray);
       } catch (err: any) {
-        setError(err.message || 'Произошла ошибка');
+        console.error('Error fetching products and categories:', err);
+        setError(err.message || 'Məhsullar və kateqoriyalar yüklənərkən xəta baş verdi');
       } finally {
         setLoading(false);
       }
@@ -205,7 +264,16 @@ export default function ProductsPage() {
     if (showForm) {
       fetch('/api/categories')
         .then(res => res.json())
-        .then(data => setCategories(Array.isArray(data) ? data.map((c:any)=>c.name) : []));
+        .then(data => {
+          let categoriesArray = [];
+          if (data.success && Array.isArray(data.data)) {
+            categoriesArray = data.data.map((c:any)=>c.name);
+          } else if (Array.isArray(data)) {
+            categoriesArray = data.map((c:any)=>c.name);
+          }
+          setCategories(categoriesArray);
+        })
+        .catch(err => console.error('Error updating categories:', err));
     }
   }, [showForm]);
 
@@ -250,7 +318,15 @@ export default function ProductsPage() {
     // Mövcud kateqoriyalardan id-ni tap
     const categoriesRes = await fetch('/api/categories');
     const categoriesData = await categoriesRes.json();
-    const found = Array.isArray(categoriesData) ? categoriesData.find((c:any)=>c.name===data.category) : null;
+    
+    let categoriesArray = [];
+    if (categoriesData.success && Array.isArray(categoriesData.data)) {
+      categoriesArray = categoriesData.data;
+    } else if (Array.isArray(categoriesData)) {
+      categoriesArray = categoriesData;
+    }
+    
+    const found = categoriesArray.find((c:any)=>c.name===data.category);
     if(found) categoryId = found.id;
     else if(data.category) {
       // Yeni kateqoriyanı backend-ə əlavə et

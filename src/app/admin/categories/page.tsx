@@ -24,12 +24,36 @@ export default function AdminCategoriesPage() {
 
   async function fetchCategories() {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch("/api/categories");
+      console.log('Fetching categories...');
+      const res = await fetch("/api/categories", {
+        cache: 'no-store'
+      });
+      
+      console.log('Categories response status:', res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Categories API Error:', errorText);
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
+      
       const data = await res.json();
-      setCategories(Array.isArray(data) ? data : []);
+      console.log('Categories response data:', data);
+      
+      // API utils istifadə edir və successResponse qaytarır
+      let categoriesArray = [];
+      if (data.success && Array.isArray(data.data)) {
+        categoriesArray = data.data;
+      } else if (Array.isArray(data)) {
+        categoriesArray = data;
+      }
+      setCategories(categoriesArray);
+      console.log('Categories set:', categoriesArray);
     } catch (e: any) {
-              setError(e.message || "Произошла ошибка");
+      console.error('Error fetching categories:', e);
+      setError(e.message || "Kateqoriyalar yüklənərkən xəta baş verdi");
     } finally {
       setLoading(false);
     }
@@ -37,22 +61,56 @@ export default function AdminCategoriesPage() {
 
   async function addCategory() {
     if (!newName.trim()) return;
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName, description: newDesc })
-    });
-    if (res.ok) {
-      setNewName("");
-      setNewDesc("");
-      fetchCategories();
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, description: newDesc })
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Add category error:', errorText);
+        alert(`Kateqoriya əlavə edilə bilmədi: ${errorText}`);
+        return;
+      }
+      
+      const data = await res.json();
+      if (data.success) {
+        setNewName("");
+        setNewDesc("");
+        fetchCategories();
+        alert('Kateqoriya uğurla əlavə edildi');
+      } else {
+        alert(`Kateqoriya əlavə edilə bilmədi: ${data.error || 'Naməlum xəta'}`);
+      }
+    } catch (error) {
+      console.error('Add category error:', error);
+      alert('Kateqoriya əlavə edilərkən xəta baş verdi');
     }
   }
 
   async function deleteCategory(id: string) {
-    if (!window.confirm("Silinsin?")) return;
-    await fetch(`/api/categories/${id}`, { method: "DELETE" });
-    fetchCategories();
+    if (!window.confirm("Kateqoriyanı silmək istədiyinizə əminsiniz?")) return;
+    try {
+      const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Delete category error:', errorText);
+        alert(`Kateqoriya silinə bilmədi: ${errorText}`);
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        fetchCategories();
+        alert('Kateqoriya uğurla silindi');
+      } else {
+        alert(`Kateqoriya silinə bilmədi: ${data.error || 'Naməlum xəta'}`);
+      }
+    } catch (error) {
+      console.error('Delete category error:', error);
+      alert('Kateqoriya silinərkən xəta baş verdi');
+    }
   }
 
   async function startEdit(cat: Category) {
@@ -63,13 +121,32 @@ export default function AdminCategoriesPage() {
 
   async function saveEdit() {
     if (!editing) return;
-    await fetch(`/api/categories/${editing.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName, description: editDesc })
-    });
-    setEditing(null);
-    fetchCategories();
+    try {
+      const res = await fetch(`/api/categories/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName, description: editDesc })
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Update category error:', errorText);
+        alert(`Kateqoriya yenilənə bilmədi: ${errorText}`);
+        return;
+      }
+      
+      const data = await res.json();
+      if (data.success) {
+        setEditing(null);
+        fetchCategories();
+        alert('Kateqoriya uğurla yeniləndi');
+      } else {
+        alert(`Kateqoriya yenilənə bilmədi: ${data.error || 'Naməlum xəta'}`);
+      }
+    } catch (error) {
+      console.error('Update category error:', error);
+      alert('Kateqoriya yenilənərkən xəta baş verdi');
+    }
   }
 
   return (
