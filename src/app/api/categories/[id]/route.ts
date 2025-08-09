@@ -2,15 +2,15 @@ import { NextRequest } from 'next/server'
 import { Pool } from 'pg'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
-// Create a connection pool
+// Create a connection pool optimized for Supabase
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? {
+  ssl: {
     rejectUnauthorized: false
-  } : false,
-  max: 2, // Limit connections
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  },
+  max: 3, // Increase connection limit for Supabase
+  idleTimeoutMillis: 60000, // Increase idle timeout
+  connectionTimeoutMillis: 5000, // Increase connection timeout
 })
 
 /**
@@ -64,6 +64,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const body = await request.json()
     const { name, description, isActive } = body
+    
+    console.log('Updating category:', { id, name, description, isActive });
 
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya ID'), 400)
@@ -74,6 +76,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     client = await pool.connect();
+    console.log('Database connection successful for PUT');
+
+    // Check if another category with same name already exists (excluding current one)
+    const existingResult = await client.query(`
+      SELECT id FROM categories WHERE LOWER(name) = LOWER($1) AND "isActive" = true AND id != $2
+    `, [name, id]);
+    
+    if (existingResult.rows.length > 0) {
+      return errorResponse('Bu adda başqa kateqoriya artıq mövcuddur', 400);
+    }
 
     const result = await client.query(`
       UPDATE categories 
@@ -90,18 +102,28 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return errorResponse(ErrorMessages.NOT_FOUND('Kateqoriya'), 404)
     }
 
+    console.log('Category updated successfully:', result.rows[0]);
     return successResponse(result.rows[0], 'Kateqoriya uğurla yeniləndi')
   } catch (error: any) {
+    console.error('Database error in PUT /api/categories/[id]:', error);
     logError('PUT /api/categories/[id]', error)
+    
+    if (error.code === '23505') { // Unique violation
+      return errorResponse('Bu adda kateqoriya artıq mövcuddur', 400)
+    }
     
     if (error.message?.includes('Max client connections reached')) {
       return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
     }
     
-    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
+    return errorResponse(`Database xətası: ${error.message}`, 500)
   } finally {
     if (client) {
-      client.release()
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing client:', releaseError);
+      }
     }
   }
 }
@@ -115,6 +137,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id } = await params;
     
+    console.log('Deleting category:', { id });
+    
     // Get request body if available
     let body = {};
     try {
@@ -127,12 +151,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
     
     const { forceDelete } = body as { forceDelete?: boolean };
+    console.log('Delete options:', { forceDelete });
 
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya ID'), 400)
     }
 
     client = await pool.connect();
+    console.log('Database connection successful for DELETE');
 
     // Check if category has products
     const productsResult = await client.query(`
@@ -140,6 +166,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     `, [id])
 
     const productCount = parseInt(productsResult.rows[0].count)
+    console.log(`Category has ${productCount} products`);
     
     if (productCount > 0) {
       if (!forceDelete) {
@@ -186,18 +213,24 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return errorResponse(ErrorMessages.NOT_FOUND('Kateqoriya'), 404)
     }
 
+    console.log('Category deleted successfully:', result.rows[0]);
     return successResponse(result.rows[0], 'Kateqoriya uğurla silindi')
   } catch (error: any) {
+    console.error('Database error in DELETE /api/categories/[id]:', error);
     logError('DELETE /api/categories/[id]', error)
     
     if (error.message?.includes('Max client connections reached')) {
       return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
     }
     
-    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
+    return errorResponse(`Database xətası: ${error.message}`, 500)
   } finally {
     if (client) {
-      client.release()
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing client:', releaseError);
+      }
     }
   }
 }

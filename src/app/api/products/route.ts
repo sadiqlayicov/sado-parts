@@ -2,15 +2,15 @@ import { NextRequest } from 'next/server'
 import { Pool } from 'pg'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
-// Create a connection pool
+// Create a connection pool optimized for Supabase
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? {
+  ssl: {
     rejectUnauthorized: false
-  } : false,
-  max: 2, // Limit connections
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  },
+  max: 3, // Increase connection limit for Supabase
+  idleTimeoutMillis: 60000, // Increase idle timeout
+  connectionTimeoutMillis: 5000, // Increase connection timeout
 })
 
 // Helper function to handle database errors
