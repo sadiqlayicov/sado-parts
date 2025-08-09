@@ -27,11 +27,11 @@ function handleDatabaseError(error: any, operation: string) {
 /**
  * GET - Get single product by ID
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let client;
   
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Məhsul ID'), 400)
@@ -104,11 +104,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 /**
  * PUT - Update product by ID
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let client;
   
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json()
     const { name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured, artikul, catalogNumber } = body
 
@@ -283,11 +283,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 /**
  * DELETE - Delete product by ID (soft delete by setting isActive to false)
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let client;
   
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Məhsul ID'), 400)

@@ -16,11 +16,11 @@ const pool = new Pool({
 /**
  * GET - Get single category by ID
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let client;
   
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya ID'), 400)
@@ -57,11 +57,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 /**
  * PUT - Update category by ID
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let client;
   
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json()
     const { name, description, isActive } = body
 
@@ -109,11 +109,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 /**
  * DELETE - Delete category by ID (soft delete by setting isActive to false)
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let client;
   
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya ID'), 400)
