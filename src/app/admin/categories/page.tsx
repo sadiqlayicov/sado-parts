@@ -91,19 +91,49 @@ export default function AdminCategoriesPage() {
   }
 
   async function deleteCategory(id: string) {
-    if (!window.confirm("Kateqoriyanı silmək istədiyinizə əminsiniz?")) return;
+    // İlk olaraq kateqoriyada neçə məhsul olduğunu yoxlayaq
     try {
-      const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+      const checkRes = await fetch(`/api/categories/${id}`);
+      if (!checkRes.ok) {
+        alert('Kateqoriya məlumatları yoxlanılarkən xəta baş verdi');
+        return;
+      }
+      
+      // Kateqoriyada məhsulların sayını yoxlayaq
+      const productsRes = await fetch(`/api/products?categoryId=${id}`);
+      const productsData = await productsRes.json();
+      const productCount = productsData?.data?.length || 0;
+      
+      let confirmMessage = "Kateqoriyanı silmək istədiyinizə əminsiniz?";
+      if (productCount > 0) {
+        confirmMessage = `Bu kateqoriyada ${productCount} məhsul var. Kateqoriyanı silsəniz, məhsullar "Ümumi" kateqoriyasına köçürüləcək. Davam etmək istəyirsiniz?`;
+      }
+      
+      if (!window.confirm(confirmMessage)) return;
+      
+      const res = await fetch(`/api/categories/${id}`, { 
+        method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ forceDelete: productCount > 0 })
+      });
+      
       if (!res.ok) {
         const errorText = await res.text();
         console.error('Delete category error:', errorText);
         alert(`Kateqoriya silinə bilmədi: ${errorText}`);
         return;
       }
+      
       const data = await res.json();
       if (data.success) {
         fetchCategories();
-        alert('Kateqoriya uğurla silindi');
+        if (productCount > 0) {
+          alert(`Kateqoriya uğurla silindi və ${productCount} məhsul "Ümumi" kateqoriyasına köçürüldü`);
+        } else {
+          alert('Kateqoriya uğurla silindi');
+        }
       } else {
         alert(`Kateqoriya silinə bilmədi: ${data.error || 'Naməlum xəta'}`);
       }

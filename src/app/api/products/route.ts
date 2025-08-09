@@ -34,8 +34,12 @@ export async function GET(request: NextRequest) {
   try {
     client = await pool.connect();
 
-    // Get products with categories
-    const productsResult = await client.query(`
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const categoryId = searchParams.get('categoryId');
+
+    // Build query based on filters
+    let query = `
       SELECT 
         p.id,
         p.name,
@@ -57,8 +61,21 @@ export async function GET(request: NextRequest) {
       FROM products p
       LEFT JOIN categories c ON p."categoryId" = c.id
       WHERE p."isActive" = true
-      ORDER BY p."createdAt" DESC
-    `)
+    `;
+    
+    const queryParams = [];
+    let paramCount = 1;
+    
+    if (categoryId) {
+      query += ` AND p."categoryId" = $${paramCount}`;
+      queryParams.push(categoryId);
+      paramCount++;
+    }
+    
+    query += ` ORDER BY p."createdAt" DESC`;
+
+    // Get products with categories
+    const productsResult = await client.query(query, queryParams)
 
     // Transform the data to match the expected format
     const products = productsResult.rows.map(row => ({

@@ -114,6 +114,19 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   
   try {
     const { id } = await params;
+    
+    // Get request body if available
+    let body = {};
+    try {
+      const text = await request.text();
+      if (text) {
+        body = JSON.parse(text);
+      }
+    } catch (e) {
+      // No body or invalid JSON - continue with empty body
+    }
+    
+    const { forceDelete } = body as { forceDelete?: boolean };
 
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya ID'), 400)
@@ -129,7 +142,34 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const productCount = parseInt(productsResult.rows[0].count)
     
     if (productCount > 0) {
-      return errorResponse(`Bu kateqoriyada ${productCount} məhsul var. Əvvəlcə məhsulları başqa kateqoriyaya köçürün və ya silin.`, 400)
+      if (!forceDelete) {
+        return errorResponse(`Bu kateqoriyada ${productCount} məhsul var. Əvvəlcə məhsulları başqa kateqoriyaya köçürün və ya silin.`, 400)
+      }
+      
+      // Find or create "Ümumi" category
+      let defaultCategoryResult = await client.query(`
+        SELECT id FROM categories WHERE name = 'Ümumi' AND "isActive" = true LIMIT 1
+      `);
+      
+      let defaultCategoryId;
+      if (defaultCategoryResult.rows.length === 0) {
+        // Create "Ümumi" category
+        const createResult = await client.query(`
+          INSERT INTO categories (name, description, "isActive")
+          VALUES ('Ümumi', 'Ümumi kateqoriya', true)
+          RETURNING id
+        `);
+        defaultCategoryId = createResult.rows[0].id;
+      } else {
+        defaultCategoryId = defaultCategoryResult.rows[0].id;
+      }
+      
+      // Move all products to default category
+      await client.query(`
+        UPDATE products 
+        SET "categoryId" = $1, "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "categoryId" = $2 AND "isActive" = true
+      `, [defaultCategoryId, id]);
     }
 
     // Soft delete - set isActive to false
