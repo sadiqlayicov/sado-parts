@@ -1,6 +1,5 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -17,7 +16,10 @@ if (supabaseUrl && supabaseKey) {
 export async function GET(request: NextRequest) {
   try {
     if (!supabase) {
-      return errorResponse('Supabase client is not configured', 500);
+      return NextResponse.json(
+        { success: false, error: 'Supabase client is not configured' },
+        { status: 500 }
+      );
     }
 
     console.log('Fetching categories with hierarchy...');
@@ -32,7 +34,10 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching categories:', error);
-      return errorResponse(`Database xətası: ${error.message}`, 500);
+      return NextResponse.json(
+        { success: false, error: `Database xətası: ${error.message}` },
+        { status: 500 }
+      );
     }
 
     // Organize categories into hierarchy
@@ -59,11 +64,17 @@ export async function GET(request: NextRequest) {
     });
 
     console.log(`Found ${categories?.length || 0} categories organized into ${rootCategories.length} root categories`);
-    return successResponse(rootCategories, `${categories?.length || 0} kateqoriya tapıldı`);
+    return NextResponse.json({
+      success: true,
+      data: rootCategories,
+      message: `${categories?.length || 0} kateqoriya tapıldı`
+    });
   } catch (error: any) {
     console.error('Database error in GET /api/categories:', error);
-    logError('GET /api/categories', error);
-    return errorResponse(`Database xətası: ${error.message}`, 500);
+    return NextResponse.json(
+      { success: false, error: `Database xətası: ${error.message}` },
+      { status: 500 }
+    );
   }
 }
 
@@ -74,7 +85,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     if (!supabase) {
-      return errorResponse('Supabase client is not configured', 500);
+      return NextResponse.json(
+        { success: false, error: 'Supabase client is not configured' },
+        { status: 500 }
+      );
     }
 
     console.log('Creating new category...');
@@ -85,7 +99,10 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!name) {
-      return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya adı'), 400)
+      return NextResponse.json(
+        { success: false, error: 'Kateqoriya adı tələb olunur' },
+        { status: 400 }
+      );
     }
 
     // Check if category with same name already exists
@@ -97,7 +114,10 @@ export async function POST(request: NextRequest) {
       .single();
     
     if (existingCategory) {
-      return errorResponse('Bu adda kateqoriya artıq mövcuddur', 400);
+      return NextResponse.json(
+        { success: false, error: 'Bu adda kateqoriya artıq mövcuddur' },
+        { status: 400 }
+      );
     }
 
     // If parentId is provided, verify it exists
@@ -110,7 +130,10 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (!parentCategory) {
-        return errorResponse('Ana kateqoriya tapılmadı', 400);
+        return NextResponse.json(
+          { success: false, error: 'Ana kateqoriya tapılmadı' },
+          { status: 400 }
+        );
       }
     }
 
@@ -128,14 +151,23 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Error creating category:', insertError);
-      return errorResponse(`Database xətası: ${insertError.message}`, 500);
+      return NextResponse.json(
+        { success: false, error: `Database xətası: ${insertError.message}` },
+        { status: 500 }
+      );
     }
 
     console.log('Category created successfully:', newCategory);
-    return successResponse(newCategory, 'Kateqoriya uğurla yaradıldı')
+    return NextResponse.json({
+      success: true,
+      data: newCategory,
+      message: 'Kateqoriya uğurla yaradıldı'
+    });
   } catch (error: any) {
     console.error('Database error in POST /api/categories:', error);
-    logError('POST /api/categories', error)
-    return errorResponse(`Database xətası: ${error.message}`, 500)
+    return NextResponse.json(
+      { success: false, error: `Database xətası: ${error.message}` },
+      { status: 500 }
+    );
   }
 } 
