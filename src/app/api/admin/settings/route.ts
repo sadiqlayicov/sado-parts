@@ -1,41 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
-// Create a connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 2,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let supabase: any = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 export async function GET() {
-  let client;
-  
   try {
-    client = await pool.connect();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase client is not configured' },
+        { status: 500 }
+      );
+    }
 
     // Check if settings table exists
-    const tableCheck = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'settings'
-      );
-    `);
-    
-    if (!tableCheck.rows[0].exists) {
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .eq('table_name', 'settings')
+      .single();
+
+    if (tableError || !tableCheck) {
       console.log('Settings table does not exist, creating...');
-      await client.query(`
-        CREATE TABLE settings (
-          id VARCHAR(255) PRIMARY KEY,
-          key VARCHAR(255) UNIQUE NOT NULL,
-          value TEXT,
-          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+      
+      // Create settings table using SQL
+      const { error: createError } = await supabase.rpc('exec_sql', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS settings (
+            id VARCHAR(255) PRIMARY KEY,
+            key VARCHAR(255) UNIQUE NOT NULL,
+            value TEXT,
+            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `
+      });
+
+      if (createError) {
+        console.error('Error creating settings table:', createError);
+        return NextResponse.json(
+          { error: 'Failed to create settings table' },
+          { status: 500 }
+        );
+      }
       
       // Insert default settings
       const defaultSettings = [
@@ -54,23 +67,38 @@ export async function GET() {
       ];
 
       for (const setting of defaultSettings) {
-        await client.query(`
-          INSERT INTO settings (id, key, value)
-          VALUES ($1, $2, $3)
-        `, [`setting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, setting.key, setting.value]);
+        const { error: insertError } = await supabase
+          .from('settings')
+          .insert({
+            id: `setting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            key: setting.key,
+            value: setting.value
+          });
+
+        if (insertError) {
+          console.error('Error inserting default setting:', insertError);
+        }
       }
       
       console.log('Settings table created with default values');
     }
 
     // Get all settings
-    const result = await client.query(`
-      SELECT key, value FROM settings
-      ORDER BY key
-    `);
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('settings')
+      .select('key, value')
+      .order('key');
+
+    if (settingsError) {
+      console.error('Error fetching settings:', settingsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch settings' },
+        { status: 500 }
+      );
+    }
 
     const settings: { [key: string]: string } = {};
-    result.rows.forEach((row: any) => {
+    settingsData?.forEach((row: any) => {
       settings[row.key] = row.value;
     });
 
@@ -81,29 +109,22 @@ export async function GET() {
 
   } catch (error: any) {
     console.error('Get settings error:', error);
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return NextResponse.json(
-        { error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
-        { status: 503 }
-      );
-    }
-    
     return NextResponse.json(
       { error: 'Не удалось получить настройки' },
       { status: 500 }
     );
-  } finally {
-    if (client) {
-      client.release();
-    }
   }
 }
 
 export async function POST(request: NextRequest) {
-  let client;
-  
   try {
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase client is not configured' },
+        { status: 500 }
+      );
+    }
+
     const { settings } = await request.json();
 
     if (!settings || typeof settings !== 'object') {
@@ -113,42 +134,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    client = await pool.connect();
-
     // Check if settings table exists
-    const tableCheck = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'settings'
-      );
-    `);
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .eq('table_name', 'settings')
+      .single();
     
-    if (!tableCheck.rows[0].exists) {
+    if (tableError || !tableCheck) {
       console.log('Creating settings table...');
-      await client.query(`
-        CREATE TABLE settings (
-          id VARCHAR(255) PRIMARY KEY,
-          key VARCHAR(255) UNIQUE NOT NULL,
-          value TEXT,
-          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+      
+      // Create settings table using SQL
+      const { error: createError } = await supabase.rpc('exec_sql', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS settings (
+            id VARCHAR(255) PRIMARY KEY,
+            key VARCHAR(255) UNIQUE NOT NULL,
+            value TEXT,
+            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `
+      });
+
+      if (createError) {
+        console.error('Error creating settings table:', createError);
+        return NextResponse.json(
+          { error: 'Failed to create settings table' },
+          { status: 500 }
+        );
+      }
     }
 
     // Update or insert settings
     for (const [key, value] of Object.entries(settings)) {
       const settingId = `setting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      await client.query(`
-        INSERT INTO settings (id, key, value)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (key) 
-        DO UPDATE SET 
-          value = EXCLUDED.value,
-          "updatedAt" = CURRENT_TIMESTAMP
-      `, [settingId, key, value as string]);
+      const { error: upsertError } = await supabase
+        .from('settings')
+        .upsert({
+          id: settingId,
+          key: key,
+          value: value as string,
+          updatedAt: new Date().toISOString()
+        }, {
+          onConflict: 'key'
+        });
+
+      if (upsertError) {
+        console.error(`Error upserting setting ${key}:`, upsertError);
+      }
     }
 
     console.log('Settings updated successfully');
@@ -160,21 +196,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Update settings error:', error);
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return NextResponse.json(
-        { error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
-        { status: 503 }
-      );
-    }
-    
     return NextResponse.json(
       { error: 'Не удалось сохранить настройки' },
       { status: 500 }
     );
-  } finally {
-    if (client) {
-      client.release();
-    }
   }
 }
