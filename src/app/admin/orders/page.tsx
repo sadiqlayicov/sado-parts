@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
+import { formatId, resetIdCounter } from '@/lib/utils';
 
 interface OrderItem {
   id: string;
@@ -43,6 +44,7 @@ export default function AdminOrdersPage() {
       router.push('/login');
       return;
     }
+    resetIdCounter(); // Reset ID counter when component mounts
     fetchAllOrders();
   }, [isAuthenticated, user]);
 

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatId, resetIdCounter } from '@/lib/utils';
 
 interface Product {
   id: string;
@@ -196,6 +197,7 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<string[]>([]);
 
     useEffect(() => {
+    resetIdCounter(); // Reset ID counter when component mounts
     async function fetchProductsAndCategories() {
       try {
         console.log('Fetching products and categories...');
@@ -533,7 +535,7 @@ export default function ProductsPage() {
                   />
                 )}
               </td>
-              <td style={{border:'1px solid #333',padding:'8px'}}>{product.id}</td>
+              <td style={{border:'1px solid #333',padding:'8px'}}>{formatId(product.id)}</td>
               <td style={{border:'1px solid #333',padding:'8px'}}>{product.name}</td>
               <td style={{border:'1px solid #333',padding:'8px'}}>{product.category?.name || '-'}</td>
               <td style={{border:'1px solid #333',padding:'8px'}}>{product.artikul || '-'}</td>

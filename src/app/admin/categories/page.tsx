@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { formatId, resetIdCounter } from '@/lib/utils';
 
 interface Category {
   id: string;
@@ -21,6 +22,7 @@ export default function AdminCategoriesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    resetIdCounter(); // Reset ID counter when component mounts
     fetchCategories();
   }, []);
 
@@ -334,7 +336,7 @@ export default function AdminCategoriesPage() {
           <tbody>
             {categories.map((cat) => (
               <tr key={cat.id} style={{ background: '#232b3b', borderBottom: '1px solid #333' }}>
-                <td style={{ border: "1px solid #333", padding: 8 }}>{cat.id}</td>
+                <td style={{ border: "1px solid #333", padding: 8 }}>{formatId(cat.id)}</td>
                 <td style={{ border: "1px solid #333", padding: 8 }}>{editing?.id === cat.id ? (
                   <input value={editName} onChange={e => setEditName(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
                 ) : cat.name}</td>
