@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     // Group by user
     const userCarts: Record<string, any> = {};
-    processedCartItems.forEach(item => {
+    processedCartItems.forEach((item: any) => {
       if (!userCarts[item.userId]) {
         userCarts[item.userId] = {
           userId: item.userId,
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
       success: true,
       cartItems: Object.values(userCarts),
       totalUsers: Object.keys(userCarts).length,
-      totalItems: processedCartItems.reduce((sum, item) => sum + item.quantity, 0)
+      totalItems: processedCartItems.reduce((sum: number, item: any) => sum + item.quantity, 0)
     });
 
   } catch (error) {
