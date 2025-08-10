@@ -1,71 +1,61 @@
 import { NextRequest } from 'next/server'
-import { Pool } from 'pg'
+import { createClient } from '@supabase/supabase-js'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
-// Create a connection pool optimized for Supabase
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 3, // Increase connection limit for Supabase
-  idleTimeoutMillis: 60000, // Increase idle timeout
-  connectionTimeoutMillis: 5000, // Increase connection timeout
-})
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let supabase: any = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 /**
  * GET - Get single category by ID
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  let client;
-  
   try {
+    if (!supabase) {
+      return errorResponse('Supabase client is not configured', 500);
+    }
+
     const { id } = await params;
     
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya ID'), 400)
     }
 
-    client = await pool.connect();
+    const { data: category, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    const result = await client.query(`
-      SELECT id, name, description, "isActive", "createdAt", "updatedAt"
-      FROM categories
-      WHERE id = $1
-    `, [id])
-
-    if (result.rows.length === 0) {
+    if (error || !category) {
       return errorResponse(ErrorMessages.NOT_FOUND('Kateqoriya'), 404)
     }
 
-    return successResponse(result.rows[0], 'Kateqoriya tapıldı')
+    return successResponse(category, 'Kateqoriya tapıldı')
   } catch (error: any) {
     logError('GET /api/categories/[id]', error)
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
-    }
-    
     return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
-  } finally {
-    if (client) {
-      client.release()
-    }
   }
 }
 
 /**
- * PUT - Update category by ID
+ * PUT - Update category by ID with parent-child support
  */
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  let client;
-  
   try {
+    if (!supabase) {
+      return errorResponse('Supabase client is not configured', 500);
+    }
+
     const { id } = await params;
     const body = await request.json()
-    const { name, description, isActive } = body
+    const { name, description, isActive, parentId, sortOrder } = body
     
-    console.log('Updating category:', { id, name, description, isActive });
+    console.log('Updating category:', { id, name, description, isActive, parentId, sortOrder });
 
     if (!id) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya ID'), 400)
@@ -75,56 +65,62 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya adı'), 400)
     }
 
-    client = await pool.connect();
-    console.log('Database connection successful for PUT');
-
     // Check if another category with same name already exists (excluding current one)
-    const existingResult = await client.query(`
-      SELECT id FROM categories WHERE LOWER(name) = LOWER($1) AND "isActive" = true AND id != $2
-    `, [name, id]);
+    const { data: existingCategory, error: existingError } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('name', name)
+      .eq('isActive', true)
+      .neq('id', id)
+      .single();
     
-    if (existingResult.rows.length > 0) {
+    if (existingCategory) {
       return errorResponse('Bu adda başqa kateqoriya artıq mövcuddur', 400);
     }
 
-    const result = await client.query(`
-      UPDATE categories 
-      SET 
-        name = $1, 
-        description = $2, 
-        "isActive" = $3,
-        "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $4
-      RETURNING *
-    `, [name, description || '', isActive !== false, id])
+    // If parentId is provided, verify it exists and is not the same as current category
+    if (parentId) {
+      if (parentId === id) {
+        return errorResponse('Kateqoriya özünün alt kateqoriyası ola bilməz', 400);
+      }
 
-    if (result.rows.length === 0) {
+      const { data: parentCategory, error: parentError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('id', parentId)
+        .eq('isActive', true)
+        .single();
+
+      if (!parentCategory) {
+        return errorResponse('Ana kateqoriya tapılmadı', 400);
+      }
+    }
+
+    const { data: updatedCategory, error: updateError } = await supabase
+      .from('categories')
+      .update({
+        name,
+        description: description || '',
+        isActive: isActive !== false,
+        parentId: parentId || null,
+        sortOrder: sortOrder || 0,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError || !updatedCategory) {
+      console.error('Error updating category:', updateError);
       return errorResponse(ErrorMessages.NOT_FOUND('Kateqoriya'), 404)
     }
 
-    console.log('Category updated successfully:', result.rows[0]);
-    return successResponse(result.rows[0], 'Kateqoriya uğurla yeniləndi')
+    console.log('Category updated successfully:', updatedCategory);
+    return successResponse(updatedCategory, 'Kateqoriya uğurla yeniləndi')
   } catch (error: any) {
     console.error('Database error in PUT /api/categories/[id]:', error);
     logError('PUT /api/categories/[id]', error)
-    
-    if (error.code === '23505') { // Unique violation
-      return errorResponse('Bu adda kateqoriya artıq mövcuddur', 400)
-    }
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
-    }
-    
     return errorResponse(`Database xətası: ${error.message}`, 500)
-  } finally {
-    if (client) {
-      try {
-        client.release();
-      } catch (releaseError) {
-        console.error('Error releasing client:', releaseError);
-      }
-    }
   }
 }
 
@@ -132,9 +128,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
  * DELETE - Delete category by ID (soft delete by setting isActive to false)
  */
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  let client;
-  
   try {
+    if (!supabase) {
+      return errorResponse('Supabase client is not configured', 500);
+    }
+
     const { id } = await params;
     
     console.log('Deleting category:', { id });
@@ -157,15 +155,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya ID'), 400)
     }
 
-    client = await pool.connect();
-    console.log('Database connection successful for DELETE');
-
     // Check if category has products
-    const productsResult = await client.query(`
-      SELECT COUNT(*) as count FROM products WHERE "categoryId" = $1 AND "isActive" = true
-    `, [id])
+    const { data: productsData, error: productsError } = await supabase
+      .from('products')
+      .select('id')
+      .eq('categoryId', id)
+      .eq('isActive', true);
 
-    const productCount = parseInt(productsResult.rows[0].count)
+    const productCount = productsData?.length || 0;
     console.log(`Category has ${productCount} products`);
     
     if (productCount > 0) {
@@ -174,63 +171,72 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       }
       
       // Find or create "Ümumi" category
-      let defaultCategoryResult = await client.query(`
-        SELECT id FROM categories WHERE name = 'Ümumi' AND "isActive" = true LIMIT 1
-      `);
+      let { data: defaultCategory, error: defaultError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', 'Ümumi')
+        .eq('isActive', true)
+        .single();
       
       let defaultCategoryId;
-      if (defaultCategoryResult.rows.length === 0) {
+      if (!defaultCategory) {
         // Create "Ümumi" category
-        const createResult = await client.query(`
-          INSERT INTO categories (name, description, "isActive")
-          VALUES ('Ümumi', 'Ümumi kateqoriya', true)
-          RETURNING id
-        `);
-        defaultCategoryId = createResult.rows[0].id;
+        const { data: newDefaultCategory, error: createError } = await supabase
+          .from('categories')
+          .insert({
+            name: 'Ümumi',
+            description: 'Ümumi kateqoriya',
+            isActive: true
+          })
+          .select('id')
+          .single();
+        
+        if (createError) {
+          console.error('Error creating default category:', createError);
+          return errorResponse('Ümumi kateqoriya yaradıla bilmədi', 500);
+        }
+        defaultCategoryId = newDefaultCategory.id;
       } else {
-        defaultCategoryId = defaultCategoryResult.rows[0].id;
+        defaultCategoryId = defaultCategory.id;
       }
       
       // Move all products to default category
-      await client.query(`
-        UPDATE products 
-        SET "categoryId" = $1, "updatedAt" = CURRENT_TIMESTAMP
-        WHERE "categoryId" = $2 AND "isActive" = true
-      `, [defaultCategoryId, id]);
+      const { error: moveError } = await supabase
+        .from('products')
+        .update({
+          categoryId: defaultCategoryId,
+          updatedAt: new Date().toISOString()
+        })
+        .eq('categoryId', id)
+        .eq('isActive', true);
+
+      if (moveError) {
+        console.error('Error moving products:', moveError);
+        return errorResponse('Məhsullar köçürülə bilmədi', 500);
+      }
     }
 
     // Soft delete - set isActive to false
-    const result = await client.query(`
-      UPDATE categories 
-      SET 
-        "isActive" = false,
-        "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $1
-      RETURNING *
-    `, [id])
+    const { data: deletedCategory, error: deleteError } = await supabase
+      .from('categories')
+      .update({
+        isActive: false,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (result.rows.length === 0) {
+    if (deleteError || !deletedCategory) {
+      console.error('Error deleting category:', deleteError);
       return errorResponse(ErrorMessages.NOT_FOUND('Kateqoriya'), 404)
     }
 
-    console.log('Category deleted successfully:', result.rows[0]);
-    return successResponse(result.rows[0], 'Kateqoriya uğurla silindi')
+    console.log('Category deleted successfully:', deletedCategory);
+    return successResponse(deletedCategory, 'Kateqoriya uğurla silindi')
   } catch (error: any) {
     console.error('Database error in DELETE /api/categories/[id]:', error);
     logError('DELETE /api/categories/[id]', error)
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
-    }
-    
     return errorResponse(`Database xətası: ${error.message}`, 500)
-  } finally {
-    if (client) {
-      try {
-        client.release();
-      } catch (releaseError) {
-        console.error('Error releasing client:', releaseError);
-      }
-    }
   }
 }

@@ -7,18 +7,26 @@ interface Category {
   name: string;
   description?: string;
   isActive?: boolean;
+  parentId?: string;
+  sortOrder?: number;
+  children?: Category[];
 }
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [parentCategories, setParentCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newParentId, setNewParentId] = useState("");
+  const [newSortOrder, setNewSortOrder] = useState(0);
   const [editing, setEditing] = useState<Category | null>(null);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  const [editParentId, setEditParentId] = useState("");
+  const [editSortOrder, setEditSortOrder] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -69,6 +77,20 @@ export default function AdminCategoriesPage() {
         categoriesArray = data;
       }
       setCategories(categoriesArray);
+      
+      // Extract all categories (including children) for parent selection
+      const allCategories: Category[] = [];
+      const extractCategories = (cats: Category[]) => {
+        cats.forEach(cat => {
+          allCategories.push(cat);
+          if (cat.children && cat.children.length > 0) {
+            extractCategories(cat.children);
+          }
+        });
+      };
+      extractCategories(categoriesArray);
+      setParentCategories(allCategories);
+      
       console.log('Categories set:', categoriesArray);
     } catch (e: any) {
       console.error('Error fetching categories:', e);
@@ -91,7 +113,12 @@ export default function AdminCategoriesPage() {
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, description: newDesc })
+        body: JSON.stringify({ 
+          name: newName, 
+          description: newDesc,
+          parentId: newParentId || null,
+          sortOrder: newSortOrder
+        })
       });
       
       if (!res.ok) {
@@ -175,6 +202,8 @@ export default function AdminCategoriesPage() {
     setEditing(cat);
     setEditName(cat.name);
     setEditDesc(cat.description || "");
+    setEditParentId(cat.parentId || "");
+    setEditSortOrder(cat.sortOrder || 0);
   }
 
   async function saveEdit() {
@@ -192,7 +221,12 @@ export default function AdminCategoriesPage() {
       const res = await fetch(`/api/categories/${editing.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName, description: editDesc })
+        body: JSON.stringify({ 
+          name: editName, 
+          description: editDesc,
+          parentId: editParentId || null,
+          sortOrder: editSortOrder
+        })
       });
       
       if (!res.ok) {
@@ -217,6 +251,128 @@ export default function AdminCategoriesPage() {
       setIsSubmitting(false);
     }
   }
+
+  // Recursive function to render categories with hierarchy
+  const renderCategories = (cats: Category[], level: number) => {
+    return cats.map((cat) => (
+      <>
+        <tr key={cat.id} style={{ background: '#232b3b', borderBottom: '1px solid #333' }}>
+          <td style={{ border: "1px solid #333", padding: 8, paddingLeft: 8 + (level * 20) }}>
+            {formatId(cat.id)}
+          </td>
+          <td style={{ border: "1px solid #333", padding: 8, paddingLeft: 8 + (level * 20) }}>
+            {editing?.id === cat.id ? (
+              <input value={editName} onChange={e => setEditName(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
+            ) : (
+              <span style={{ fontWeight: level === 0 ? 'bold' : 'normal' }}>
+                {level > 0 && '└─ '}{cat.name}
+              </span>
+            )}
+          </td>
+          <td style={{ border: "1px solid #333", padding: 8 }}>{editing?.id === cat.id ? (
+            <input value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
+          ) : cat.description || "-"}</td>
+          <td style={{ border: "1px solid #333", padding: 8 }}>
+            {editing?.id === cat.id ? (
+              <select 
+                value={editParentId} 
+                onChange={e => setEditParentId(e.target.value)} 
+                style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }}
+              >
+                <option value="">Ana kateqoriya yoxdur</option>
+                {parentCategories.filter(p => p.id !== cat.id).map((parentCat) => (
+                  <option key={parentCat.id} value={parentCat.id}>
+                    {parentCat.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>
+                {cat.parentId ? 
+                  parentCategories.find(p => p.id === cat.parentId)?.name || 'Bilinməyən' 
+                  : 'Ana kateqoriya'
+                }
+              </span>
+            )}
+          </td>
+          <td style={{ border: "1px solid #333", padding: 8, textAlign: 'center', minWidth: 180 }}>
+            {editing?.id === cat.id ? (
+              <>
+                <button 
+                  onClick={saveEdit} 
+                  disabled={isSubmitting}
+                  style={{ 
+                    marginRight: 8, 
+                    padding: "6px 16px", 
+                    background: isSubmitting ? "#666" : "#0af", 
+                    color: "#fff", 
+                    border: "none", 
+                    borderRadius: 4, 
+                    fontWeight: 600, 
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    opacity: isSubmitting ? 0.7 : 1
+                  }}
+                >
+                  {isSubmitting ? 'Yadda saxlanılır...' : 'Yadda saxla'}
+                </button>
+                <button 
+                  onClick={() => setEditing(null)} 
+                  disabled={isSubmitting}
+                  style={{ 
+                    padding: "6px 16px", 
+                    background: "#888", 
+                    color: "#fff", 
+                    border: "none", 
+                    borderRadius: 4, 
+                    fontWeight: 600, 
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    opacity: isSubmitting ? 0.7 : 1
+                  }}
+                >
+                  Ləğv et
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => startEdit(cat)} 
+                  disabled={isSubmitting}
+                  style={{ 
+                    marginRight: 8, 
+                    padding: "6px 16px", 
+                    background: "#0af", 
+                    color: "#fff", 
+                    border: "none", 
+                    borderRadius: 4, 
+                    fontWeight: 600, 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  Redaktə
+                </button>
+                <button 
+                  onClick={() => deleteCategory(cat.id)} 
+                  disabled={isSubmitting}
+                  style={{ 
+                    padding: "6px 16px", 
+                    background: "#f44", 
+                    color: "#fff", 
+                    border: "none", 
+                    borderRadius: 4, 
+                    fontWeight: 600, 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  Sil
+                </button>
+              </>
+            )}
+          </td>
+        </tr>
+        {cat.children && cat.children.length > 0 && renderCategories(cat.children, level + 1)}
+      </>
+    ));
+  };
 
   return (
     <div style={{ maxWidth: '100%', margin: "40px auto", background: "#232b3b", color: "#fff", padding: 24, borderRadius: 10, boxShadow: '0 4px 24px #0002' }}>
@@ -305,6 +461,25 @@ export default function AdminCategoriesPage() {
           placeholder="Təsvir (optional)" 
           style={{ padding: 8, width: 220, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }} 
         />
+        <select 
+          value={newParentId} 
+          onChange={e => setNewParentId(e.target.value)} 
+          style={{ padding: 8, width: 180, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }}
+        >
+          <option value="">Ana kateqoriya seçin</option>
+          {parentCategories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+        <input 
+          type="number"
+          value={newSortOrder} 
+          onChange={e => setNewSortOrder(parseInt(e.target.value) || 0)} 
+          placeholder="Sıra" 
+          style={{ padding: 8, width: 80, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }} 
+        />
         <button 
           onClick={addCategory} 
           disabled={isSubmitting}
@@ -330,94 +505,12 @@ export default function AdminCategoriesPage() {
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>ID</th>
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ad</th>
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Təsvir</th>
+              <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ana Kateqoriya</th>
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'center' }}>Əməliyyatlar</th>
             </tr>
           </thead>
           <tbody>
-            {categories.map((cat) => (
-              <tr key={cat.id} style={{ background: '#232b3b', borderBottom: '1px solid #333' }}>
-                <td style={{ border: "1px solid #333", padding: 8 }}>{formatId(cat.id)}</td>
-                <td style={{ border: "1px solid #333", padding: 8 }}>{editing?.id === cat.id ? (
-                  <input value={editName} onChange={e => setEditName(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
-                ) : cat.name}</td>
-                <td style={{ border: "1px solid #333", padding: 8 }}>{editing?.id === cat.id ? (
-                  <input value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
-                ) : cat.description || "-"}</td>
-                <td style={{ border: "1px solid #333", padding: 8, textAlign: 'center', minWidth: 180 }}>
-                  {editing?.id === cat.id ? (
-                    <>
-                      <button 
-                        onClick={saveEdit} 
-                        disabled={isSubmitting}
-                        style={{ 
-                          marginRight: 8, 
-                          padding: "6px 16px", 
-                          background: isSubmitting ? "#666" : "#0af", 
-                          color: "#fff", 
-                          border: "none", 
-                          borderRadius: 4, 
-                          fontWeight: 600, 
-                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                          opacity: isSubmitting ? 0.7 : 1
-                        }}
-                      >
-                        {isSubmitting ? 'Yadda saxlanılır...' : 'Yadda saxla'}
-                      </button>
-                      <button 
-                        onClick={() => setEditing(null)} 
-                        disabled={isSubmitting}
-                        style={{ 
-                          padding: "6px 16px", 
-                          background: "#888", 
-                          color: "#fff", 
-                          border: "none", 
-                          borderRadius: 4, 
-                          fontWeight: 600, 
-                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                          opacity: isSubmitting ? 0.7 : 1
-                        }}
-                      >
-                        Ləğv et
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button 
-                        onClick={() => startEdit(cat)} 
-                        disabled={isSubmitting}
-                        style={{ 
-                          marginRight: 8, 
-                          padding: "6px 16px", 
-                          background: "#0af", 
-                          color: "#fff", 
-                          border: "none", 
-                          borderRadius: 4, 
-                          fontWeight: 600, 
-                          cursor: 'pointer' 
-                        }}
-                      >
-                        Redaktə
-                      </button>
-                      <button 
-                        onClick={() => deleteCategory(cat.id)} 
-                        disabled={isSubmitting}
-                        style={{ 
-                          padding: "6px 16px", 
-                          background: "#f44", 
-                          color: "#fff", 
-                          border: "none", 
-                          borderRadius: 4, 
-                          fontWeight: 600, 
-                          cursor: 'pointer' 
-                        }}
-                      >
-                        Sil
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {renderCategories(categories, 0)}
           </tbody>
         </table>
       </div>

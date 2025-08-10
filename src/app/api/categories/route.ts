@@ -1,137 +1,141 @@
 import { NextRequest } from 'next/server'
-import { Pool } from 'pg'
+import { createClient } from '@supabase/supabase-js'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
-// Create a connection pool optimized for Supabase
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 3, // Increase connection limit for Supabase
-  idleTimeoutMillis: 60000, // Increase idle timeout
-  connectionTimeoutMillis: 5000, // Increase connection timeout
-})
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let supabase: any = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 /**
- * GET - Get all categories
- * Fetches all active categories
+ * GET - Get all categories with hierarchy
+ * Fetches all active categories organized by parent-child relationships
  */
 export async function GET(request: NextRequest) {
-  let client;
-  
   try {
-    console.log('Attempting to connect to database...');
-    
-    // Test database connection
-    if (!process.env.DATABASE_URL) {
-      console.error('DATABASE_URL environment variable is not set');
-      return errorResponse('Database configuration xətası', 500);
+    if (!supabase) {
+      return errorResponse('Supabase client is not configured', 500);
     }
-    
-    client = await pool.connect();
-    console.log('Database connection successful');
 
-    const result = await client.query(`
-      SELECT id, name, description, "isActive", "createdAt", "updatedAt"
-      FROM categories
-      WHERE "isActive" = true
-      ORDER BY name ASC
-    `);
-    
-    console.log(`Found ${result.rows.length} categories`);
-    return successResponse(result.rows, `${result.rows.length} kateqoriya tapıldı`)
+    console.log('Fetching categories with hierarchy...');
+
+    // Get all active categories
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('isActive', true)
+      .order('sortOrder', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching categories:', error);
+      return errorResponse(`Database xətası: ${error.message}`, 500);
+    }
+
+    // Organize categories into hierarchy
+    const categoryMap = new Map();
+    const rootCategories: any[] = [];
+
+    // First pass: create map of all categories
+    categories?.forEach((category: any) => {
+      categoryMap.set(category.id, {
+        ...category,
+        children: []
+      });
+    });
+
+    // Second pass: organize into hierarchy
+    categories?.forEach((category: any) => {
+      if (category.parentId && categoryMap.has(category.parentId)) {
+        // This is a child category
+        categoryMap.get(category.parentId).children.push(categoryMap.get(category.id));
+      } else {
+        // This is a root category
+        rootCategories.push(categoryMap.get(category.id));
+      }
+    });
+
+    console.log(`Found ${categories?.length || 0} categories organized into ${rootCategories.length} root categories`);
+    return successResponse(rootCategories, `${categories?.length || 0} kateqoriya tapıldı`);
   } catch (error: any) {
     console.error('Database error in GET /api/categories:', error);
-    logError('GET /api/categories', error)
-    
-    if (error.code === 'ENOTFOUND') {
-      return errorResponse('Database serverinə bağlantı qurula bilmədi', 503)
-    }
-    
-    if (error.code === 'ECONNREFUSED') {
-      return errorResponse('Database bağlantısı rədd edildi', 503)
-    }
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
-    }
-    
-    if (error.message?.includes('password authentication failed')) {
-      return errorResponse('Database authentication xətası', 500)
-    }
-    
-    return errorResponse(`Database xətası: ${error.message}`, 500)
-  } finally {
-    if (client) {
-      try {
-        client.release();
-      } catch (releaseError) {
-        console.error('Error releasing client:', releaseError);
-      }
-    }
+    logError('GET /api/categories', error);
+    return errorResponse(`Database xətası: ${error.message}`, 500);
   }
 }
 
 /**
  * POST - Create new category
- * Creates a new category with validation
+ * Creates a new category with validation and parent-child support
  */
 export async function POST(request: NextRequest) {
-  let client;
-  
   try {
+    if (!supabase) {
+      return errorResponse('Supabase client is not configured', 500);
+    }
+
     console.log('Creating new category...');
     const body = await request.json()
-    const { name, description, isActive } = body
+    const { name, description, isActive, parentId, sortOrder } = body
     
-    console.log('Category data:', { name, description, isActive });
+    console.log('Category data:', { name, description, isActive, parentId, sortOrder });
 
     // Validation
     if (!name) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Kateqoriya adı'), 400)
     }
 
-    client = await pool.connect();
-    console.log('Database connection successful for POST');
-
     // Check if category with same name already exists
-    const existingResult = await client.query(`
-      SELECT id FROM categories WHERE LOWER(name) = LOWER($1) AND "isActive" = true
-    `, [name]);
+    const { data: existingCategory, error: existingError } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('name', name)
+      .eq('isActive', true)
+      .single();
     
-    if (existingResult.rows.length > 0) {
+    if (existingCategory) {
       return errorResponse('Bu adda kateqoriya artıq mövcuddur', 400);
     }
 
-    const result = await client.query(`
-      INSERT INTO categories (id, name, description, "isActive")
-      VALUES (gen_random_uuid()::text, $1, $2, $3)
-      RETURNING *
-    `, [name, description || '', isActive !== false])
+    // If parentId is provided, verify it exists
+    if (parentId) {
+      const { data: parentCategory, error: parentError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('id', parentId)
+        .eq('isActive', true)
+        .single();
 
-    console.log('Category created successfully:', result.rows[0]);
-    return successResponse(result.rows[0], 'Kateqoriya uğurla yaradıldı')
+      if (!parentCategory) {
+        return errorResponse('Ana kateqoriya tapılmadı', 400);
+      }
+    }
+
+    const { data: newCategory, error: insertError } = await supabase
+      .from('categories')
+      .insert({
+        name,
+        description: description || '',
+        isActive: isActive !== false,
+        parentId: parentId || null,
+        sortOrder: sortOrder || 0
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error creating category:', insertError);
+      return errorResponse(`Database xətası: ${insertError.message}`, 500);
+    }
+
+    console.log('Category created successfully:', newCategory);
+    return successResponse(newCategory, 'Kateqoriya uğurla yaradıldı')
   } catch (error: any) {
     console.error('Database error in POST /api/categories:', error);
     logError('POST /api/categories', error)
-    
-    if (error.code === '23505') { // Unique violation
-      return errorResponse('Bu adda kateqoriya artıq mövcuddur', 400)
-    }
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
-    }
-    
     return errorResponse(`Database xətası: ${error.message}`, 500)
-  } finally {
-    if (client) {
-      try {
-        client.release();
-      } catch (releaseError) {
-        console.error('Error releasing client:', releaseError);
-      }
-    }
   }
 } 

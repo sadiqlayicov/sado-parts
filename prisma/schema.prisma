@@ -56,11 +56,15 @@ model Category {
   description String?
   image       String?
   isActive    Boolean  @default(true)
+  parentId    String?  // Parent category ID for subcategories
+  sortOrder   Int      @default(0) // For ordering categories
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  products Product[]
+  products    Product[]
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
 
   @@map("categories")
 }
