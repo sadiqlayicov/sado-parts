@@ -367,7 +367,7 @@ export default function ProductsPage() {
         return;
       }
       
-      product = result.product || result;
+      product = result.data || result.product || result;
       console.log('UPDATED PRODUCT RESPONSE:', product); // Debug üçün əlavə olundu
       
       // YENİ: product undefined olarsa error throw et
@@ -378,13 +378,13 @@ export default function ProductsPage() {
         return;
       }
       
-      if (product.artikul !== undefined && product.catalogNumber !== undefined) {
-        setProducts(p => p.map(pr => pr.id === product.id ? product : pr));
-      } else if (typeof product.artikul === 'string' && typeof product.catalogNumber === 'string') {
-        setProducts(p => p.map(pr => pr.id === product.id ? product : pr));
-      } else {
-        alert('Backend-dən artikul və catalogNumber gəlmədi!');
-      }
+      // YENİ: category obyektini düzəlt
+      setProducts(p => p.map(pr => pr.id === product.id ? {
+        ...product,
+        category: typeof product.category === 'object'
+          ? product.category
+          : { name: data.category }
+      } : pr));
     } else {
       // Əlavə et
       const requestData = {
@@ -421,7 +421,7 @@ export default function ProductsPage() {
         return;
       }
       
-      product = result.product || result;
+      product = result.data || result.product || result;
       
       // YENİ: product undefined olarsa error throw et
       if (!product) {
