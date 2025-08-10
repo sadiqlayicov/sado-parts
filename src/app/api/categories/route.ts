@@ -1,73 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Real Supabase credentials
-const supabaseUrl = 'https://aws-0-eu-north-1.pooler.supabase.co';
-const supabaseKey = 'sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI';
-
-console.log('Connecting to real Supabase database...');
-console.log('URL:', supabaseUrl);
-console.log('Key length:', supabaseKey?.length || 0);
-
-let supabase: any = null;
-try {
-  supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  });
-  console.log('Supabase client created successfully');
-} catch (error) {
-  console.error('Error creating Supabase client:', error);
-}
 
 export async function GET(request: NextRequest) {
   try {
     console.log('GET /api/categories called');
     
-    if (!supabase) {
-      console.error('Supabase client is null');
-      return NextResponse.json(
-        { success: false, error: 'Supabase client is not configured' },
-        { status: 500 }
-      );
-    }
-
-    console.log('Testing Supabase connection...');
-
-    // Test connection first
-    const { data: testData, error: testError } = await supabase
-      .from('categories')
-      .select('count')
-      .limit(1);
+    // Test with direct fetch first
+    console.log('Testing direct fetch to Supabase...');
     
-    if (testError) {
-      console.error('Connection test failed:', testError);
+    const response = await fetch('https://aws-0-eu-north-1.pooler.supabase.co/rest/v1/categories?select=*&isActive=eq.true', {
+      headers: {
+        'apikey': 'sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI',
+        'Authorization': 'Bearer sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('Direct fetch failed:', response.status, response.statusText);
       return NextResponse.json(
-        { success: false, error: `Database bağlantı xətası: ${testError.message}` },
+        { success: false, error: `Direct fetch failed: ${response.status}` },
         { status: 500 }
       );
     }
     
-    console.log('Database connection successful, fetching categories...');
-
-    // Get all active categories
-    const { data: categories, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('isActive', true)
-      .order('sortOrder', { ascending: true })
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching categories:', error);
-      return NextResponse.json(
-        { success: false, error: `Database xətası: ${error.message}` },
-        { status: 500 }
-      );
-    }
-
+    const categories = await response.json();
+    console.log('Direct fetch successful, found categories:', categories.length);
+    
     // Organize categories into hierarchy
     const categoryMap = new Map();
     const rootCategories: any[] = [];
@@ -108,19 +66,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!supabase) {
-      return NextResponse.json(
-        { success: false, error: 'Supabase client is not configured' },
-        { status: 500 }
-      );
-    }
-
-    console.log('Creating new category...');
-    const body = await request.json()
-    const { name, description, isActive, parentId, sortOrder } = body
+    console.log('POST /api/categories called');
     
-    console.log('Category data:', { name, description, isActive, parentId, sortOrder });
-
+    const body = await request.json();
+    const { name, description, isActive, parentId, sortOrder } = body;
+    
     // Validation
     if (!name) {
       return NextResponse.json(
@@ -129,62 +79,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if category with same name already exists
-    const { data: existingCategory, error: existingError } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('name', name)
-      .eq('isActive', true)
-      .single();
-    
-    if (existingCategory) {
-      return NextResponse.json(
-        { success: false, error: 'Bu adda kateqoriya artıq mövcuddur' },
-        { status: 400 }
-      );
-    }
-
-    // If parentId is provided, verify it exists
-    if (parentId) {
-      const { data: parentCategory, error: parentError } = await supabase
-        .from('categories')
-        .select('id')
-        .eq('id', parentId)
-        .eq('isActive', true)
-        .single();
-
-      if (!parentCategory) {
-        return NextResponse.json(
-          { success: false, error: 'Ana kateqoriya tapılmadı' },
-          { status: 400 }
-        );
-      }
-    }
-
-    const { data: newCategory, error: insertError } = await supabase
-      .from('categories')
-      .insert({
+    // Create new category using direct fetch
+    const response = await fetch('https://aws-0-eu-north-1.pooler.supabase.co/rest/v1/categories', {
+      method: 'POST',
+      headers: {
+        'apikey': 'sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI',
+        'Authorization': 'Bearer sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI',
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
         name,
         description: description || '',
         isActive: isActive !== false,
         parentId: parentId || null,
         sortOrder: sortOrder || 0
       })
-      .select()
-      .single();
+    });
 
-    if (insertError) {
-      console.error('Error creating category:', insertError);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error creating category:', response.status, errorText);
       return NextResponse.json(
-        { success: false, error: `Database xətası: ${insertError.message}` },
+        { success: false, error: `Database xətası: ${response.status}` },
         { status: 500 }
       );
     }
 
+    const newCategory = await response.json();
     console.log('Category created successfully:', newCategory);
+    
     return NextResponse.json({
       success: true,
-      data: newCategory,
+      data: newCategory[0], // Supabase returns array
       message: 'Kateqoriya uğurla yaradıldı'
     });
   } catch (error: any) {
