@@ -1,29 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
-// Vercel üçün connection pool
-let client: Client | null = null;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-async function getClient() {
-  if (!client) {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    await client.connect();
-  }
-  return client;
-}
-
-async function closeClient() {
-  if (client) {
-    await client.end();
-    client = null;
-  }
+let supabase: any = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
 }
 
 export async function POST(request: NextRequest) {
   try {
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase client is not configured' },
+        { status: 500 }
+      );
+    }
+
     const { orderId, itemId, quantity } = await request.json();
     
     console.log('POST /api/admin/orders/update-item-quantity called with:', { orderId, itemId, quantity });
@@ -41,52 +35,78 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    const dbClient = await getClient();
     
     // Update item quantity
-    const itemResult = await dbClient.query(
-      `UPDATE order_items 
-       SET quantity = $1, "updatedAt" = CURRENT_TIMESTAMP 
-       WHERE id = $2 AND "orderId" = $3 
-       RETURNING id, quantity, price`,
-      [quantity, itemId, orderId]
-    );
+    const { data: updatedItem, error: itemError } = await supabase
+      .from('order_items')
+      .update({ 
+        quantity: quantity, 
+        updatedAt: new Date().toISOString() 
+      })
+      .eq('id', itemId)
+      .eq('orderId', orderId)
+      .select('id, quantity, price')
+      .single();
 
-    if (itemResult.rows.length === 0) {
+    if (itemError) {
+      console.error('Error updating item quantity:', itemError);
+      return NextResponse.json(
+        { error: 'Məhsul sayı yeniləmə zamanı xəta baş verdi' },
+        { status: 500 }
+      );
+    }
+
+    if (!updatedItem) {
       return NextResponse.json(
         { error: 'Məhsul tapılmadı' },
         { status: 404 }
       );
     }
 
-    const updatedItem = itemResult.rows[0];
     const newTotalPrice = parseFloat(updatedItem.price) * quantity;
 
-    // Update order total amount more efficiently
-    const orderResult = await dbClient.query(
-      `UPDATE orders 
-       SET "totalAmount" = (
-         SELECT COALESCE(SUM(oi.quantity * oi.price), 0)
-         FROM order_items oi
-         WHERE oi."orderId" = $1
-       ),
-       "updatedAt" = CURRENT_TIMESTAMP 
-       WHERE id = $1 
-       RETURNING id, "totalAmount", (
-         SELECT COUNT(*) FROM order_items WHERE "orderId" = $1
-       ) as "itemCount"`,
-      [orderId]
-    );
+    // Get total amount for the order
+    const { data: orderItems, error: itemsError } = await supabase
+      .from('order_items')
+      .select('quantity, price')
+      .eq('orderId', orderId);
 
-    if (orderResult.rows.length === 0) {
+    if (itemsError) {
+      console.error('Error getting order items:', itemsError);
+      return NextResponse.json(
+        { error: 'Sifariş məlumatları əldə etmə zamanı xəta baş verdi' },
+        { status: 500 }
+      );
+    }
+
+    const totalAmount = orderItems?.reduce((sum: number, item: any) => sum + (parseFloat(item.price) * item.quantity), 0) || 0;
+
+    // Update order total amount
+    const { data: updatedOrder, error: orderError } = await supabase
+      .from('orders')
+      .update({ 
+        totalAmount: totalAmount, 
+        updatedAt: new Date().toISOString() 
+      })
+      .eq('id', orderId)
+      .select('id, totalAmount')
+      .single();
+
+    if (orderError) {
+      console.error('Error updating order total:', orderError);
+      return NextResponse.json(
+        { error: 'Sifariş yeniləmə zamanı xəta baş verdi' },
+        { status: 500 }
+      );
+    }
+
+    if (!updatedOrder) {
       return NextResponse.json(
         { error: 'Sifariş tapılmadı' },
         { status: 404 }
       );
     }
 
-    const updatedOrder = orderResult.rows[0];
     console.log('Item quantity updated:', { itemId, quantity, newTotalPrice, orderTotal: updatedOrder.totalAmount });
 
     return NextResponse.json({
@@ -97,7 +117,7 @@ export async function POST(request: NextRequest) {
         quantity,
         totalPrice: newTotalPrice,
         orderTotal: updatedOrder.totalAmount,
-        itemCount: parseInt(updatedOrder.itemCount)
+        itemCount: orderItems?.length || 0
       }
     });
 
@@ -107,7 +127,5 @@ export async function POST(request: NextRequest) {
       { error: 'Məhsul sayı yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
-  } finally {
-    await closeClient();
   }
 } 

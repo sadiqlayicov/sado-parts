@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
-// Create a connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 2, // Limit connections
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let supabase: any = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 export async function POST(request: NextRequest) {
-  let client: any;
-  
   try {
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase client is not configured' },
+        { status: 500 }
+      );
+    }
+
     const { orderId, status } = await request.json();
     
     console.log('POST /api/admin/orders/update-status called with:', { orderId, status });
@@ -33,26 +37,33 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    client = await pool.connect();
     
     // Update order status
-    const result = await client.query(
-      `UPDATE orders 
-       SET status = $1, "updatedAt" = CURRENT_TIMESTAMP 
-       WHERE id = $2 
-       RETURNING id, "orderNumber", status`,
-      [status, orderId]
-    );
+    const { data: updatedOrder, error: updateError } = await supabase
+      .from('orders')
+      .update({ 
+        status: status, 
+        updatedAt: new Date().toISOString() 
+      })
+      .eq('id', orderId)
+      .select('id, orderNumber, status')
+      .single();
 
-    if (result.rows.length === 0) {
+    if (updateError) {
+      console.error('Error updating order status:', updateError);
+      return NextResponse.json(
+        { error: 'Status yeniləmə zamanı xəta baş verdi' },
+        { status: 500 }
+      );
+    }
+
+    if (!updatedOrder) {
       return NextResponse.json(
         { error: 'Sifariş tapılmadı' },
         { status: 404 }
       );
     }
 
-    const updatedOrder = result.rows[0];
     console.log('Order status updated:', updatedOrder);
 
     return NextResponse.json({
@@ -67,21 +78,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Update order status error:', error);
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return NextResponse.json(
-        { error: 'Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.' },
-        { status: 503 }
-      );
-    }
-    
     return NextResponse.json(
       { error: 'Status yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
-  } finally {
-    if (client) {
-      client.release();
-    }
   }
 } 
