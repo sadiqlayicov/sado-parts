@@ -23,12 +23,28 @@ interface Product {
   isActive: boolean;
 }
 
+interface SimilarProduct {
+  id: string;
+  name: string;
+  price: number;
+  salePrice?: number;
+  artikul?: string;
+  catalogNumber?: string;
+  images?: string[];
+  stock: number;
+  isActive: boolean;
+  categories: {
+    name: string;
+  };
+}
+
 export default function ProductPage() {
   const { t } = useTranslation();
   const params = useParams();
   const { addToCart } = useCart();
   const { isAuthenticated, isApproved, calculateDiscountedPrice, user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
+  const [similarProducts, setSimilarProducts] = useState<SimilarProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -44,18 +60,31 @@ export default function ProductPage() {
           return;
         }
 
-        const response = await fetch(`/api/products/${productId}`);
-        if (!response.ok) {
+        // Fetch product and similar products in parallel
+        const [productResponse, similarResponse] = await Promise.all([
+          fetch(`/api/products/${productId}`),
+          fetch(`/api/products/similar/${productId}`)
+        ]);
+
+        if (!productResponse.ok) {
           throw new Error('Məhsul tapılmadı');
         }
 
-        const data = await response.json();
-        if (data.success && data.data) {
-          setProduct(data.data);
-        } else if (data.id) {
-          setProduct(data);
+        const productData = await productResponse.json();
+        if (productData.success && productData.data) {
+          setProduct(productData.data);
+        } else if (productData.id) {
+          setProduct(productData);
         } else {
           throw new Error('Məhsul məlumatları düzgün formatda deyil');
+        }
+
+        // Handle similar products
+        if (similarResponse.ok) {
+          const similarData = await similarResponse.json();
+          if (similarData.success && similarData.products) {
+            setSimilarProducts(similarData.products);
+          }
         }
       } catch (err: any) {
         console.error('Error fetching product:', err);
@@ -268,6 +297,81 @@ export default function ProductPage() {
             </div>
           </div>
         </div>
+
+        {/* Similar Products Section */}
+        {similarProducts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold mb-8 text-center">Oxşar Məhsullar</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {similarProducts.map((similarProduct) => (
+                <Link
+                  key={similarProduct.id}
+                  href={`/product/${similarProduct.id}`}
+                  className="bg-[#1e293b] rounded-lg overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
+                >
+                  <div className="aspect-square bg-gradient-to-br from-cyan-500 to-blue-600 relative overflow-hidden">
+                    {similarProduct.images && similarProduct.images.length > 0 ? (
+                      <img
+                        src={similarProduct.images[0]}
+                        alt={similarProduct.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm text-center px-2">
+                          {similarProduct.name}
+                        </span>
+                      </div>
+                    )}
+                    {!similarProduct.isActive && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <span className="text-white font-bold">Deaktiv</span>
+                      </div>
+                    )}
+                    {similarProduct.stock === 0 && (
+                      <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                        Stokda yoxdur
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-4">
+                    <h3 className="font-semibold text-white mb-2 line-clamp-2 group-hover:text-cyan-400 transition">
+                      {similarProduct.name}
+                    </h3>
+                    
+                    {similarProduct.categories && (
+                      <p className="text-gray-400 text-sm mb-2">
+                        {similarProduct.categories.name}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="text-cyan-400 font-bold">
+                        {isAuthenticated && isApproved && user && user.discountPercentage > 0
+                          ? `${calculateDiscountedPrice(similarProduct.price, similarProduct.salePrice)?.toFixed(2)}₼`
+                          : `${similarProduct.price?.toLocaleString()}₼`
+                        }
+                      </div>
+                      
+                      {similarProduct.artikul && (
+                        <div className="text-gray-400 text-xs">
+                          {similarProduct.artikul}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {similarProduct.stock > 0 && (
+                      <div className="text-green-400 text-xs mt-1">
+                        Stok: {similarProduct.stock} ədəd
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
