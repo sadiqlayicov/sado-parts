@@ -79,6 +79,22 @@ export default function Header() {
     "Hydraulic", "Transmission", "Brake", "Electrical", "Steering"
   ];
 
+  // Recursive function to render categories with hierarchy for header
+  const renderCategoriesForHeader = (cats: any[], level: number): React.ReactElement[] => {
+    return cats.map((category) => (
+      <div key={category.id}>
+        <Link
+          href={`/catalog?category=${category.id}`}
+          className={`block px-4 py-2 text-sm text-white hover:bg-cyan-600 rounded transition ${level > 0 ? 'pl-' + (level * 4 + 4) : ''}`}
+          onClick={() => setShowCategories(false)}
+        >
+          {level > 0 && '└─ '}{category.name}
+        </Link>
+        {category.children && category.children.length > 0 && renderCategoriesForHeader(category.children, level + 1)}
+      </div>
+    ));
+  };
+
   useEffect(() => {
     async function fetchCategories() {
       try {
@@ -364,16 +380,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-400">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    categories.map(category => (
-                      <Link
-                        key={category.id}
-                        href={`/catalog?category=${category.id}`}
-                        className="block px-4 py-2 text-sm text-white hover:bg-cyan-600 rounded transition"
-                        onClick={() => setShowCategories(false)}
-                      >
-                        {category.name}
-                      </Link>
-                    ))
+                    renderCategoriesForHeader(categories, 0)
                   ) : (
                     <div className="px-4 py-2 text-sm text-gray-400">Kateqoriya tapılmadı</div>
                   )}

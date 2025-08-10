@@ -253,7 +253,7 @@ export default function AdminCategoriesPage() {
   }
 
   // Recursive function to render categories with hierarchy
-  const renderCategories = (cats: Category[], level: number) => {
+  const renderCategories = (cats: Category[], level: number): React.ReactElement[] => {
     return cats.map((cat) => (
       <>
         <tr key={cat.id} style={{ background: '#232b3b', borderBottom: '1px solid #333' }}>

@@ -68,6 +68,18 @@ function CatalogPage() {
     });
   };
 
+  // Recursive function to render categories with hierarchy for select
+  const renderCategoriesForSelect = (cats: any[], level: number): React.ReactElement[] => {
+    return cats.map((cat) => (
+      <>
+        <option key={cat.id} value={cat.id}>
+          {'—'.repeat(level)}{cat.name}
+        </option>
+        {cat.children && cat.children.length > 0 && renderCategoriesForSelect(cat.children, level + 1)}
+      </>
+    ));
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -209,9 +221,7 @@ function CatalogPage() {
                   className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
                 >
                   <option value="" key="all">Все категории</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
+                  {renderCategoriesForSelect(categories, 0)}
                 </select>
               </div>
 

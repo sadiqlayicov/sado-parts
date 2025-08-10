@@ -11,7 +11,7 @@ if (supabaseUrl && supabaseKey) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     if (!supabase) {
@@ -21,7 +21,8 @@ export async function GET(
       );
     }
 
-    const productId = params.id;
+    const { id } = await params;
+    const productId = id;
     if (!productId) {
       return NextResponse.json(
         { error: 'Product ID is required' },
