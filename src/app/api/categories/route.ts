@@ -105,8 +105,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await client.query(`
-      INSERT INTO categories (name, description, "isActive")
-      VALUES ($1, $2, $3)
+      INSERT INTO categories (id, name, description, "isActive")
+      VALUES (gen_random_uuid()::text, $1, $2, $3)
       RETURNING *
     `, [name, description || '', isActive !== false])
 
