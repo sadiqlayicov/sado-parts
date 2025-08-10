@@ -5,26 +5,26 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
+// Supabase client yalnız environment variables varsa yaradılır
+let supabase: any = null;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
   console.error('Supabase environment variables are missing:', {
     url: !!supabaseUrl,
     key: !!supabaseKey
   });
 }
 
-const supabase = createClient(
-  supabaseUrl || '',
-  supabaseKey || ''
-);
-
 // Get all cart items for admin
 export async function GET(request: NextRequest) {
   try {
     console.log('GET /api/cart/all called');
     
-    // Environment variables yoxlanılır
-    if (!supabaseUrl || !supabaseKey) {
-      console.log('Supabase environment variables missing, returning empty result');
+    // Supabase client yoxlanılır
+    if (!supabase) {
+      console.log('Supabase client not available, returning empty result');
       return NextResponse.json({
         success: true,
         cartItems: [],
