@@ -1,29 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Hardcoded values for testing
+const supabaseUrl = 'https://aws-0-eu-north-1.pooler.supabase.co';
+const supabaseKey = 'sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI';
 
-console.log('Environment check:', {
-  hasUrl: !!supabaseUrl,
-  hasKey: !!supabaseKey,
-  urlLength: supabaseUrl?.length || 0,
-  keyLength: supabaseKey?.length || 0
-});
+console.log('Using hardcoded Supabase credentials');
 
 let supabase: any = null;
-if (supabaseUrl && supabaseKey) {
-  try {
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('Supabase client created successfully');
-  } catch (error) {
-    console.error('Error creating Supabase client:', error);
-  }
-} else {
-  console.error('Missing Supabase environment variables:', {
-    url: supabaseUrl ? 'present' : 'missing',
-    key: supabaseKey ? 'present' : 'missing'
-  });
+try {
+  supabase = createClient(supabaseUrl, supabaseKey);
+  console.log('Supabase client created successfully');
+} catch (error) {
+  console.error('Error creating Supabase client:', error);
 }
 
 /**
@@ -42,31 +31,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Fetching categories with hierarchy...');
-
-    // Test the connection first
-    try {
-      const { data: testData, error: testError } = await supabase
-        .from('categories')
-        .select('count')
-        .limit(1);
-      
-      if (testError) {
-        console.error('Connection test failed:', testError);
-        return NextResponse.json(
-          { success: false, error: `Database bağlantı xətası: ${testError.message}` },
-          { status: 500 }
-        );
-      }
-      
-      console.log('Database connection test successful');
-    } catch (testError: any) {
-      console.error('Database connection test error:', testError);
-      return NextResponse.json(
-        { success: false, error: `Database bağlantı xətası: ${testError.message}` },
-        { status: 500 }
-      );
-    }
+    console.log('Fetching categories...');
 
     // Get all active categories
     const { data: categories, error } = await supabase
