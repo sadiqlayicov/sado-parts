@@ -129,10 +129,10 @@ export async function POST(request: NextRequest) {
     try {
       client = await pool.connect();
       console.log('Database connected successfully');
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('Database connection error:', dbError);
       return NextResponse.json(
-        { error: 'Database connection failed' },
+        { error: 'Database connection failed', details: dbError?.message || 'Unknown error' },
         { status: 500 }
       );
     }
@@ -141,10 +141,10 @@ export async function POST(request: NextRequest) {
     try {
       const testResult = await client.query('SELECT 1 as test');
       console.log('Test query successful:', testResult.rows);
-    } catch (testError) {
+    } catch (testError: any) {
       console.error('Test query failed:', testError);
       return NextResponse.json(
-        { error: 'Database test query failed' },
+        { error: 'Database test query failed', details: testError?.message || 'Unknown error' },
         { status: 500 }
       );
     }
@@ -153,10 +153,10 @@ export async function POST(request: NextRequest) {
     try {
       await ensureSettingsTable(client);
       console.log('Settings table ensured');
-    } catch (tableError) {
+    } catch (tableError: any) {
       console.error('Error ensuring settings table:', tableError);
       return NextResponse.json(
-        { error: 'Ошибка создания таблицы настроек' },
+        { error: 'Ошибка создания таблицы настроек', details: tableError?.message || 'Unknown error' },
         { status: 500 }
       );
     }
@@ -175,9 +175,12 @@ export async function POST(request: NextRequest) {
             "updatedAt" = NOW()
         `, [settingId, key, value as string]);
         console.log(`Setting ${key} updated successfully`);
-      } catch (queryError) {
+      } catch (queryError: any) {
         console.error(`Error updating setting ${key}:`, queryError);
-        throw queryError;
+        return NextResponse.json(
+          { error: `Error updating setting ${key}`, details: queryError?.message || 'Unknown error' },
+          { status: 500 }
+        );
       }
     }
 
@@ -190,7 +193,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Update settings error:', error);
-    return handleDatabaseError(error, 'POST /api/admin/settings');
+    return NextResponse.json(
+      { error: `Update settings error: ${error?.message || 'Unknown error'}` },
+      { status: 500 }
+    );
   } finally {
     if (client) {
       client.release();
