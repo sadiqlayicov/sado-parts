@@ -106,6 +106,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  let client;
+  
   try {
     console.log('POST /api/admin/settings called');
     
@@ -136,13 +138,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, just return success without database operations
-    console.log('Settings received successfully');
+    // Test database connection first
+    try {
+      client = await pool.connect();
+      console.log('Database connected successfully');
+    } catch (dbError: any) {
+      console.error('Database connection error:', dbError);
+      return NextResponse.json(
+        { error: 'Database connection failed', details: dbError?.message || 'Unknown error' },
+        { status: 500 }
+      );
+    }
+
+    // Test simple query first
+    try {
+      const testResult = await client.query('SELECT 1 as test');
+      console.log('Test query successful:', testResult.rows);
+    } catch (testError: any) {
+      console.error('Test query failed:', testError);
+      return NextResponse.json(
+        { error: 'Database test query failed', details: testError?.message || 'Unknown error' },
+        { status: 500 }
+      );
+    }
+
+    // Ensure settings table exists
+    try {
+      await ensureSettingsTable(client);
+      console.log('Settings table ensured');
+    } catch (tableError: any) {
+      console.error('Error ensuring settings table:', tableError);
+      return NextResponse.json(
+        { error: 'Ошибка создания таблицы настроек', details: tableError?.message || 'Unknown error' },
+        { status: 500 }
+      );
+    }
+
+    // Update or insert settings
+    for (const [key, value] of Object.entries(settings)) {
+      const settingId = `setting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      console.log(`Updating setting: ${key} = ${value}`);
+      
+      try {
+        await client.query(`
+          INSERT INTO settings (id, key, value, "updatedAt")
+          VALUES ($1, $2, $3, NOW())
+          ON CONFLICT (key) DO UPDATE SET
+            value = EXCLUDED.value,
+            "updatedAt" = NOW()
+        `, [settingId, key, value as string]);
+        console.log(`Setting ${key} updated successfully`);
+      } catch (queryError: any) {
+        console.error(`Error updating setting ${key}:`, queryError);
+        return NextResponse.json(
+          { error: `Error updating setting ${key}`, details: queryError?.message || 'Unknown error' },
+          { status: 500 }
+        );
+      }
+    }
+
+    console.log('All settings updated successfully');
 
     return NextResponse.json({
       success: true,
-      message: 'Настройки получены успешно (тестовый режим)',
-      receivedSettings: settings
+      message: 'Настройки успешно сохранены'
     });
 
   } catch (error: any) {
@@ -151,5 +210,10 @@ export async function POST(request: NextRequest) {
       { error: `Update settings error: ${error?.message || 'Unknown error'}` },
       { status: 500 }
     );
+  } finally {
+    if (client) {
+      client.release();
+      console.log('Database connection released');
+    }
   }
 }
