@@ -25,7 +25,33 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log('Fetching categories from Supabase...');
+    console.log('Supabase client created, testing connection...');
+    
+    // Test simple connection first
+    try {
+      const { data: testData, error: testError } = await supabase
+        .from('categories')
+        .select('count')
+        .limit(1);
+      
+      console.log('Test query result:', { testData, testError });
+      
+      if (testError) {
+        console.error('Test query error:', testError);
+        return NextResponse.json(
+          { success: false, error: `Test query xətası: ${testError.message}` },
+          { status: 500 }
+        );
+      }
+    } catch (testError: any) {
+      console.error('Test query exception:', testError);
+      return NextResponse.json(
+        { success: false, error: `Test query exception: ${testError.message}` },
+        { status: 500 }
+      );
+    }
+    
+    console.log('Test query successful, fetching categories...');
     
     // Try simple query first
     const { data: categories, error } = await supabase
