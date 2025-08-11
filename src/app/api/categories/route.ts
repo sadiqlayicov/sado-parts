@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // Temporary hardcoded Supabase credentials for Vercel deployment
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://chiptvdjdcvuowfiggwe.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_publishable_iJbMjzicllDWC8Y2EoMCvA_hJgNxDRG";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://aws-0-eu-north-1.supabase.co";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI";
 
 console.log('Supabase URL:', supabaseUrl);
 console.log('Supabase Key:', supabaseKey ? '***' + supabaseKey.slice(-4) : 'NOT SET');
