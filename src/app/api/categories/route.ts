@@ -45,13 +45,11 @@ export async function GET(request: NextRequest) {
         name,
         description,
         "isActive",
-        "parentId",
-        "sortOrder",
         "createdAt",
         "updatedAt"
       FROM categories 
       WHERE "isActive" = true 
-      ORDER BY "sortOrder" ASC, "createdAt" DESC
+      ORDER BY "createdAt" DESC
     `);
 
     const categories = categoriesResult.rows;
@@ -116,15 +114,13 @@ export async function POST(request: NextRequest) {
 
     // Create new category
     const newCategoryResult = await client.query(`
-      INSERT INTO categories (name, description, "isActive", "parentId", "sortOrder", "createdAt", "updatedAt")
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      INSERT INTO categories (name, description, "isActive", "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, NOW(), NOW())
       RETURNING *
     `, [
       name,
       description || '',
-      isActive !== false,
-      parentId || null,
-      sortOrder || 0
+      isActive !== false
     ]);
 
     const newCategory = newCategoryResult.rows[0];
