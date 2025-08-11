@@ -4,7 +4,7 @@ import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/a
 
 // Temporary hardcoded Supabase credentials for Vercel deployment
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://chiptvdjdcvuowfiggwe.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoaXB0dmRqZGN2dW93ZmlnZ3dlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTY4NzI5MCwiZXhwIjoyMDUxMjYzMjkwfQ.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI";
 
 let supabase: any = null;
 if (supabaseUrl && supabaseKey) {
