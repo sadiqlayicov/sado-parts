@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://chiptvdjdcvuowfiggwe.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "OPPE7kyd8WKwuMhn";
+// Use the correct Supabase URL and service role key
+const supabaseUrl = "https://aws-0-eu-north-1.supabase.co";
+const supabaseKey = "OPPE7kyd8WKwuMhn";
 
 let supabase: any = null;
 if (supabaseUrl && supabaseKey) {
