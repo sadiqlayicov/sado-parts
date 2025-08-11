@@ -22,10 +22,10 @@ export async function GET() {
     try {
       client = await pool.connect();
       console.log('Database connected successfully');
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('Database connection error:', dbError);
       return NextResponse.json(
-        { error: 'Database connection failed', details: dbError.message },
+        { error: 'Database connection failed', details: dbError?.message || 'Unknown error' },
         { status: 500 }
       );
     }
@@ -34,22 +34,23 @@ export async function GET() {
     try {
       const testResult = await client.query('SELECT 1 as test');
       console.log('Test query successful:', testResult.rows);
-    } catch (testError) {
+    } catch (testError: any) {
       console.error('Test query failed:', testError);
       return NextResponse.json(
-        { error: 'Database test query failed', details: testError.message },
+        { error: 'Database test query failed', details: testError?.message || 'Unknown error' },
         { status: 500 }
       );
     }
 
     // Test settings table
+    let settingsResult;
     try {
-      const settingsResult = await client.query('SELECT COUNT(*) as count FROM settings');
+      settingsResult = await client.query('SELECT COUNT(*) as count FROM settings');
       console.log('Settings table query successful:', settingsResult.rows);
-    } catch (settingsError) {
+    } catch (settingsError: any) {
       console.error('Settings table query failed:', settingsError);
       return NextResponse.json(
-        { error: 'Settings table query failed', details: settingsError.message },
+        { error: 'Settings table query failed', details: settingsError?.message || 'Unknown error' },
         { status: 500 }
       );
     }
