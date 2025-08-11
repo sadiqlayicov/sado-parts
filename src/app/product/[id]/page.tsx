@@ -171,6 +171,11 @@ export default function ProductPage() {
                   src={product.images[selectedImage]} 
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('Image failed to load:', product.images?.[selectedImage]);
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600">
@@ -194,6 +199,10 @@ export default function ProductPage() {
                       src={image} 
                       alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('Thumbnail image failed to load:', image);
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                   </button>
                 ))}
