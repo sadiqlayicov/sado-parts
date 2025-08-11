@@ -125,8 +125,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    client = await pool.connect();
-    console.log('Database connected');
+    // Test database connection first
+    try {
+      client = await pool.connect();
+      console.log('Database connected successfully');
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+
+    // Test simple query first
+    try {
+      const testResult = await client.query('SELECT 1 as test');
+      console.log('Test query successful:', testResult.rows);
+    } catch (testError) {
+      console.error('Test query failed:', testError);
+      return NextResponse.json(
+        { error: 'Database test query failed' },
+        { status: 500 }
+      );
+    }
 
     // Ensure settings table exists
     try {
