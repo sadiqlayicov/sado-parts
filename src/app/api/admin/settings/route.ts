@@ -109,8 +109,21 @@ export async function POST(request: NextRequest) {
   try {
     console.log('POST /api/admin/settings called');
     
-    const body = await request.json();
-    console.log('Received body:', body);
+    // Test if we can read the request
+    const text = await request.text();
+    console.log('Raw request text:', text);
+    
+    let body;
+    try {
+      body = JSON.parse(text);
+      console.log('Parsed body:', body);
+    } catch (parseError: any) {
+      console.error('JSON parse error:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON', details: parseError?.message || 'Unknown error' },
+        { status: 400 }
+      );
+    }
     
     const { settings } = body;
     console.log('Received settings:', settings);
