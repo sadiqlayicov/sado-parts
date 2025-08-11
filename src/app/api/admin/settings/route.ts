@@ -29,11 +29,33 @@ function handleDatabaseError(error: any, operation: string) {
   )
 }
 
+// Helper function to create settings table if it doesn't exist
+async function ensureSettingsTable(client: any) {
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        id VARCHAR(255) PRIMARY KEY,
+        key VARCHAR(255) UNIQUE NOT NULL,
+        value TEXT,
+        "createdAt" TIMESTAMP DEFAULT NOW(),
+        "updatedAt" TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    console.log('Settings table ensured');
+  } catch (error) {
+    console.error('Error creating settings table:', error);
+    throw error;
+  }
+}
+
 export async function GET() {
   let client;
   
   try {
     client = await pool.connect();
+
+    // Ensure settings table exists
+    await ensureSettingsTable(client);
 
     // Try to get settings directly
     const settingsResult = await client.query(`
@@ -45,17 +67,8 @@ export async function GET() {
       settings[row.key] = row.value;
     });
 
-    return NextResponse.json({
-      success: true,
-      settings
-    });
-
-  } catch (error: any) {
-    console.error('Get settings error:', error);
-    
-    // If table doesn't exist, return default settings
-    if (error.message?.includes('relation "settings" does not exist')) {
-      console.log('Settings table does not exist, returning default settings');
+    // If no settings found, return default settings
+    if (Object.keys(settings).length === 0) {
       const defaultSettings = {
         siteName: 'Sado-Parts',
         companyName: 'ООО "Спецтехника"',
@@ -76,7 +89,14 @@ export async function GET() {
         settings: defaultSettings
       });
     }
-    
+
+    return NextResponse.json({
+      success: true,
+      settings
+    });
+
+  } catch (error: any) {
+    console.error('Get settings error:', error);
     return handleDatabaseError(error, 'GET /api/admin/settings');
   } finally {
     if (client) {
@@ -100,35 +120,28 @@ export async function POST(request: NextRequest) {
 
     client = await pool.connect();
 
-    // Try to update settings
-    try {
-      // Update or insert settings
-      for (const [key, value] of Object.entries(settings)) {
-        const settingId = `setting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        await client.query(`
-          INSERT INTO settings (id, key, value, "updatedAt")
-          VALUES ($1, $2, $3, NOW())
-          ON CONFLICT (key) DO UPDATE SET
-            value = EXCLUDED.value,
-            "updatedAt" = NOW()
-        `, [settingId, key, value as string]);
-      }
+    // Ensure settings table exists
+    await ensureSettingsTable(client);
 
-      console.log('Settings updated successfully');
-
-      return NextResponse.json({
-        success: true,
-        message: 'Настройки успешно сохранены'
-      });
-    } catch (tableError: any) {
-      // If settings table doesn't exist, just return success
-      console.log('Settings table does not exist, skipping save');
-      return NextResponse.json({
-        success: true,
-        message: 'Настройки временно сохранены (таблица настроек не создана)'
-      });
+    // Update or insert settings
+    for (const [key, value] of Object.entries(settings)) {
+      const settingId = `setting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      await client.query(`
+        INSERT INTO settings (id, key, value, "updatedAt")
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (key) DO UPDATE SET
+          value = EXCLUDED.value,
+          "updatedAt" = NOW()
+      `, [settingId, key, value as string]);
     }
+
+    console.log('Settings updated successfully');
+
+    return NextResponse.json({
+      success: true,
+      message: 'Настройки успешно сохранены'
+    });
 
   } catch (error: any) {
     console.error('Update settings error:', error);
