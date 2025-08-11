@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
 // Temporary hardcoded Supabase credentials for Vercel deployment
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://chiptvdjdcvuowfiggwe.supabase.co";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://aws-0-eu-north-1.supabase.co";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI";
 
 let supabase: any = null;
