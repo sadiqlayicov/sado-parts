@@ -16,6 +16,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [topSellers, setTopSellers] = useState<any[]>([]);
   const [showAllLatestProducts, setShowAllLatestProducts] = useState(false);
+  const [siteName, setSiteName] = useState('SADO-PARTS');
 
   // Function to translate product names and categories from Azerbaijani to Russian
   const translateProductData = (product: any) => {
@@ -44,6 +45,24 @@ export default function HomePage() {
       } : product.category
     };
   };
+
+  // Load site settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch('/api/admin/settings');
+        const data = await response.json();
+        
+        if (data.success && data.settings && data.settings.siteName) {
+          setSiteName(data.settings.siteName.toUpperCase());
+        }
+      } catch (error) {
+        console.error('Error loading site settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -385,7 +404,7 @@ export default function HomePage() {
         {/* Hero Section */}
         <section className="text-center mb-16">
           <h1 className="text-6xl font-bold mb-6 neon-text">
-            SADO-PARTS
+            {siteName}
           </h1>
           <p className="text-xl mb-8 text-gray-300">
             Запчасти для вилочных погрузчиков в Москве
