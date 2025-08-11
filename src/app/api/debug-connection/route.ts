@@ -12,13 +12,13 @@ export async function GET(request: NextRequest) {
     // Test 1: Basic fetch to Supabase
     try {
       console.log('Test 1: Basic fetch to Supabase...');
-      const response = await fetch('https://chiptvdjdcvuowfiggwe.supabase.co/rest/v1/categories?select=count&limit=1', {
-        headers: {
-          'apikey': 'sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI',
-          'Authorization': 'Bearer sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI',
-          'Content-Type': 'application/json'
-        }
-      });
+             const response = await fetch('https://chiptvdjdcvuowfiggwe.supabase.co/rest/v1/categories?select=count&limit=1', {
+         headers: {
+           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoaXB0dmRqZGN2dW93ZmlnZ3dlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTY4NzI5MCwiZXhwIjoyMDUxMjYzMjkwfQ.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8',
+           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoaXB0dmRqZGN2dW93ZmlnZ3dlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTY4NzI5MCwiZXhwIjoyMDUxMjYzMjkwfQ.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8',
+           'Content-Type': 'application/json'
+         }
+       });
       
       results.tests.push({
         name: 'Direct fetch to Supabase',
