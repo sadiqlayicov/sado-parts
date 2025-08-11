@@ -115,9 +115,10 @@ export default function AdminCategoriesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           name: newName, 
-          description: newDesc,
-          parentId: newParentId || null,
-          sortOrder: newSortOrder
+          description: newDesc
+          // Temporarily disable parentId and sortOrder
+          // parentId: newParentId || null,
+          // sortOrder: newSortOrder
         })
       });
       
@@ -202,8 +203,9 @@ export default function AdminCategoriesPage() {
     setEditing(cat);
     setEditName(cat.name);
     setEditDesc(cat.description || "");
-    setEditParentId(cat.parentId || "");
-    setEditSortOrder(cat.sortOrder || 0);
+    // Temporarily disable parentId and sortOrder
+    // setEditParentId(cat.parentId || "");
+    // setEditSortOrder(cat.sortOrder || 0);
   }
 
   async function saveEdit() {
@@ -223,9 +225,10 @@ export default function AdminCategoriesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           name: editName, 
-          description: editDesc,
-          parentId: editParentId || null,
-          sortOrder: editSortOrder
+          description: editDesc
+          // Temporarily disable parentId and sortOrder
+          // parentId: editParentId || null,
+          // sortOrder: editSortOrder
         })
       });
       
@@ -272,6 +275,7 @@ export default function AdminCategoriesPage() {
           <td style={{ border: "1px solid #333", padding: 8 }}>{editing?.id === cat.id ? (
             <input value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
           ) : cat.description || "-"}</td>
+          {/* Temporarily disabled parent category column
           <td style={{ border: "1px solid #333", padding: 8 }}>
             {editing?.id === cat.id ? (
               <select 
@@ -295,6 +299,7 @@ export default function AdminCategoriesPage() {
               </span>
             )}
           </td>
+          */}
           <td style={{ border: "1px solid #333", padding: 8, textAlign: 'center', minWidth: 180 }}>
             {editing?.id === cat.id ? (
               <>
@@ -461,6 +466,7 @@ export default function AdminCategoriesPage() {
           placeholder="Təsvir (optional)" 
           style={{ padding: 8, width: 220, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }} 
         />
+        {/* Temporarily disabled parentId and sortOrder fields
         <select 
           value={newParentId} 
           onChange={e => setNewParentId(e.target.value)} 
@@ -480,6 +486,7 @@ export default function AdminCategoriesPage() {
           placeholder="Sıra" 
           style={{ padding: 8, width: 80, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }} 
         />
+        */}
         <button 
           onClick={addCategory} 
           disabled={isSubmitting}
@@ -505,7 +512,9 @@ export default function AdminCategoriesPage() {
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>ID</th>
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ad</th>
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Təsvir</th>
+              {/* Temporarily disabled parent category column
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ana Kateqoriya</th>
+              */}
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'center' }}>Əməliyyatlar</th>
             </tr>
           </thead>
