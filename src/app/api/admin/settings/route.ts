@@ -109,9 +109,13 @@ export async function POST(request: NextRequest) {
   let client;
   
   try {
+    console.log('POST /api/admin/settings called');
+    
     const { settings } = await request.json();
+    console.log('Received settings:', settings);
 
     if (!settings || typeof settings !== 'object') {
+      console.error('Invalid settings data');
       return NextResponse.json(
         { error: 'Неверные данные настроек' },
         { status: 400 }
@@ -119,24 +123,41 @@ export async function POST(request: NextRequest) {
     }
 
     client = await pool.connect();
+    console.log('Database connected');
 
     // Ensure settings table exists
-    await ensureSettingsTable(client);
+    try {
+      await ensureSettingsTable(client);
+      console.log('Settings table ensured');
+    } catch (tableError) {
+      console.error('Error ensuring settings table:', tableError);
+      return NextResponse.json(
+        { error: 'Ошибка создания таблицы настроек' },
+        { status: 500 }
+      );
+    }
 
     // Update or insert settings
     for (const [key, value] of Object.entries(settings)) {
       const settingId = `setting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      console.log(`Updating setting: ${key} = ${value}`);
       
-      await client.query(`
-        INSERT INTO settings (id, key, value, "updatedAt")
-        VALUES ($1, $2, $3, NOW())
-        ON CONFLICT (key) DO UPDATE SET
-          value = EXCLUDED.value,
-          "updatedAt" = NOW()
-      `, [settingId, key, value as string]);
+      try {
+        await client.query(`
+          INSERT INTO settings (id, key, value, "updatedAt")
+          VALUES ($1, $2, $3, NOW())
+          ON CONFLICT (key) DO UPDATE SET
+            value = EXCLUDED.value,
+            "updatedAt" = NOW()
+        `, [settingId, key, value as string]);
+        console.log(`Setting ${key} updated successfully`);
+      } catch (queryError) {
+        console.error(`Error updating setting ${key}:`, queryError);
+        throw queryError;
+      }
     }
 
-    console.log('Settings updated successfully');
+    console.log('All settings updated successfully');
 
     return NextResponse.json({
       success: true,
@@ -149,6 +170,7 @@ export async function POST(request: NextRequest) {
   } finally {
     if (client) {
       client.release();
+      console.log('Database connection released');
     }
   }
 }
