@@ -9,8 +9,8 @@ export async function GET() {
     const testConfigs = [
       {
         name: 'Config 1',
-        url: "https://chiptvdjdcvuowfiggwe.supabase.co",
-        key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoaXB0dmRqZGN2dW93ZmlnZ3dlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTY4NzI5MCwiZXhwIjoyMDUxMjYzMjkwfQ.OPPE7kyd8WKwuMhn"
+        url: "https://aws-0-eu-north-1.supabase.co",
+        key: "sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI"
       },
       {
         name: 'Config 2',
