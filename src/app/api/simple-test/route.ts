@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
     console.log('Simple test endpoint called');
     
     const supabaseUrl = "https://chiptvdjdcvuowfiggwe.supabase.co";
-    const supabaseKey = "sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoaXB0dmRqZGN2dW93ZmlnZ3dlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTY4NzI5MCwiZXhwIjoyMDUxMjYzMjkwfQ.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8";
     
     console.log('Supabase URL:', supabaseUrl);
     console.log('Supabase Key length:', supabaseKey.length);
