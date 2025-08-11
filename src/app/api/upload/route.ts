@@ -55,14 +55,49 @@ export async function POST(request: Request) {
       );
     }
 
-    // For now, just return success without uploading to Supabase
-    console.log('File validation successful');
+    // Upload to Supabase Storage
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${randomUUID()}.${fileExtension}`;
+    const filePath = `product-images/${fileName}`;
 
-    return NextResponse.json({ 
-      url: '/placeholder.png',
-      success: true,
-      message: 'File validation successful (test mode)'
-    });
+    console.log('Uploading to Supabase Storage:', filePath);
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Supabase upload error:', error);
+        return NextResponse.json(
+          { error: `Upload failed: ${error.message}` },
+          { status: 500 }
+        );
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      console.log('Upload successful, URL:', urlData.publicUrl);
+
+      return NextResponse.json({
+        url: urlData.publicUrl,
+        success: true,
+        message: 'File uploaded successfully'
+      });
+
+    } catch (uploadError: any) {
+      console.error('Upload error:', uploadError);
+      return NextResponse.json(
+        { error: `Upload error: ${uploadError.message}` },
+        { status: 500 }
+      );
+    }
 
   } catch (error: any) {
     console.error('Upload error:', error);
