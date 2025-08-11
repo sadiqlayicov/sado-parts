@@ -1,65 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { Pool } from 'pg';
 
-// Temporary hardcoded Supabase credentials for Vercel deployment
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://chiptvdjdcvuowfiggwe.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "OPPE7kyd8WKwuMhn";
+// Create a connection pool optimized for Supabase
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  max: 3,
+  idleTimeoutMillis: 60000,
+  connectionTimeoutMillis: 5000,
+});
 
-let supabase: any = null;
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
+// Helper function to handle database errors
+function handleDatabaseError(error: any, operation: string) {
+  console.error(`${operation} error:`, error)
+  
+  if (error.message?.includes('Max client connections reached')) {
+    return NextResponse.json(
+      { success: false, error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
+      { status: 503 }
+    )
+  }
+  
+  return NextResponse.json(
+    { success: false, error: `Database xətası: ${error.message}` },
+    { status: 500 }
+  )
 }
 
 export async function GET() {
+  let client;
+  
   try {
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Supabase client is not configured' },
-        { status: 500 }
-      );
-    }
+    client = await pool.connect();
 
     // Try to get settings directly
-    const { data: settingsData, error: settingsError } = await supabase
-      .from('settings')
-      .select('key, value')
-      .order('key');
-
-    if (settingsError) {
-      console.error('Error fetching settings:', settingsError);
-      
-      // If table doesn't exist, return default settings
-      if (settingsError.code === 'PGRST116') {
-        console.log('Settings table does not exist, returning default settings');
-        const defaultSettings = {
-          siteName: 'Sado-Parts',
-          companyName: 'ООО "Спецтехника"',
-          companyAddress: 'г. Москва, ул. Примерная, д. 123',
-          inn: '7707083893',
-          kpp: '770701001',
-          bik: '044525225',
-          accountNumber: '40702810123456789012',
-          bankName: 'Сбербанк',
-          bankBik: '044525225',
-          bankAccountNumber: '30101810200000000225',
-          directorName: 'Иванов И.И.',
-          accountantName: 'Петрова П.П.'
-        };
-
-        return NextResponse.json({
-          success: true,
-          settings: defaultSettings
-        });
-      }
-      
-      return NextResponse.json(
-        { error: 'Failed to fetch settings' },
-        { status: 500 }
-      );
-    }
+    const settingsResult = await client.query(`
+      SELECT key, value FROM settings ORDER BY key
+    `);
 
     const settings: { [key: string]: string } = {};
-    settingsData?.forEach((row: any) => {
+    settingsResult.rows.forEach((row: any) => {
       settings[row.key] = row.value;
     });
 
@@ -70,22 +52,43 @@ export async function GET() {
 
   } catch (error: any) {
     console.error('Get settings error:', error);
-    return NextResponse.json(
-      { error: 'Не удалось получить настройки' },
-      { status: 500 }
-    );
+    
+    // If table doesn't exist, return default settings
+    if (error.message?.includes('relation "settings" does not exist')) {
+      console.log('Settings table does not exist, returning default settings');
+      const defaultSettings = {
+        siteName: 'Sado-Parts',
+        companyName: 'ООО "Спецтехника"',
+        companyAddress: 'г. Москва, ул. Примерная, д. 123',
+        inn: '7707083893',
+        kpp: '770701001',
+        bik: '044525225',
+        accountNumber: '40702810123456789012',
+        bankName: 'Сбербанк',
+        bankBik: '044525225',
+        bankAccountNumber: '30101810200000000225',
+        directorName: 'Иванов И.И.',
+        accountantName: 'Петрова П.П.'
+      };
+
+      return NextResponse.json({
+        success: true,
+        settings: defaultSettings
+      });
+    }
+    
+    return handleDatabaseError(error, 'GET /api/admin/settings');
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
 
 export async function POST(request: NextRequest) {
+  let client;
+  
   try {
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Supabase client is not configured' },
-        { status: 500 }
-      );
-    }
-
     const { settings } = await request.json();
 
     if (!settings || typeof settings !== 'object') {
@@ -95,26 +98,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    client = await pool.connect();
+
     // Try to update settings
     try {
       // Update or insert settings
       for (const [key, value] of Object.entries(settings)) {
         const settingId = `setting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
-        const { error: upsertError } = await supabase
-          .from('settings')
-          .upsert({
-            id: settingId,
-            key: key,
-            value: value as string,
-            updatedAt: new Date().toISOString()
-          }, {
-            onConflict: 'key'
-          });
-
-        if (upsertError) {
-          console.error(`Error upserting setting ${key}:`, upsertError);
-        }
+        await client.query(`
+          INSERT INTO settings (id, key, value, "updatedAt")
+          VALUES ($1, $2, $3, NOW())
+          ON CONFLICT (key) DO UPDATE SET
+            value = EXCLUDED.value,
+            "updatedAt" = NOW()
+        `, [settingId, key, value as string]);
       }
 
       console.log('Settings updated successfully');
@@ -134,9 +132,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Update settings error:', error);
-    return NextResponse.json(
-      { error: 'Не удалось сохранить настройки' },
-      { status: 500 }
-    );
+    return handleDatabaseError(error, 'POST /api/admin/settings');
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
