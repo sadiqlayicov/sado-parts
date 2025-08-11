@@ -5,6 +5,9 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://chiptvdjdcvuowfiggwe.supabase.co";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI";
 
+console.log('Supabase URL:', supabaseUrl);
+console.log('Supabase Key:', supabaseKey ? '***' + supabaseKey.slice(-4) : 'NOT SET');
+
 let supabase: any = null;
 if (supabaseUrl && supabaseKey) {
   supabase = createClient(supabaseUrl, supabaseKey);
@@ -24,55 +27,34 @@ export async function GET(request: NextRequest) {
     
     console.log('Fetching categories from Supabase...');
     
-    // First, try to get categories without parentId to see if the field exists
-    try {
-      const { data: categories, error } = await supabase
-        .from('categories')
-        .select('id, name, description, isActive, createdAt, updatedAt')
-        .eq('isActive', true)
-        .order('name', { ascending: true });
-      
-      if (error) {
-        console.error('Supabase error:', error);
-        return NextResponse.json(
-          { success: false, error: `Database xətası: ${error.message}` },
-          { status: 500 }
-        );
-      }
-      
-      console.log(`Found ${categories?.length || 0} categories`);
-      
-      // For now, return flat structure without hierarchy
-      return NextResponse.json({
-        success: true,
-        data: categories || [],
-        message: `${categories?.length || 0} kateqoriya tapıldı`
+    // Try simple query first
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('isActive', true);
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
       });
-      
-    } catch (hierarchyError: any) {
-      console.error('Error with hierarchy, trying simple query:', hierarchyError);
-      
-      // Fallback: try simple query without any complex fields
-      const { data: simpleCategories, error: simpleError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('isActive', true);
-      
-      if (simpleError) {
-        console.error('Simple query also failed:', simpleError);
-        return NextResponse.json(
-          { success: false, error: `Database xətası: ${simpleError.message}` },
-          { status: 500 }
-        );
-      }
-      
-      console.log(`Found ${simpleCategories?.length || 0} categories with simple query`);
-      return NextResponse.json({
-        success: true,
-        data: simpleCategories || [],
-        message: `${simpleCategories?.length || 0} kateqoriya tapıldı`
-      });
+      return NextResponse.json(
+        { success: false, error: `Database xətası: ${error.message}` },
+        { status: 500 }
+      );
     }
+    
+    console.log(`Found ${categories?.length || 0} categories`);
+    console.log('Categories data:', categories);
+    
+    return NextResponse.json({
+      success: true,
+      data: categories || [],
+      message: `${categories?.length || 0} kateqoriya tapıldı`
+    });
     
   } catch (error: any) {
     console.error('Database error in GET /api/categories:', error);
