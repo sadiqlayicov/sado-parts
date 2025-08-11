@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Testing Supabase connection...');
     
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://aws-0-eu-north-1.supabase.co";
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://chiptvdjdcvuowfiggwe.supabase.co";
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI";
     
     console.log('Supabase URL:', supabaseUrl);

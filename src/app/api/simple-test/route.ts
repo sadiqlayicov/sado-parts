@@ -4,7 +4,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Simple test endpoint called');
     
-    const supabaseUrl = "https://aws-0-eu-north-1.supabase.co";
+    const supabaseUrl = "https://chiptvdjdcvuowfiggwe.supabase.co";
     const supabaseKey = "sb_secret_p_OyrmK9KvNFLEUUy_uPrg_sL6yZ9UI";
     
     console.log('Supabase URL:', supabaseUrl);
