@@ -111,7 +111,10 @@ export async function POST(request: NextRequest) {
   try {
     console.log('POST /api/admin/settings called');
     
-    const { settings } = await request.json();
+    const body = await request.json();
+    console.log('Received body:', body);
+    
+    const { settings } = body;
     console.log('Received settings:', settings);
 
     if (!settings || typeof settings !== 'object') {
