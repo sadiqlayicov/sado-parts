@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
 // Use the correct Supabase URL and service role key
-const supabaseUrl = "https://aws-0-eu-north-1.supabase.co";
-const supabaseKey = "OPPE7kyd8WKwuMhn";
+const supabaseUrl = "https://chiptvdjdcvuowfiggwe.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoaXB0dmRqZGN2dW93ZmlnZ3dlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTY4NzI5MCwiZXhwIjoyMDUxMjYzMjkwfQ.OPPE7kyd8WKwuMhn";
 
 let supabase: any = null;
 if (supabaseUrl && supabaseKey) {
