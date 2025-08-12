@@ -49,59 +49,38 @@ async function ensureSettingsTable(client: any) {
 }
 
 export async function GET() {
-  let client;
-  
   try {
-    client = await pool.connect();
+    console.log('GET /api/admin/settings called');
+    
+    // For now, return test settings to see if the flow works
+    const testSettings = {
+      siteName: 'Bilal-Parts',
+      companyName: 'ООО "Спецтехника"',
+      companyAddress: 'г. Москва, ул. Примерная, д. 123',
+      inn: '7707083893',
+      kpp: '770701001',
+      bik: '044525225',
+      accountNumber: '40702810123456789012',
+      bankName: 'Сбербанк',
+      bankBik: '044525225',
+      bankAccountNumber: '30101810200000000225',
+      directorName: 'Иванов И.И.',
+      accountantName: 'Петрова П.П.'
+    };
 
-    // Ensure settings table exists
-    await ensureSettingsTable(client);
-
-    // Try to get settings directly
-    const settingsResult = await client.query(`
-      SELECT key, value FROM settings ORDER BY key
-    `);
-
-    const settings: { [key: string]: string } = {};
-    settingsResult.rows.forEach((row: any) => {
-      settings[row.key] = row.value;
-    });
-
-    // If no settings found, return default settings
-    if (Object.keys(settings).length === 0) {
-      const defaultSettings = {
-        siteName: 'Sado-Parts',
-        companyName: 'ООО "Спецтехника"',
-        companyAddress: 'г. Москва, ул. Примерная, д. 123',
-        inn: '7707083893',
-        kpp: '770701001',
-        bik: '044525225',
-        accountNumber: '40702810123456789012',
-        bankName: 'Сбербанк',
-        bankBik: '044525225',
-        bankAccountNumber: '30101810200000000225',
-        directorName: 'Иванов И.И.',
-        accountantName: 'Петрова П.П.'
-      };
-
-      return NextResponse.json({
-        success: true,
-        settings: defaultSettings
-      });
-    }
+    console.log('Returning test settings:', testSettings);
 
     return NextResponse.json({
       success: true,
-      settings
+      settings: testSettings
     });
 
   } catch (error: any) {
     console.error('Get settings error:', error);
-    return handleDatabaseError(error, 'GET /api/admin/settings');
-  } finally {
-    if (client) {
-      client.release();
-    }
+    return NextResponse.json(
+      { success: false, error: `Get settings error: ${error?.message || 'Unknown error'}` },
+      { status: 500 }
+    );
   }
 }
 
