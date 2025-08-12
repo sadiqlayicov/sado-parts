@@ -32,8 +32,13 @@ function handleDatabaseError(error: any, operation: string) {
 // Helper function to create settings table if it doesn't exist
 async function ensureSettingsTable(client: any) {
   try {
+    // First, drop the table if it exists to recreate with proper constraints
+    await client.query(`DROP TABLE IF EXISTS settings CASCADE`);
+    console.log('Dropped existing settings table');
+    
+    // Create the table with proper constraints
     await client.query(`
-      CREATE TABLE IF NOT EXISTS settings (
+      CREATE TABLE settings (
         id VARCHAR(255) PRIMARY KEY,
         key VARCHAR(255) UNIQUE NOT NULL,
         value TEXT,
@@ -41,7 +46,7 @@ async function ensureSettingsTable(client: any) {
         "updatedAt" TIMESTAMP DEFAULT NOW()
       )
     `);
-    console.log('Settings table ensured');
+    console.log('Settings table created with proper constraints');
   } catch (error) {
     console.error('Error creating settings table:', error);
     throw error;
