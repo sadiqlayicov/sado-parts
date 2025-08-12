@@ -52,9 +52,9 @@ export async function GET() {
   try {
     console.log('GET /api/admin/settings called');
     
-    // For now, return test settings to see if the flow works
-    const testSettings = {
-      siteName: 'Bilal-Parts',
+    // For now, return hardcoded settings to test the flow
+    const hardcodedSettings = {
+      siteName: 'Test-Site-Name',
       companyName: 'ООО "Спецтехника"',
       companyAddress: 'г. Москва, ул. Примерная, д. 123',
       inn: '7707083893',
@@ -68,11 +68,11 @@ export async function GET() {
       accountantName: 'Петрова П.П.'
     };
 
-    console.log('Returning test settings:', testSettings);
+    console.log('Returning hardcoded settings:', hardcodedSettings);
 
     return NextResponse.json({
       success: true,
-      settings: testSettings
+      settings: hardcodedSettings
     });
 
   } catch (error: any) {
