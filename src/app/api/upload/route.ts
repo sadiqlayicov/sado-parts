@@ -58,7 +58,8 @@ export async function POST(request: Request) {
     // For now, return a placeholder URL to test the flow
     console.log('File validation successful, returning placeholder URL');
     
-    const placeholderUrl = `https://via.placeholder.com/400x400/cccccc/666666?text=${encodeURIComponent(file.name)}`;
+    // Use a more reliable placeholder service
+    const placeholderUrl = `https://picsum.photos/400/400?random=${Date.now()}`;
     
     return NextResponse.json({
       url: placeholderUrl,
