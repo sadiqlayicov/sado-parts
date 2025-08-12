@@ -176,6 +176,9 @@ export default function ProductPage() {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
+                  onLoad={() => {
+                    console.log('Image loaded successfully:', product.images?.[selectedImage]);
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600">
