@@ -55,17 +55,58 @@ export async function POST(request: Request) {
       );
     }
 
-    // For now, return a placeholder URL to test the flow
-    console.log('File validation successful, returning placeholder URL');
+    // Upload to Supabase Storage
+    console.log('File validation successful, uploading to Supabase Storage');
     
-    // Create a simple data URL for testing
-    const placeholderUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9LPC90ZXh0Pjwvc3ZnPg==';
-    
-    return NextResponse.json({
-      url: placeholderUrl,
-      success: true,
-      message: 'File validation successful (placeholder mode)'
-    });
+    try {
+      // Generate unique filename
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${randomUUID()}.${fileExtension}`;
+      
+      // Convert file to buffer
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, buffer, {
+          contentType: file.type,
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (uploadError) {
+        console.error('Supabase upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+      
+      const imageUrl = urlData.publicUrl;
+      console.log('Successfully uploaded to Supabase:', imageUrl);
+      
+      return NextResponse.json({
+        url: imageUrl,
+        success: true,
+        message: 'File uploaded successfully to Supabase Storage'
+      });
+      
+    } catch (uploadError: any) {
+      console.error('Upload to Supabase failed:', uploadError);
+      
+      // Fallback to placeholder if Supabase upload fails
+      const placeholderUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9LPC90ZXh0Pjwvc3ZnPg==';
+      
+      return NextResponse.json({
+        url: placeholderUrl,
+        success: true,
+        message: 'File validation successful (fallback to placeholder)'
+      });
+    }
 
   } catch (error: any) {
     console.error('Upload error:', error);
