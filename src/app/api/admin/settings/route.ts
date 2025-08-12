@@ -52,35 +52,36 @@ export async function GET() {
   try {
     console.log('GET /api/admin/settings called');
     
-    // For now, return hardcoded settings to test the flow
-    const hardcodedSettings = {
-      siteName: 'Test-Site-Name',
-      companyName: 'ООО "Спецтехника"',
-      companyAddress: 'г. Москва, ул. Примерная, д. 123',
-      inn: '7707083893',
-      kpp: '770701001',
-      bik: '044525225',
-      accountNumber: '40702810123456789012',
-      bankName: 'Сбербанк',
-      bankBik: '044525225',
-      bankAccountNumber: '30101810200000000225',
-      directorName: 'Иванов И.И.',
-      accountantName: 'Петрова П.П.'
-    };
-
-    console.log('Returning hardcoded settings:', hardcodedSettings);
-
-    return NextResponse.json({
-      success: true,
-      settings: hardcodedSettings
-    });
+    // Connect to database and get settings
+    const client = await pool.connect();
+    try {
+      // Ensure settings table exists
+      await ensureSettingsTable(client);
+      
+      // Get all settings from database
+      const result = await client.query('SELECT key, value FROM settings');
+      console.log('Database settings result:', result.rows);
+      
+      // Convert to settings object
+      const settings: any = {};
+      result.rows.forEach(row => {
+        settings[row.key] = row.value;
+      });
+      
+      console.log('Retrieved settings from database:', settings);
+      
+      return NextResponse.json({
+        success: true,
+        settings: settings
+      });
+      
+    } finally {
+      client.release();
+    }
 
   } catch (error: any) {
     console.error('Get settings error:', error);
-    return NextResponse.json(
-      { success: false, error: `Get settings error: ${error?.message || 'Unknown error'}` },
-      { status: 500 }
-    );
+    return handleDatabaseError(error, 'Get settings');
   }
 }
 
@@ -103,20 +104,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, just return success to test the flow
-    console.log('Settings received successfully:', settings);
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Настройки успешно сохранены (test mode)',
-      receivedSettings: settings
-    });
+    // Connect to database and save settings
+    const client = await pool.connect();
+    try {
+      // Ensure settings table exists
+      await ensureSettingsTable(client);
+      
+      // Save each setting to database
+      for (const [key, value] of Object.entries(settings)) {
+        console.log(`Saving setting: ${key} = ${value}`);
+        
+        await client.query(`
+          INSERT INTO settings (id, key, value, "updatedAt") 
+          VALUES ($1, $2, $3, NOW())
+          ON CONFLICT (key) 
+          DO UPDATE SET value = $3, "updatedAt" = NOW()
+        `, [`setting_${key}`, key, value]);
+      }
+      
+      console.log('Settings saved successfully to database');
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Настройки успешно сохранены',
+        savedSettings: settings
+      });
+      
+    } finally {
+      client.release();
+    }
 
   } catch (error: any) {
     console.error('Update settings error:', error);
-    return NextResponse.json(
-      { success: false, error: `Update settings error: ${error?.message || 'Unknown error'}` },
-      { status: 500 }
-    );
+    return handleDatabaseError(error, 'Update settings');
   }
 }
