@@ -576,7 +576,13 @@ export default function ProductsPage() {
                     src={product.images[0]}
                     alt={product.name}
                     style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
-                    onError={e => (e.currentTarget.src = '/placeholder.png')}
+                    onError={(e) => {
+                      console.error('Product image failed to load:', product.images?.[0]);
+                      e.currentTarget.src = '/placeholder.png';
+                    }}
+                    onLoad={(e) => {
+                      console.log('Product image loaded successfully:', product.images?.[0]);
+                    }}
                   />
                 ) : (
                   <img
