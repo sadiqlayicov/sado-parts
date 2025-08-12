@@ -152,36 +152,47 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        console.log('Settings page: Loading settings...');
         const response = await fetch('/api/admin/settings');
         const data = await response.json();
         
+        console.log('Settings page: API response:', data);
+        
         if (data.success && data.settings) {
           const apiSettings = data.settings;
+          console.log('Settings page: Received settings:', apiSettings);
           
-          setSettings(prev => ({
-            ...prev,
-            general: {
-              ...prev.general,
-              siteName: apiSettings.siteName || prev.general.siteName
-            },
-            company: {
-              ...prev.company,
-              companyName: apiSettings.companyName || prev.company.companyName,
-              companyAddress: apiSettings.companyAddress || prev.company.companyAddress,
-              inn: apiSettings.inn || prev.company.inn,
-              kpp: apiSettings.kpp || prev.company.kpp,
-              bik: apiSettings.bik || prev.company.bik,
-              accountNumber: apiSettings.accountNumber || prev.company.accountNumber,
-              bankName: apiSettings.bankName || prev.company.bankName,
-              bankBik: apiSettings.bankBik || prev.company.bankBik,
-              bankAccountNumber: apiSettings.bankAccountNumber || prev.company.bankAccountNumber,
-              directorName: apiSettings.directorName || prev.company.directorName,
-              accountantName: apiSettings.accountantName || prev.company.accountantName
-            }
-          }));
+          setSettings(prev => {
+            const newSettings = {
+              ...prev,
+              general: {
+                ...prev.general,
+                siteName: apiSettings.siteName || prev.general.siteName
+              },
+              company: {
+                ...prev.company,
+                companyName: apiSettings.companyName || prev.company.companyName,
+                companyAddress: apiSettings.companyAddress || prev.company.companyAddress,
+                inn: apiSettings.inn || prev.company.inn,
+                kpp: apiSettings.kpp || prev.company.kpp,
+                bik: apiSettings.bik || prev.company.bik,
+                accountNumber: apiSettings.accountNumber || prev.company.accountNumber,
+                bankName: apiSettings.bankName || prev.company.bankName,
+                bankBik: apiSettings.bankBik || prev.company.bankBik,
+                bankAccountNumber: apiSettings.bankAccountNumber || prev.company.bankAccountNumber,
+                directorName: apiSettings.directorName || prev.company.directorName,
+                accountantName: apiSettings.accountantName || prev.company.accountantName
+              }
+            };
+            
+            console.log('Settings page: Updated settings:', newSettings);
+            return newSettings;
+          });
+        } else {
+          console.log('Settings page: No settings found in API response');
         }
       } catch (error) {
-        console.error('Error loading settings:', error);
+        console.error('Settings page: Error loading settings:', error);
       } finally {
         setIsLoading(false);
       }
