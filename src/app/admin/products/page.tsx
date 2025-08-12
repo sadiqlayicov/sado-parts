@@ -91,13 +91,36 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const uploaded: string[] = [];
+    
+    console.log('Starting image upload for', files.length, 'files');
+    
     for (const file of files) {
+      console.log('Uploading file:', file.name, file.type, file.size);
+      
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.url) uploaded.push(data.url);
+      
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        console.log('Upload response status:', res.status);
+        
+        const data = await res.json();
+        console.log('Upload response data:', data);
+        
+        if (data.url) {
+          console.log('Successfully uploaded image:', data.url);
+          uploaded.push(data.url);
+        } else {
+          console.error('Upload failed - no URL returned:', data);
+          alert(`Şəkil yüklənmədi: ${data.error || 'Naməlum xəta'}`);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert(`Şəkil yüklənmədi: ${error}`);
+      }
     }
+    
+    console.log('All uploads completed. URLs:', uploaded);
     setForm(f => ({ ...f, images: [...(f.images || []), ...uploaded] }));
   };
   // Şəkil silmək üçün handler
@@ -156,7 +179,32 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
           <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
             {form.images && form.images.map((img, idx) => (
               <div key={idx} style={{position:'relative',display:'inline-block'}}>
-                <img src={img} alt="preview" style={{width:60,height:60,objectFit:'cover',borderRadius:6}} />
+                <img 
+                  src={img} 
+                  alt="preview" 
+                  style={{width:60,height:60,objectFit:'cover',borderRadius:6}} 
+                  onError={(e) => {
+                    console.error('Preview image failed to load:', img);
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div 
+                  className="hidden"
+                  style={{
+                    width: 60, 
+                    height: 60, 
+                    backgroundColor: '#f0f0f0', 
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    color: '#666'
+                  }}
+                >
+                  Error
+                </div>
                 <button
                   type="button"
                   onClick={() => handleImageDelete(idx)}
