@@ -394,20 +394,21 @@ export default function ProductsPage() {
     let product: any;
     if (editProduct) {
       // Redaktə
-      const res = await fetch(`/api/products/${editProduct.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          artikul: data.artikul || '',
-          catalogNumber: data.catalogNumber || '',
-          description: data.description || '',
-          price: data.price ? parseFloat(data.price) : 0,
-          categoryId,
-          isActive: !!data.isActive,
-          isFeatured: !!data.isFeatured,
-        })
-      });
+             const res = await fetch(`/api/products/${editProduct.id}`, {
+         method: 'PUT',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           ...data,
+           artikul: data.artikul || '',
+           catalogNumber: data.catalogNumber || '',
+           description: data.description || '',
+           price: data.price ? parseFloat(data.price) : 0,
+           categoryId,
+           isActive: !!data.isActive,
+           isFeatured: !!data.isFeatured,
+           images: data.images || [],
+         })
+       });
       const result = await res.json();
       
       // YENİ: Response-u yoxla
