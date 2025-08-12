@@ -188,6 +188,9 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
+                  onLoad={(e) => {
+                    console.log('Preview image loaded successfully:', img);
+                  }}
                 />
                 <div 
                   className="hidden"
@@ -196,7 +199,7 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
                     height: 60, 
                     backgroundColor: '#f0f0f0', 
                     borderRadius: 6,
-                    display: 'flex',
+                    display: 'none',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '12px',
