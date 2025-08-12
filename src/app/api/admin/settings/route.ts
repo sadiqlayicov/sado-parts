@@ -106,6 +106,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  let client;
+  
   try {
     console.log('POST /api/admin/settings called');
     
@@ -124,13 +126,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, just return success to test the flow
-    console.log('Settings received successfully:', settings);
-    
+    // Connect to database
+    client = await pool.connect();
+    console.log('Database connected successfully');
+
+    // Ensure settings table exists
+    await ensureSettingsTable(client);
+    console.log('Settings table ensured');
+
+    // Update or insert settings
+    for (const [key, value] of Object.entries(settings)) {
+      console.log(`Updating setting: ${key} = ${value}`);
+      
+      await client.query(`
+        INSERT INTO settings (id, key, value, "updatedAt")
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (key) DO UPDATE SET
+          value = EXCLUDED.value,
+          "updatedAt" = NOW()
+      `, [`setting-${key}`, key, value as string]);
+      
+      console.log(`Setting ${key} updated successfully`);
+    }
+
+    console.log('All settings updated successfully');
+
     return NextResponse.json({
       success: true,
-      message: 'Настройки успешно сохранены (test mode)',
-      receivedSettings: settings
+      message: 'Настройки успешно сохранены'
     });
 
   } catch (error: any) {
@@ -139,5 +162,10 @@ export async function POST(request: NextRequest) {
       { success: false, error: `Update settings error: ${error?.message || 'Unknown error'}` },
       { status: 500 }
     );
+  } finally {
+    if (client) {
+      client.release();
+      console.log('Database connection released');
+    }
   }
 }

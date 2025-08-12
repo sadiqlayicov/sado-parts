@@ -50,14 +50,22 @@ export default function HomePage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        console.log('Loading site settings...');
         const response = await fetch('/api/admin/settings');
         const data = await response.json();
         
+        console.log('Settings response:', data);
+        
         if (data.success && data.settings && data.settings.siteName) {
+          console.log('Setting site name to:', data.settings.siteName);
           setSiteName(data.settings.siteName.toUpperCase());
+        } else {
+          console.log('No site name found in settings, using default');
+          setSiteName('SADO-PARTS');
         }
       } catch (error) {
         console.error('Error loading site settings:', error);
+        setSiteName('SADO-PARTS');
       }
     };
 

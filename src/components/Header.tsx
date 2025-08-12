@@ -60,14 +60,22 @@ export default function Header() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        console.log('Header: Loading site settings...');
         const response = await fetch('/api/admin/settings');
         const data = await response.json();
         
+        console.log('Header: Settings response:', data);
+        
         if (data.success && data.settings && data.settings.siteName) {
+          console.log('Header: Setting site name to:', data.settings.siteName);
           setSiteName(data.settings.siteName);
+        } else {
+          console.log('Header: No site name found in settings, using default');
+          setSiteName('Sado-Parts');
         }
       } catch (error) {
-        console.error('Error loading site settings:', error);
+        console.error('Header: Error loading site settings:', error);
+        setSiteName('Sado-Parts');
       }
     };
 
