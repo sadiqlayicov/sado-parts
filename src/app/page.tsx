@@ -269,7 +269,7 @@ export default function HomePage() {
     }
     
     try {
-      await addToCart(product);
+      await addToCart(product.id, 1);
       alert('Товар добавлен в корзину!');
     } catch (error) {
       console.error('Error adding to cart:', error);
