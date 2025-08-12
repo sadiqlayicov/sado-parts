@@ -55,49 +55,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Upload to Supabase Storage
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${randomUUID()}.${fileExtension}`;
-    const filePath = `product-images/${fileName}`;
-
-    console.log('Uploading to Supabase Storage:', filePath);
-
-    try {
-      const { data, error } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        console.error('Supabase upload error:', error);
-        return NextResponse.json(
-          { error: `Upload failed: ${error.message}` },
-          { status: 500 }
-        );
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      console.log('Upload successful, URL:', urlData.publicUrl);
-
-      return NextResponse.json({
-        url: urlData.publicUrl,
-        success: true,
-        message: 'File uploaded successfully'
-      });
-
-    } catch (uploadError: any) {
-      console.error('Upload error:', uploadError);
-      return NextResponse.json(
-        { error: `Upload error: ${uploadError.message}` },
-        { status: 500 }
-      );
-    }
+    // For now, return a placeholder URL to test the flow
+    console.log('File validation successful, returning placeholder URL');
+    
+    const placeholderUrl = `https://via.placeholder.com/400x400/cccccc/666666?text=${encodeURIComponent(file.name)}`;
+    
+    return NextResponse.json({
+      url: placeholderUrl,
+      success: true,
+      message: 'File validation successful (placeholder mode)'
+    });
 
   } catch (error: any) {
     console.error('Upload error:', error);
