@@ -80,6 +80,11 @@ export default function Header() {
     };
 
     loadSettings();
+    
+    // Set up interval to refresh settings every 30 seconds
+    const interval = setInterval(loadSettings, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const brands = [
