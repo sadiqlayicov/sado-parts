@@ -32,21 +32,30 @@ function handleDatabaseError(error: any, operation: string) {
 // Helper function to create settings table if it doesn't exist
 async function ensureSettingsTable(client: any) {
   try {
-    // First, drop the table if it exists to recreate with proper constraints
-    await client.query(`DROP TABLE IF EXISTS settings CASCADE`);
-    console.log('Dropped existing settings table');
-    
-    // Create the table with proper constraints
-    await client.query(`
-      CREATE TABLE settings (
-        id VARCHAR(255) PRIMARY KEY,
-        key VARCHAR(255) UNIQUE NOT NULL,
-        value TEXT,
-        "createdAt" TIMESTAMP DEFAULT NOW(),
-        "updatedAt" TIMESTAMP DEFAULT NOW()
-      )
+    // Check if table exists first
+    const tableExists = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'settings'
+      );
     `);
-    console.log('Settings table created with proper constraints');
+    
+    if (!tableExists.rows[0].exists) {
+      // Create the table with proper constraints
+      await client.query(`
+        CREATE TABLE settings (
+          id VARCHAR(255) PRIMARY KEY,
+          key VARCHAR(255) UNIQUE NOT NULL,
+          value TEXT,
+          "createdAt" TIMESTAMP DEFAULT NOW(),
+          "updatedAt" TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      console.log('Settings table created with proper constraints');
+    } else {
+      console.log('Settings table already exists');
+    }
   } catch (error) {
     console.error('Error creating settings table:', error);
     throw error;
