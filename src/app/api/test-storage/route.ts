@@ -50,7 +50,7 @@ export async function GET() {
     }
     
     // List files in product-images bucket (if it exists)
-    let files = [];
+    let files: any[] = [];
     if (productImagesBucket || buckets?.find(b => b.name === 'product-images')) {
       const { data: filesData, error: filesError } = await supabase.storage
         .from('product-images')

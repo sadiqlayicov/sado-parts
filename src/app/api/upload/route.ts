@@ -95,18 +95,23 @@ export async function POST(request: Request) {
         message: 'File uploaded successfully to Supabase Storage'
       });
       
-    } catch (uploadError: any) {
-      console.error('Upload to Supabase failed:', uploadError);
-      
-      // Fallback to placeholder if Supabase upload fails
-      const placeholderUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9LPC90ZXh0Pjwvc3ZnPg==';
-      
-      return NextResponse.json({
-        url: placeholderUrl,
-        success: true,
-        message: 'File validation successful (fallback to placeholder)'
-      });
-    }
+         } catch (uploadError: any) {
+       console.error('Upload to Supabase failed:', uploadError);
+       console.error('Upload error details:', {
+         message: uploadError.message,
+         stack: uploadError.stack,
+         name: uploadError.name
+       });
+       
+       // Fallback to placeholder if Supabase upload fails
+       const placeholderUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9LPC90ZXh0Pjwvc3ZnPg==';
+       
+       return NextResponse.json({
+         url: placeholderUrl,
+         success: true,
+         message: `File validation successful (fallback to placeholder due to: ${uploadError.message})`
+       });
+     }
 
   } catch (error: any) {
     console.error('Upload error:', error);
