@@ -52,13 +52,24 @@ export async function GET() {
   try {
     console.log('GET /api/admin/settings called');
     
-    // Connect to database and get settings
+    // Test database connection first
+    console.log('Testing database connection...');
     const client = await pool.connect();
+    console.log('Database connection successful');
+    
     try {
-      // Ensure settings table exists
+      // Test if we can query the database
+      console.log('Testing basic query...');
+      const testResult = await client.query('SELECT 1 as test');
+      console.log('Basic query successful:', testResult.rows);
+      
+      // Try to create settings table
+      console.log('Creating settings table...');
       await ensureSettingsTable(client);
+      console.log('Settings table created/ensured');
       
       // Get all settings from database
+      console.log('Querying settings...');
       const result = await client.query('SELECT key, value FROM settings');
       console.log('Database settings result:', result.rows);
       
@@ -77,11 +88,24 @@ export async function GET() {
       
     } finally {
       client.release();
+      console.log('Database client released');
     }
 
   } catch (error: any) {
     console.error('Get settings error:', error);
-    return handleDatabaseError(error, 'Get settings');
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: `Get settings error: ${error.message}`,
+        details: error.stack
+      },
+      { status: 500 }
+    );
   }
 }
 
