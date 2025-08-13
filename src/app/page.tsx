@@ -464,54 +464,59 @@ export default function HomePage() {
                 const translatedProduct = translateProductData(product);
                 return (
                   <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
-                    <div className="relative mb-4">
-                      {translatedProduct.images && translatedProduct.images.length > 0 ? (
-                        <Image
-                          src={translatedProduct.images[0]}
-                          alt={translatedProduct.name}
-                          width={200}
-                          height={200}
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center">
-                          <span className="text-4xl">📦</span>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => toggleWishlist(product.id)}
-                        className={`absolute top-2 right-2 p-2 rounded-full ${
-                          wishlist.includes(product.id) 
-                            ? 'bg-red-500 text-white' 
-                            : 'bg-white/20 text-white hover:bg-white/30'
-                        } transition`}
-                      >
-                        {wishlist.includes(product.id) ? '❤️' : '🤍'}
-                      </button>
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">{translatedProduct.name}</h3>
-                    <p className="text-sm text-gray-400 mb-2">Артикул: {translatedProduct.sku}</p>
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        {isApproved && user && user.discountPercentage > 0 ? (
-                          <div>
-                            <span className="line-through text-gray-400 text-sm">
+                    <Link href={`/product/${product.id}`} className="block">
+                      <div className="relative mb-4">
+                        {translatedProduct.images && translatedProduct.images.length > 0 ? (
+                          <Image
+                            src={translatedProduct.images[0]}
+                            alt={translatedProduct.name}
+                            width={200}
+                            height={200}
+                            className="w-full h-48 object-cover rounded-lg cursor-pointer"
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center cursor-pointer">
+                            <span className="text-4xl">📦</span>
+                          </div>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleWishlist(product.id);
+                          }}
+                          className={`absolute top-2 right-2 p-2 rounded-full ${
+                            wishlist.includes(product.id) 
+                              ? 'bg-red-500 text-white' 
+                              : 'bg-white/20 text-white hover:bg-white/30'
+                          } transition`}
+                        >
+                          {wishlist.includes(product.id) ? '❤️' : '🤍'}
+                        </button>
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 cursor-pointer hover:text-cyan-300 transition">{translatedProduct.name}</h3>
+                      <p className="text-sm text-gray-400 mb-2">Артикул: {translatedProduct.sku}</p>
+                      <div className="flex justify-between items-center mb-4">
+                        <div>
+                          {isApproved && user && user.discountPercentage > 0 ? (
+                            <div>
+                              <span className="line-through text-gray-400 text-sm">
+                                {translatedProduct.price.toLocaleString()} ₽
+                              </span>
+                              <span className="text-green-400 ml-2 font-semibold">
+                                {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xl font-bold">
                               {translatedProduct.price.toLocaleString()} ₽
                             </span>
-                            <span className="text-green-400 ml-2 font-semibold">
-                              {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xl font-bold">
-                            {translatedProduct.price.toLocaleString()} ₽
-                          </span>
-                        )}
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          Продано: {topSellers.find(s => s.productId === product.id)?.salesCount || 0}
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-400">
-                        Продано: {topSellers.find(s => s.productId === product.id)?.salesCount || 0}
-                      </span>
-                    </div>
+                    </Link>
                     <button
                       onClick={() => handleAddToCart(translatedProduct)}
                       className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
@@ -541,49 +546,54 @@ export default function HomePage() {
               const translatedProduct = translateProductData(product);
               return (
                 <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
-                  <div className="relative mb-4">
-                    {translatedProduct.images && translatedProduct.images.length > 0 ? (
-                      <Image
-                        src={translatedProduct.images[0]}
-                        alt={translatedProduct.name}
-                        width={200}
-                        height={200}
-                        className="w-full h-48 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center">
-                        <span className="text-4xl">📦</span>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => toggleWishlist(product.id)}
-                      className={`absolute top-2 right-2 p-2 rounded-full ${
-                        wishlist.includes(product.id) 
-                          ? 'bg-red-500 text-white' 
-                          : 'bg-white/20 text-white hover:bg-white/30'
-                      } transition`}
-                    >
-                      {wishlist.includes(product.id) ? '❤️' : '🤍'}
-                    </button>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{translatedProduct.name}</h3>
-                  <p className="text-sm text-gray-400 mb-2">Артикул: {translatedProduct.sku}</p>
-                  <div className="mb-4">
-                    {isApproved && user && user.discountPercentage > 0 ? (
-                      <div>
-                        <span className="line-through text-gray-400 text-sm">
+                  <Link href={`/product/${product.id}`} className="block">
+                    <div className="relative mb-4">
+                      {translatedProduct.images && translatedProduct.images.length > 0 ? (
+                        <Image
+                          src={translatedProduct.images[0]}
+                          alt={translatedProduct.name}
+                          width={200}
+                          height={200}
+                          className="w-full h-48 object-cover rounded-lg cursor-pointer"
+                        />
+                      ) : (
+                        <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center cursor-pointer">
+                          <span className="text-4xl">📦</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toggleWishlist(product.id);
+                        }}
+                        className={`absolute top-2 right-2 p-2 rounded-full ${
+                          wishlist.includes(product.id) 
+                            ? 'bg-red-500 text-white' 
+                            : 'bg-white/20 text-white hover:bg-white/30'
+                        } transition`}
+                      >
+                        {wishlist.includes(product.id) ? '❤️' : '🤍'}
+                      </button>
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 cursor-pointer hover:text-cyan-300 transition">{translatedProduct.name}</h3>
+                    <p className="text-sm text-gray-400 mb-2">Артикул: {translatedProduct.sku}</p>
+                    <div className="mb-4">
+                      {isApproved && user && user.discountPercentage > 0 ? (
+                        <div>
+                          <span className="line-through text-gray-400 text-sm">
+                            {translatedProduct.price.toLocaleString()} ₽
+                          </span>
+                          <span className="text-green-400 ml-2 font-semibold">
+                            {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xl font-bold">
                           {translatedProduct.price.toLocaleString()} ₽
                         </span>
-                        <span className="text-green-400 ml-2 font-semibold">
-                          {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-xl font-bold">
-                        {translatedProduct.price.toLocaleString()} ₽
-                      </span>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  </Link>
                   <button
                     onClick={() => handleAddToCart(translatedProduct)}
                     className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
