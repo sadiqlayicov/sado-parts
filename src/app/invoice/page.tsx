@@ -269,23 +269,7 @@ function InvoiceContent({ order, companySettings }: {
               margin-bottom: 20px; 
             }
             
-            .parties-section {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 30px;
-            }
             
-            .supplier, .buyer {
-              width: 48%;
-            }
-            
-            .supplier h3, .buyer h3 {
-              font-size: 14px;
-              font-weight: bold;
-              margin-bottom: 10px;
-              border-bottom: 1px solid #000;
-              padding-bottom: 5px;
-            }
             
             table { 
               width: 100%; 
@@ -386,29 +370,41 @@ function InvoiceContent({ order, companySettings }: {
               <div class="invoice-date">от ${order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
             </div>
 
-            <!-- Parties Information -->
-            <div class="parties-section">
-              <div class="supplier">
-                <h3>Поставщик:</h3>
-                <p>${companySettings.companyName}</p>
-                <p>${companySettings.companyAddress}</p>
-                <p>ИНН: ${companySettings.inn}</p>
-                <p>КПП: ${companySettings.kpp}</p>
-                <p>БИК: ${companySettings.bik}</p>
-                <p>Счет №: ${companySettings.accountNumber}</p>
-                <p>Банк: ${companySettings.bankName}</p>
-                <p>БИК банка: ${companySettings.bankBik}</p>
-                <p>Корр. счет: ${companySettings.bankAccountNumber}</p>
-              </div>
-              <div class="buyer">
-                <h3>Покупатель:</h3>
-                <p>${(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}</p>
-                <p>ИНН: ${(user as any)?.inn || 'Не указан'}</p>
-                <p>Страна: ${(user as any)?.country || 'Не указана'}</p>
-                <p>Город: ${(user as any)?.city || 'Не указан'}</p>
-                <p>Адрес: ${(user as any)?.address || 'Не указан'}</p>
-              </div>
-            </div>
+                         <!-- Parties Information -->
+             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 11px;">
+               <thead>
+                 <tr style="background-color: #f0f0f0;">
+                   <th style="border: 1px solid #000; padding: 8px; text-align: left; width: 50%;">Поставщик:</th>
+                   <th style="border: 1px solid #000; padding: 8px; text-align: left; width: 50%;">Покупатель:</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 <tr>
+                   <td style="border: 1px solid #000; padding: 8px; vertical-align: top;">
+                     <div style="line-height: 1.4;">
+                       <p style="font-weight: bold; margin: 0 0 4px 0;">${companySettings.companyName}</p>
+                       <p style="margin: 0 0 2px 0;">${companySettings.companyAddress}</p>
+                       <p style="margin: 0 0 2px 0;">ИНН: ${companySettings.inn}</p>
+                       <p style="margin: 0 0 2px 0;">КПП: ${companySettings.kpp}</p>
+                       <p style="margin: 0 0 2px 0;">БИК: ${companySettings.bik}</p>
+                       <p style="margin: 0 0 2px 0;">Счет №: ${companySettings.accountNumber}</p>
+                       <p style="margin: 0 0 2px 0;">Банк: ${companySettings.bankName}</p>
+                       <p style="margin: 0 0 2px 0;">БИК банка: ${companySettings.bankBik}</p>
+                       <p style="margin: 0 0 2px 0;">Корр. счет: ${companySettings.bankAccountNumber}</p>
+                     </div>
+                   </td>
+                   <td style="border: 1px solid #000; padding: 8px; vertical-align: top;">
+                     <div style="line-height: 1.4;">
+                       <p style="font-weight: bold; margin: 0 0 4px 0;">${(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}</p>
+                       <p style="margin: 0 0 2px 0;">ИНН: ${(user as any)?.inn || 'Не указан'}</p>
+                       <p style="margin: 0 0 2px 0;">Страна: ${(user as any)?.country || 'Не указана'}</p>
+                       <p style="margin: 0 0 2px 0;">Город: ${(user as any)?.city || 'Не указан'}</p>
+                       <p style="margin: 0 0 2px 0;">Адрес: ${(user as any)?.address || 'Не указан'}</p>
+                     </div>
+                   </td>
+                 </tr>
+               </tbody>
+             </table>
 
             <!-- Products Table -->
             <table>
@@ -710,27 +706,41 @@ function InvoiceContent({ order, companySettings }: {
         </div>
 
         {/* Supplier and Buyer Info */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
-          <div>
-            <h3 className="font-bold text-lg mb-2">Поставщик:</h3>
-            <p className="mb-1">{companySettings.companyName}</p>
-            <p className="mb-1">{companySettings.companyAddress}</p>
-            <p className="mb-1">ИНН: {companySettings.inn}</p>
-            <p className="mb-1">КПП: {companySettings.kpp}</p>
-            <p className="mb-1">БИК: {companySettings.bik}</p>
-            <p className="mb-1">Счет №: {companySettings.accountNumber}</p>
-            <p className="mb-1">Банк: {companySettings.bankName}</p>
-            <p className="mb-1">БИК банка: {companySettings.bankBik}</p>
-            <p>Корр. счет: {companySettings.bankAccountNumber}</p>
-          </div>
-          <div>
-            <h3 className="font-bold text-lg mb-2">Покупатель:</h3>
-            <p className="mb-1">{(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}</p>
-            <p className="mb-1">ИНН: {(user as any)?.inn || 'Не указан'}</p>
-            <p className="mb-1">Страна: {(user as any)?.country || 'Не указана'}</p>
-            <p className="mb-1">Город: {(user as any)?.city || 'Не указан'}</p>
-            <p>Адрес: {(user as any)?.address || 'Не указан'}</p>
-          </div>
+        <div className="mb-8">
+          <table className="w-full border-collapse border border-gray-300 mb-4">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 p-3 text-left w-1/2">Поставщик:</th>
+                <th className="border border-gray-300 p-3 text-left w-1/2">Покупатель:</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-gray-300 p-3 align-top">
+                  <div className="space-y-1">
+                    <p className="font-semibold">{companySettings.companyName}</p>
+                    <p>{companySettings.companyAddress}</p>
+                    <p>ИНН: {companySettings.inn}</p>
+                    <p>КПП: {companySettings.kpp}</p>
+                    <p>БИК: {companySettings.bik}</p>
+                    <p>Счет №: {companySettings.accountNumber}</p>
+                    <p>Банк: {companySettings.bankName}</p>
+                    <p>БИК банка: {companySettings.bankBik}</p>
+                    <p>Корр. счет: {companySettings.bankAccountNumber}</p>
+                  </div>
+                </td>
+                <td className="border border-gray-300 p-3 align-top">
+                  <div className="space-y-1">
+                    <p className="font-semibold">{(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}</p>
+                    <p>ИНН: {(user as any)?.inn || 'Не указан'}</p>
+                    <p>Страна: {(user as any)?.country || 'Не указана'}</p>
+                    <p>Город: {(user as any)?.city || 'Не указан'}</p>
+                    <p>Адрес: {(user as any)?.address || 'Не указан'}</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         {/* Products Table */}
