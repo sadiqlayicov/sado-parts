@@ -261,6 +261,12 @@ function InvoiceContent({ order, companySettings }: {
                margin-bottom: 30px; 
                padding-bottom: 20px;
              }
+             
+             /* Hide any company info at the top in print */
+             .company-info,
+             .company-details {
+               display: none !important;
+             }
             
 
             
@@ -361,11 +367,13 @@ function InvoiceContent({ order, companySettings }: {
           </style>
         </head>
         <body>
-          <div class="invoice-container">
-            <!-- Header -->
-            <div class="header">
-              <div class="invoice-title">СЧЕТ-ФАКТУРА</div>
-            </div>
+                     <div class="invoice-container">
+             <!-- Header -->
+             <div class="header">
+               <div class="invoice-title">СЧЕТ-ФАКТУРА</div>
+               <div class="invoice-number">№ ${order?.orderNumber || ''}</div>
+               <div class="invoice-date">от ${order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
+             </div>
 
                          <!-- Parties Information -->
              <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 11px;">
