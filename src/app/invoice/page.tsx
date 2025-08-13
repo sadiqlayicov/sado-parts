@@ -256,12 +256,11 @@ function InvoiceContent({ order, companySettings }: {
               padding: 20px;
             }
             
-            .header { 
-              text-align: center; 
-              margin-bottom: 30px; 
-              border-bottom: 2px solid #000;
-              padding-bottom: 20px;
-            }
+                         .header { 
+               text-align: center; 
+               margin-bottom: 30px; 
+               padding-bottom: 20px;
+             }
             
 
             
