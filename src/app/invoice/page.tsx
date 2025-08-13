@@ -366,8 +366,6 @@ function InvoiceContent({ order, companySettings }: {
             <!-- Header -->
             <div class="header">
               <div class="invoice-title">СЧЕТ-ФАКТУРА</div>
-              <div class="invoice-number">№ ${order?.orderNumber || 'N/A'}</div>
-              <div class="invoice-date">от ${order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
             </div>
 
                          <!-- Parties Information -->
@@ -703,6 +701,8 @@ function InvoiceContent({ order, companySettings }: {
         {/* Invoice Title */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-blue-600 mb-4">СЧЕТ-ФАКТУРА</h2>
+          <div className="text-lg text-gray-600 mb-2">№ {order.orderNumber}</div>
+          <div className="text-lg text-gray-600">от {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
         </div>
 
         {/* Supplier and Buyer Info */}

@@ -14,7 +14,7 @@ export default function Header() {
   const { user, isAuthenticated, isRegistered, isApproved, isAdmin, login, register, logout, getDiscountPercentage, refreshUserStatus, clearCachedData } = useAuth();
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [siteName, setSiteName] = useState('Sado-Parts');
+  const [siteName, setSiteName] = useState('');
   
   const [showCategories, setShowCategories] = useState(false);
   const [showBrands, setShowBrands] = useState(false);
@@ -71,11 +71,11 @@ export default function Header() {
           setSiteName(data.settings.siteName);
         } else {
           console.log('Header: No site name found in settings, using default');
-          setSiteName('Sado-Parts');
+          setSiteName('Bilal-Parts');
         }
       } catch (error) {
         console.error('Header: Error loading site settings:', error);
-        setSiteName('Sado-Parts');
+        setSiteName('Bilal-Parts');
       }
     };
 

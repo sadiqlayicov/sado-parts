@@ -16,7 +16,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [topSellers, setTopSellers] = useState<any[]>([]);
   const [showAllLatestProducts, setShowAllLatestProducts] = useState(false);
-  const [siteName, setSiteName] = useState('SADO-PARTS');
+  const [siteName, setSiteName] = useState('');
 
   // Function to translate product names and categories from Azerbaijani to Russian
   const translateProductData = (product: any) => {
@@ -61,11 +61,11 @@ export default function HomePage() {
           setSiteName(data.settings.siteName.toUpperCase());
         } else {
           console.log('No site name found in settings, using default');
-          setSiteName('SADO-PARTS');
+          setSiteName('BILAL-PARTS');
         }
       } catch (error) {
         console.error('Error loading site settings:', error);
-        setSiteName('SADO-PARTS');
+        setSiteName('BILAL-PARTS');
       }
     };
 
