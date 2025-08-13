@@ -263,9 +263,7 @@ function InvoiceContent({ order, companySettings }: {
               padding-bottom: 20px;
             }
             
-            .company-info { 
-              margin-bottom: 20px; 
-            }
+
             
             .order-info { 
               margin-bottom: 20px; 
@@ -706,19 +704,9 @@ function InvoiceContent({ order, companySettings }: {
 
       {/* Invoice Content */}
       <div className="invoice-content max-w-4xl mx-auto p-8">
-        {/* Company Information */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">{companySettings.companyName}</h1>
-            <p className="text-gray-600 mb-1">{companySettings.companyAddress}</p>
-            <p className="text-gray-600 mb-1">ИНН: {companySettings.inn}</p>
-            <p className="text-gray-600 mb-1">КПП: {companySettings.kpp}</p>
-            <p className="text-gray-600 mb-1">БИК: {companySettings.bik}</p>
-            <p className="text-gray-600">Счет №: {companySettings.accountNumber}</p>
-          </div>
-          <div className="text-right">
-            <h2 className="text-3xl font-bold text-blue-600 mb-4">СЧЕТ-ФАКТУРА</h2>
-          </div>
+        {/* Invoice Title */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-blue-600 mb-4">СЧЕТ-ФАКТУРА</h2>
         </div>
 
         {/* Supplier and Buyer Info */}
