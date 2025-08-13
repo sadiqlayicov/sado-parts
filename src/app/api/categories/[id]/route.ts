@@ -224,7 +224,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       // Move all products to default category
       await client.query(`
         UPDATE products 
-        SET "categoryId" = $1, "updatedAt" = NOW()
+        SET "categoryId" = $1, "categoryName" = 'Ümumi', "updatedAt" = NOW()
         WHERE "categoryId" = $2 AND "isActive" = true
       `, [defaultCategoryId, id]);
     }
