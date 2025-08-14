@@ -19,7 +19,8 @@ import {
   FaGlobe,
   FaFileExcel,
   FaDatabase,
-  FaShieldAlt
+  FaShieldAlt,
+  FaExchangeAlt
 } from 'react-icons/fa';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -60,6 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Доставка', href: '/admin/shipping', icon: FaTruck },
     { name: 'Маркетплейсы', href: '/admin/marketplaces', icon: FaGlobe },
     { name: 'Импорт/Экспорт', href: '/admin/import-export', icon: FaFileExcel },
+    { name: '1C Интеграция', href: '/admin/1c-integration', icon: FaExchangeAlt },
     { name: 'Аналитика', href: '/admin/analytics', icon: FaChartBar },
     { name: 'Настройки', href: '/admin/settings', icon: FaCog },
     { name: 'Безопасность', href: '/admin/security', icon: FaShieldAlt },
