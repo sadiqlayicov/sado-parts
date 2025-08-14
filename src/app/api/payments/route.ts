@@ -355,7 +355,7 @@ async function createPayment(client: any, body: any) {
     const system = PAYMENT_SYSTEMS[paymentSystem as keyof typeof PAYMENT_SYSTEMS];
     
     // Bank köçürməsi üçün INN yoxlaması
-    if (system.requiresInn) {
+    if ('requiresInn' in system && system.requiresInn) {
       const userResult = await client.query(`
         SELECT "inn" FROM users WHERE id = $1
       `, [userId]);
