@@ -70,17 +70,44 @@ const PAYMENT_SYSTEMS = {
   }
 };
 
-// Bank rekvizitləri
-const BANK_DETAILS = {
-  name: 'ООО "Садо-Партс"',
-  account: '40702810123456789012',
-  bank: 'ПАО Сбербанк',
-  bik: '044525225',
-  correspondent: '30101810400000000225',
-  inn: '7707083893',
-  kpp: '770701001',
-  address: 'г. Москва, ул. Тверская, д. 1, стр. 1'
-};
+// Bank rekvizitləri - settings-dən alınacaq
+async function getBankDetailsFromSettings(client: any) {
+  try {
+    const result = await client.query(`
+      SELECT key, value FROM settings 
+      WHERE key IN ('companyName', 'accountNumber', 'bankName', 'bik', 'bankAccountNumber', 'inn', 'kpp', 'companyAddress')
+    `);
+    
+    const settings: any = {};
+    result.rows.forEach(row => {
+      settings[row.key] = row.value;
+    });
+    
+    return {
+      name: settings.companyName || 'ООО "Садо-Партс"',
+      account: settings.accountNumber || '40702810123456789012',
+      bank: settings.bankName || 'ПАО Сбербанк',
+      bik: settings.bik || '044525225',
+      correspondent: settings.bankAccountNumber || '30101810400000000225',
+      inn: settings.inn || '7707083893',
+      kpp: settings.kpp || '770701001',
+      address: settings.companyAddress || 'г. Москва, ул. Тверская, д. 1, стр. 1'
+    };
+  } catch (error) {
+    console.error('Error getting bank details from settings:', error);
+    // Fallback dəyərlər
+    return {
+      name: 'ООО "Садо-Партс"',
+      account: '40702810123456789012',
+      bank: 'ПАО Сбербанк',
+      bik: '044525225',
+      correspondent: '30101810400000000225',
+      inn: '7707083893',
+      kpp: '770701001',
+      address: 'г. Москва, ул. Тверская, д. 1, стр. 1'
+    };
+  }
+}
 
 export async function GET(request: NextRequest) {
   let client: any;
@@ -188,10 +215,27 @@ async function getPaymentSystems() {
 
 // Bank rekvizitlərini qaytar
 async function getBankDetails() {
-  return NextResponse.json({
-    success: true,
-    bankDetails: BANK_DETAILS
-  });
+  let client: any;
+  
+  try {
+    client = await pool.connect();
+    const bankDetails = await getBankDetailsFromSettings(client);
+    
+    return NextResponse.json({
+      success: true,
+      bankDetails: bankDetails
+    });
+  } catch (error: any) {
+    console.error('Error getting bank details:', error);
+    return NextResponse.json(
+      { error: `Ошибка получения банковских реквизитов: ${error.message}` },
+      { status: 500 }
+    );
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
 }
 
 // Ödənişləri al
