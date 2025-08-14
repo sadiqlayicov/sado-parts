@@ -273,7 +273,7 @@ export default function AdminPayments() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -300,8 +300,8 @@ export default function AdminPayments() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Действия
                   </th>
-                </tr>
-              </thead>
+            </tr>
+          </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredPayments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -383,12 +383,12 @@ export default function AdminPayments() {
                           </button>
                         )}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
         )}
 
         {filteredPayments.length === 0 && !loading && (

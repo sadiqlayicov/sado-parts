@@ -79,7 +79,7 @@ async function getBankDetailsFromSettings(client: any) {
     `);
     
     const settings: any = {};
-    result.rows.forEach(row => {
+    result.rows.forEach((row: any) => {
       settings[row.key] = row.value;
     });
     
