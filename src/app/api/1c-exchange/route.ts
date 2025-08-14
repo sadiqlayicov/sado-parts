@@ -36,13 +36,15 @@ export async function GET(request: NextRequest) {
         return await getOrders(client, format);
       case 'get_categories':
         return await getCategories(client, format);
-      case 'get_inventory':
-        return await getInventory(client, format);
-      default:
-        return NextResponse.json(
-          { error: 'Неизвестное действие' },
-          { status: 400 }
-        );
+                        case 'get_inventory':
+                    return await getInventory(client, format);
+                  case 'get_export_jobs':
+                    return await getExportJobs(client);
+                  default:
+                    return NextResponse.json(
+                      { error: 'Неизвестное действие' },
+                      { status: 400 }
+                    );
     }
 
   } catch (error: any) {
@@ -77,21 +79,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     client = await pool.connect();
 
-    switch (action) {
-      case 'sync_products':
-        return await syncProducts(client, body);
-      case 'sync_orders':
-        return await syncOrders(client, body);
-      case 'update_inventory':
-        return await updateInventory(client, body);
-      case 'create_order':
-        return await createOrder(client, body);
-      default:
-        return NextResponse.json(
-          { error: 'Неизвестное действие' },
-          { status: 400 }
-        );
-    }
+                    switch (action) {
+                  case 'sync_products':
+                    return await syncProducts(client, body);
+                  case 'sync_orders':
+                    return await syncOrders(client, body);
+                  case 'update_inventory':
+                    return await updateInventory(client, body);
+                  case 'create_order':
+                    return await createOrder(client, body);
+                  case 'export_data':
+                    return await exportData(client, body);
+                  default:
+                    return NextResponse.json(
+                      { error: 'Неизвестное действие' },
+                      { status: 400 }
+                    );
+                }
 
   } catch (error: any) {
     console.error('1C Exchange POST error:', error);
@@ -571,4 +575,272 @@ function escapeXml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// Export functions
+async function getExportJobs(client: any) {
+  try {
+    // Create export_jobs table if it doesn't exist
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS export_jobs (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(50) NOT NULL,
+        data_type VARCHAR(50) NOT NULL,
+        format VARCHAR(10) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        file_url TEXT,
+        error_message TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    const result = await client.query(`
+      SELECT 
+        id,
+        type,
+        data_type,
+        format,
+        status,
+        file_url,
+        error_message,
+        created_at
+      FROM export_jobs 
+      ORDER BY created_at DESC 
+      LIMIT 20
+    `);
+
+    return NextResponse.json({
+      success: true,
+      jobs: result.rows || []
+    });
+
+  } catch (error: any) {
+    console.error('Error getting export jobs:', error);
+    return NextResponse.json(
+      { error: `Ошибка получения заданий экспорта: ${error.message}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function exportData(client: any, body: any) {
+  try {
+    const { data_type, format } = body;
+
+    if (!data_type || !format) {
+      return NextResponse.json(
+        { error: 'Требуется data_type и format' },
+        { status: 400 }
+      );
+    }
+
+    // Create export job record
+    const jobResult = await client.query(`
+      INSERT INTO export_jobs (
+        type, data_type, format, status
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `, [
+      'export',
+      data_type,
+      format,
+      'processing'
+    ]);
+
+    const jobId = jobResult.rows[0].id;
+
+    let data: any[] = [];
+    let fileName = '';
+
+    // Get data based on type
+    switch (data_type) {
+      case 'products':
+        const productsResult = await client.query(`
+          SELECT 
+            p.*,
+            c.name as category
+          FROM products p
+          LEFT JOIN categories c ON p."categoryId" = c.id
+          WHERE p."isActive" = true
+          ORDER BY p."createdAt" DESC
+        `);
+        data = productsResult.rows;
+        fileName = `products_export_${Date.now()}`;
+        break;
+
+      case 'orders':
+        const ordersResult = await client.query(`
+          SELECT 
+            o.*,
+            u."firstName",
+            u."lastName",
+            u.email,
+            u.phone,
+            u.inn
+          FROM orders o
+          LEFT JOIN users u ON o."userId" = u.id
+          ORDER BY o."createdAt" DESC
+        `);
+        data = ordersResult.rows.map((order: any) => ({
+          ...order,
+          customer: {
+            firstName: order.firstName,
+            lastName: order.lastName,
+            email: order.email,
+            phone: order.phone,
+            inn: order.inn
+          }
+        }));
+        fileName = `orders_export_${Date.now()}`;
+        break;
+
+      case 'categories':
+        const categoriesResult = await client.query(`
+          SELECT * FROM categories 
+          WHERE "isActive" = true
+          ORDER BY "createdAt" DESC
+        `);
+        data = categoriesResult.rows;
+        fileName = `categories_export_${Date.now()}`;
+        break;
+
+      case 'inventory':
+        const inventoryResult = await client.query(`
+          SELECT 
+            p.id,
+            p.name,
+            p.sku,
+            p.stock,
+            c.name as category,
+            p."isActive"
+          FROM products p
+          LEFT JOIN categories c ON p."categoryId" = c.id
+          WHERE p."isActive" = true
+          ORDER BY p.name
+        `);
+        data = inventoryResult.rows;
+        fileName = `inventory_export_${Date.now()}`;
+        break;
+
+      default:
+        throw new Error('Неизвестный тип данных');
+    }
+
+    let fileContent = '';
+    let fileUrl = '';
+
+    // Generate file content based on format
+    switch (format) {
+      case 'json':
+        fileContent = JSON.stringify(data, null, 2);
+        fileName += '.json';
+        break;
+
+      case 'xml':
+        switch (data_type) {
+          case 'products':
+            fileContent = generateProductsXML(data);
+            break;
+          case 'orders':
+            fileContent = generateOrdersXML(data);
+            break;
+          case 'categories':
+            fileContent = generateCategoriesXML(data);
+            break;
+          case 'inventory':
+            fileContent = generateInventoryXML(data);
+            break;
+        }
+        fileName += '.xml';
+        break;
+
+      case 'csv':
+        if (data.length > 0) {
+          const headers = Object.keys(data[0]);
+          const csvRows = [headers.join(',')];
+          
+          for (const row of data) {
+            const values = headers.map(header => {
+              const value = row[header];
+              if (typeof value === 'string' && value.includes(',')) {
+                return `"${value.replace(/"/g, '""')}"`;
+              }
+              return value || '';
+            });
+            csvRows.push(values.join(','));
+          }
+          
+          fileContent = csvRows.join('\n');
+        }
+        fileName += '.csv';
+        break;
+
+      case 'xlsx':
+        // For XLSX, we'll create a simple CSV-like structure
+        if (data.length > 0) {
+          const headers = Object.keys(data[0]);
+          const csvRows = [headers.join('\t')];
+          
+          for (const row of data) {
+            const values = headers.map(header => {
+              const value = row[header];
+              return value || '';
+            });
+            csvRows.push(values.join('\t'));
+          }
+          
+          fileContent = csvRows.join('\n');
+        }
+        fileName += '.xlsx';
+        break;
+
+      default:
+        throw new Error('Неподдерживаемый формат');
+    }
+
+    // Create file URL (in production, you might want to save to cloud storage)
+    fileUrl = `data:text/plain;base64,${Buffer.from(fileContent).toString('base64')}`;
+
+    // Update job as completed
+    await client.query(`
+      UPDATE export_jobs 
+      SET 
+        status = 'completed',
+        file_url = $1
+      WHERE id = $2
+    `, [fileUrl, jobId]);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Экспорт завершен успешно',
+      jobId,
+      fileName,
+      fileUrl,
+      recordCount: data.length
+    });
+
+  } catch (error: any) {
+    console.error('Error exporting data:', error);
+    
+    // Update job with error if jobId exists
+    if (client) {
+      try {
+        await client.query(`
+          UPDATE export_jobs 
+          SET 
+            status = 'failed',
+            error_message = $1
+          WHERE status = 'processing'
+        `, [error.message]);
+      } catch (updateError) {
+        console.error('Error updating job status:', updateError);
+      }
+    }
+    
+    return NextResponse.json(
+      { error: `Ошибка экспорта: ${error.message}` },
+      { status: 500 }
+    );
+  }
 } 
