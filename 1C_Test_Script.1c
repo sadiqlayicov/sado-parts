@@ -1,0 +1,261 @@
+// 1C CommerceML 2.05 Test Skripti
+// Bu skripti 1C konfiqurasiya redaktorunda işə salın
+
+Prosedur TestCommerceML()
+    
+    Mesaj("=== CommerceML 2.05 Test Başladı ===");
+    
+    // Test 1: Katalog əldə et
+    Mesaj("Test 1: Katalog əldə edilir...");
+    KatalogTesti();
+    
+    // Test 2: Qiymət təklifləri
+    Mesaj("Test 2: Qiymət təklifləri əldə edilir...");
+    QiymətTəklifləriTesti();
+    
+    // Test 3: Klassifikator
+    Mesaj("Test 3: Klassifikator əldə edilir...");
+    KlassifikatorTesti();
+    
+    // Test 4: Sifarişlər
+    Mesaj("Test 4: Sifarişlər əldə edilir...");
+    SifarişlərTesti();
+    
+    Mesaj("=== Bütün testlər tamamlandı ===");
+    
+SonProsedur
+
+// Katalog testi
+Prosedur KatalogTesti()
+    
+    HTTP = Yeni HTTPKlient();
+    HTTP.URL = "http://sado-parts.vercel.app/api/1c-exchange?action=get_catalog&format=json";
+    
+    Cavab = HTTP.GET();
+    
+    Əгər Cavab.StatusKodu = 200 Olsa
+        Mesaj("✓ Katalog testi uğurlu");
+        Mesaj("   Məhsul sayı: " + Cavab.Təsvir());
+    ƏksHalda
+        Mesaj("✗ Katalog testi uğursuz: " + Cavab.StatusKodu);
+    Sonra;
+    
+SonProsedur
+
+// Qiymət təklifləri testi
+Prosedur QiymətTəklifləriTesti()
+    
+    HTTP = Yeni HTTPKlient();
+    HTTP.URL = "http://sado-parts.vercel.app/api/1c-exchange?action=get_offers&format=json";
+    
+    Cavab = HTTP.GET();
+    
+    Əгər Cavab.StatusKodu = 200 Olsa
+        Mesaj("✓ Qiymət təklifləri testi uğurlu");
+        Mesaj("   Təklif sayı: " + Cavab.Təsvir());
+    ƏksHalda
+        Mesaj("✗ Qiymət təklifləri testi uğursuz: " + Cavab.StatusKodu);
+    Sonra;
+    
+SonProsedur
+
+// Klassifikator testi
+Prosedur KlassifikatorTesti()
+    
+    HTTP = Yeni HTTPKlient();
+    HTTP.URL = "http://sado-parts.vercel.app/api/1c-exchange?action=get_classifier&format=json";
+    
+    Cavab = HTTP.GET();
+    
+    Əгər Cavab.StatusKodu = 200 Olsa
+        Mesaj("✓ Klassifikator testi uğurlu");
+        Mesaj("   Kateqoriya sayı: " + Cavab.Təsvir());
+    ƏksHalda
+        Mesaj("✗ Klassifikator testi uğursuz: " + Cavab.StatusKodu);
+    Sonra;
+    
+SonProsedur
+
+// Sifarişlər testi
+Prosedur SifarişlərTesti()
+    
+    HTTP = Yeni HTTPKlient();
+    HTTP.URL = "http://sado-parts.vercel.app/api/1c-exchange?action=get_orders&format=json";
+    
+    Cavab = HTTP.GET();
+    
+    Əгər Cavab.StatusKodu = 200 Olsa
+        Mesaj("✓ Sifarişlər testi uğurlu");
+        Mesaj("   Sifariş sayı: " + Cavab.Təsvir());
+    ƏksHalda
+        Mesaj("✗ Sifarişlər testi uğursuz: " + Cavab.StatusKodu);
+    Sonra;
+    
+SonProsedur
+
+// XML formatında test
+Prosedur XMLTesti()
+    
+    Mesaj("=== XML Format Testi ===");
+    
+    HTTP = Yeni HTTPKlient();
+    HTTP.URL = "http://sado-parts.vercel.app/api/1c-exchange?action=get_catalog&format=xml";
+    
+    Cavab = HTTP.GET();
+    
+    Əгər Cavab.StatusKodu = 200 Olsa
+        Mesaj("✓ XML katalog testi uğurlu");
+        
+        // XML-i fayla yaz
+        XMLFaylı = "C:\Temp\catalog_test.xml";
+        Fayl = Yeni Fayl(XMLFaylı);
+        Fayl.Yaz(Cavab.Təsvir());
+        Fayl.Закрыть();
+        
+        Mesaj("   XML faylı yaradıldı: " + XMLFaylı);
+    ƏksHalda
+        Mesaj("✗ XML katalog testi uğursuz: " + Cavab.StatusKodu);
+    Sonra;
+    
+SonProsedur
+
+// Avtomatik sinkronizasiya testi
+Prosedur AvtomatikSinkronizasiyaTesti()
+    
+    Mesaj("=== Avtomatik Sinkronizasiya Testi ===");
+    
+    // 1. Katalog import et
+    Mesaj("1. Katalog import edilir...");
+    KatalogİmportTesti();
+    
+    // 2. Qiymət təkliflərini yenilə
+    Mesaj("2. Qiymət təklifləri yenilənir...");
+    QiymətTəklifləriİmportTesti();
+    
+    // 3. Sifarişləri export et
+    Mesaj("3. Sifarişlər export edilir...");
+    SifarişlərExportTesti();
+    
+    Mesaj("✓ Avtomatik sinkronizasiya testi tamamlandı");
+    
+SonProsedur
+
+// Katalog import testi
+Prosedur KatalogİmportTesti()
+    
+    // Test məlumatları hazırla
+    TestKatalog = Yeni Struktur;
+    TestKatalog.Вставить("products", Yeni Массив);
+    
+    TestMəhsul = Yeni Struktur;
+    TestMəhsul.Вставить("name", "Test Məhsul");
+    TestMəhsul.Вставить("description", "Test təsviri");
+    TestMəhsul.Вставить("price", 100);
+    TestMəhsul.Вставить("artikul", "TEST001");
+    TestMəhsul.Вставить("stock", 10);
+    
+    TestKatalog.products.Добавить(TestMəhsul);
+    
+    // POST sorğusu göndər
+    HTTP = Yeni HTTPKlient();
+    HTTP.URL = "http://sado-parts.vercel.app/api/1c-exchange?action=import_catalog";
+    HTTP.Заголовки.Вставить("Content-Type", "application/json");
+    
+    Cavab = HTTP.POST(JSONStringify(TestKatalog));
+    
+    Əгər Cavab.StatusKodu = 200 Olsa
+        Mesaj("   ✓ Katalog import uğurlu");
+    ƏksHalda
+        Mesaj("   ✗ Katalog import uğursuz: " + Cavab.StatusKodu);
+    Sonra;
+    
+SonProsedur
+
+// Qiymət təklifləri import testi
+Prosedur QiymətTəklifləriİmportTesti()
+    
+    // Test məlumatları hazırla
+    TestTəkliflər = Yeni Struktur;
+    TestTəkliflər.Вставить("offers", Yeni Массив);
+    
+    TestTəklif = Yeni Struktur;
+    TestTəklif.Вставить("artikul", "TEST001");
+    TestTəklif.Вставить("price", 95);
+    TestTəklif.Вставить("salePrice", 90);
+    TestTəklif.Вставить("stock", 8);
+    
+    TestTəkliflər.offers.Добавить(TestTəklif);
+    
+    // POST sorğusu göndər
+    HTTP = Yeni HTTPKlient();
+    HTTP.URL = "http://sado-parts.vercel.app/api/1c-exchange?action=import_offers";
+    HTTP.Заголовки.Вставить("Content-Type", "application/json");
+    
+    Cavab = HTTP.POST(JSONStringify(TestTəkliflər));
+    
+    Əгər Cavab.StatusKodu = 200 Olsa
+        Mesaj("   ✓ Qiymət təklifləri import uğurlu");
+    ƏksHalda
+        Mesaj("   ✗ Qiymət təklifləri import uğursuz: " + Cavab.StatusKodu);
+    Sonra;
+    
+SonProsedur
+
+// Sifarişlər export testi
+Prosedur SifarişlərExportTesti()
+    
+    // Test sifariş məlumatları hazırla
+    TestSifarişlər = Yeni Struktur;
+    TestSifarişlər.Вставить("orders", Yeni Массив);
+    
+    TestSifariş = Yeni Struktur;
+    TestSifariş.Вставить("orderNumber", "1C-TEST-001");
+    TestSifariş.Вставить("status", "confirmed");
+    TestSifariş.Вставить("totalAmount", 500);
+    TestSifariş.Вставить("notes", "Test sifarişi");
+    
+    TestSifarişlər.orders.Добавить(TestSifariş);
+    
+    // POST sorğusu göndər
+    HTTP = Yeni HTTPKlient();
+    HTTP.URL = "http://sado-parts.vercel.app/api/1c-exchange?action=import_orders";
+    HTTP.Заголовки.Вставить("Content-Type", "application/json");
+    
+    Cavab = HTTP.POST(JSONStringify(TestSifarişlər));
+    
+    Əгər Cavab.StatusKodu = 200 Olsa
+        Mesaj("   ✓ Sifarişlər export uğurlu");
+    ƏksHalda
+        Mesaj("   ✗ Sifarişlər export uğursuz: " + Cavab.StatusKodu);
+    Sonra;
+    
+SonProsedur
+
+// JSON stringify funksiyası
+Функция JSONStringify(Объект)
+    
+    JSON = Yeni JSONWriter();
+    JSON.Записать(Объект);
+    
+    Возврат JSON.Закрыть();
+    
+КонецФункции
+
+// Əsas test proseduru
+Prosedur ƏsasTest()
+    
+    Mesaj("1C CommerceML 2.05 Test Skripti");
+    Mesaj("================================");
+    
+    // Sadə testlər
+    TestCommerceML();
+    
+    // XML testi
+    XMLTesti();
+    
+    // Avtomatik sinkronizasiya testi
+    AvtomatikSinkronizasiyaTesti();
+    
+    Mesaj("Bütün testlər tamamlandı!");
+    
+SonProsedur
