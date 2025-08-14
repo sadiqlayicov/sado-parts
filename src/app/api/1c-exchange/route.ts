@@ -9,16 +9,16 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-// 1C ERP Integration API
+// CommerceML 2.05 Standard API
 export async function GET(request: NextRequest) {
   let client: any;
   
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
-    const format = searchParams.get('format') || 'json';
+    const format = searchParams.get('format') || 'xml';
     
-    console.log('1C Exchange GET request:', { action, format });
+    console.log('CommerceML GET request:', { action, format });
 
     if (!action) {
       return NextResponse.json(
@@ -30,27 +30,27 @@ export async function GET(request: NextRequest) {
     client = await pool.connect();
 
     switch (action) {
-      case 'get_products':
-        return await getProducts(client, format);
+      case 'get_catalog':
+        return await getCatalog(client, format);
+      case 'get_offers':
+        return await getOffers(client, format);
       case 'get_orders':
         return await getOrders(client, format);
-      case 'get_categories':
-        return await getCategories(client, format);
-                        case 'get_inventory':
-                    return await getInventory(client, format);
-                  case 'get_export_jobs':
-                    return await getExportJobs(client);
-                  default:
-                    return NextResponse.json(
-                      { error: 'Неизвестное действие' },
-                      { status: 400 }
-                    );
+      case 'get_classifier':
+        return await getClassifier(client, format);
+      case 'get_export_jobs':
+        return await getExportJobs(client);
+      default:
+        return NextResponse.json(
+          { error: 'Неизвестное действие' },
+          { status: 400 }
+        );
     }
 
   } catch (error: any) {
-    console.error('1C Exchange GET error:', error);
+    console.error('CommerceML GET error:', error);
     return NextResponse.json(
-      { error: `Ошибка 1C обмена: ${error.message}` },
+      { error: `Ошибка CommerceML обмена: ${error.message}` },
       { status: 500 }
     );
   } finally {
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
     
-    console.log('1C Exchange POST request:', { action });
+    console.log('CommerceML POST request:', { action });
 
     if (!action) {
       return NextResponse.json(
@@ -79,28 +79,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     client = await pool.connect();
 
-                    switch (action) {
-                  case 'sync_products':
-                    return await syncProducts(client, body);
-                  case 'sync_orders':
-                    return await syncOrders(client, body);
-                  case 'update_inventory':
-                    return await updateInventory(client, body);
-                  case 'create_order':
-                    return await createOrder(client, body);
-                  case 'export_data':
-                    return await exportData(client, body);
-                  default:
-                    return NextResponse.json(
-                      { error: 'Неизвестное действие' },
-                      { status: 400 }
-                    );
-                }
+    switch (action) {
+      case 'import_catalog':
+        return await importCatalog(client, body);
+      case 'import_offers':
+        return await importOffers(client, body);
+      case 'import_orders':
+        return await importOrders(client, body);
+      case 'export_data':
+        return await exportData(client, body);
+      default:
+        return NextResponse.json(
+          { error: 'Неизвестное действие' },
+          { status: 400 }
+        );
+    }
 
   } catch (error: any) {
-    console.error('1C Exchange POST error:', error);
+    console.error('CommerceML POST error:', error);
     return NextResponse.json(
-      { error: `Ошибка 1C обмена: ${error.message}` },
+      { error: `Ошибка CommerceML обмена: ${error.message}` },
       { status: 500 }
     );
   } finally {
@@ -110,15 +108,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper functions
-async function getProducts(client: any, format: string) {
+// CommerceML 2.05 Helper functions
+async function getCatalog(client: any, format: string) {
   const result = await client.query(`
     SELECT 
       p.id,
       p.name,
       p.description,
       p.price,
-      p.salePrice,
+      p."salePrice",
       p.sku,
       p.stock,
       p.artikul,
@@ -127,7 +125,8 @@ async function getProducts(client: any, format: string) {
       p."isFeatured",
       p."createdAt",
       p."updatedAt",
-      c.name as category_name
+      c.name as category_name,
+      c.id as category_id
     FROM products p
     LEFT JOIN categories c ON p."categoryId" = c.id
     WHERE p."isActive" = true
@@ -146,22 +145,75 @@ async function getProducts(client: any, format: string) {
     stock: row.stock,
     isActive: row.isActive,
     isFeatured: row.isFeatured,
-    category: row.category_name,
+    category: {
+      id: row.category_id,
+      name: row.category_name
+    },
     createdAt: row.createdAt,
     updatedAt: row.updatedAt
   }));
 
   if (format === 'xml') {
-    const xml = generateProductsXML(products);
+    const xml = generateCommerceMLCatalog(products);
     return new NextResponse(xml, {
-      headers: { 'Content-Type': 'application/xml' }
+      headers: { 
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="catalog.xml"'
+      }
     });
   }
 
   return NextResponse.json({
     success: true,
     count: products.length,
-    products
+    catalog: products
+  });
+}
+
+async function getOffers(client: any, format: string) {
+  const result = await client.query(`
+    SELECT 
+      p.id,
+      p.name,
+      p.price,
+      p."salePrice",
+      p.sku,
+      p.stock,
+      p.artikul,
+      p."catalogNumber",
+      c.name as category_name
+    FROM products p
+    LEFT JOIN categories c ON p."categoryId" = c.id
+    WHERE p."isActive" = true AND p.stock > 0
+    ORDER BY p.name
+  `);
+
+  const offers = result.rows.map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    price: parseFloat(row.price),
+    salePrice: row.salePrice ? parseFloat(row.salePrice) : null,
+    sku: row.sku,
+    artikul: row.artikul,
+    catalogNumber: row.catalogNumber,
+    stock: row.stock,
+    category: row.category_name
+  }));
+
+  if (format === 'xml') {
+    const xml = generateCommerceMLOffers(offers);
+    return new NextResponse(xml, {
+      headers: { 
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="offers.xml"'
+      }
+    });
+  }
+
+  return NextResponse.json({
+    success: true,
+    count: offers.length,
+    offers
   });
 }
 
@@ -180,7 +232,8 @@ async function getOrders(client: any, format: string) {
       u."lastName",
       u.email,
       u.phone,
-      u.inn
+      u.inn,
+      u.address
     FROM orders o
     LEFT JOIN users u ON o."userId" = u.id
     WHERE o.status IN ('pending', 'confirmed', 'processing')
@@ -199,16 +252,20 @@ async function getOrders(client: any, format: string) {
       lastName: row.lastName,
       email: row.email,
       phone: row.phone,
-      inn: row.inn
+      inn: row.inn,
+      address: row.address
     },
     createdAt: row.createdAt,
     updatedAt: row.updatedAt
   }));
 
   if (format === 'xml') {
-    const xml = generateOrdersXML(orders);
+    const xml = generateCommerceMLOrders(orders);
     return new NextResponse(xml, {
-      headers: { 'Content-Type': 'application/xml' }
+      headers: { 
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="orders.xml"'
+      }
     });
   }
 
@@ -219,7 +276,7 @@ async function getOrders(client: any, format: string) {
   });
 }
 
-async function getCategories(client: any, format: string) {
+async function getClassifier(client: any, format: string) {
   const result = await client.query(`
     SELECT 
       id,
@@ -243,63 +300,29 @@ async function getCategories(client: any, format: string) {
   }));
 
   if (format === 'xml') {
-    const xml = generateCategoriesXML(categories);
+    const xml = generateCommerceMLClassifier(categories);
     return new NextResponse(xml, {
-      headers: { 'Content-Type': 'application/xml' }
+      headers: { 
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="classifier.xml"'
+      }
     });
   }
 
   return NextResponse.json({
     success: true,
     count: categories.length,
-    categories
+    classifier: categories
   });
 }
 
-async function getInventory(client: any, format: string) {
-  const result = await client.query(`
-    SELECT 
-      p.id,
-      p.name,
-      p.sku,
-      p.stock,
-      p."isActive",
-      c.name as category_name
-    FROM products p
-    LEFT JOIN categories c ON p."categoryId" = c.id
-    WHERE p."isActive" = true
-    ORDER BY p.name
-  `);
-
-  const inventory = result.rows.map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    sku: row.sku,
-    stock: row.stock,
-    category: row.category_name,
-    isActive: row.isActive
-  }));
-
-  if (format === 'xml') {
-    const xml = generateInventoryXML(inventory);
-    return new NextResponse(xml, {
-      headers: { 'Content-Type': 'application/xml' }
-    });
-  }
-
-  return NextResponse.json({
-    success: true,
-    count: inventory.length,
-    inventory
-  });
-}
-
-async function syncProducts(client: any, products: any[]) {
+// Import functions
+async function importCatalog(client: any, catalog: any) {
   let updated = 0;
   let created = 0;
   let errors = 0;
 
-  for (const product of products) {
+  for (const product of catalog.products || []) {
     try {
       if (product.id) {
         // Update existing product
@@ -332,6 +355,25 @@ async function syncProducts(client: any, products: any[]) {
         updated++;
       } else {
         // Create new product
+        let categoryId = '1'; // Default category
+        
+        if (product.category && product.category.name) {
+          const categoryResult = await client.query(`
+            SELECT id FROM categories WHERE name = $1
+          `, [product.category.name]);
+          
+          if (categoryResult.rows.length > 0) {
+            categoryId = categoryResult.rows[0].id;
+          } else {
+            const newCategoryResult = await client.query(`
+              INSERT INTO categories (name, description, "isActive")
+              VALUES ($1, $2, $3)
+              RETURNING id
+            `, [product.category.name, product.category.description || '', true]);
+            categoryId = newCategoryResult.rows[0].id;
+          }
+        }
+
         await client.query(`
           INSERT INTO products (
             name, description, price, "salePrice", sku, stock, 
@@ -347,19 +389,19 @@ async function syncProducts(client: any, products: any[]) {
           product.artikul,
           product.catalogNumber,
           product.isActive,
-          product.categoryId || '1' // Default category
+          categoryId
         ]);
         created++;
       }
     } catch (error) {
-      console.error('Error syncing product:', product, error);
+      console.error('Error importing product:', product, error);
       errors++;
     }
   }
 
   return NextResponse.json({
     success: true,
-    message: 'Синхронизация товаров завершена',
+    message: 'Импорт каталога завершен',
     stats: {
       updated,
       created,
@@ -368,11 +410,43 @@ async function syncProducts(client: any, products: any[]) {
   });
 }
 
-async function syncOrders(client: any, orders: any[]) {
+async function importOffers(client: any, offers: any) {
   let updated = 0;
   let errors = 0;
 
-  for (const order of orders) {
+  for (const offer of offers.offers || []) {
+    try {
+      await client.query(`
+        UPDATE products 
+        SET 
+          price = $1,
+          "salePrice" = $2,
+          stock = $3,
+          "updatedAt" = NOW()
+        WHERE artikul = $4
+      `, [offer.price, offer.salePrice, offer.stock, offer.artikul]);
+      updated++;
+    } catch (error) {
+      console.error('Error importing offer:', offer, error);
+      errors++;
+    }
+  }
+
+  return NextResponse.json({
+    success: true,
+    message: 'Импорт предложений завершен',
+    stats: {
+      updated,
+      errors
+    }
+  });
+}
+
+async function importOrders(client: any, orders: any) {
+  let updated = 0;
+  let errors = 0;
+
+  for (const order of orders.orders || []) {
     try {
       await client.query(`
         UPDATE orders 
@@ -384,203 +458,24 @@ async function syncOrders(client: any, orders: any[]) {
       `, [order.status, order.notes, order.orderNumber]);
       updated++;
     } catch (error) {
-      console.error('Error syncing order:', order, error);
+      console.error('Error importing order:', order, error);
       errors++;
     }
   }
 
   return NextResponse.json({
     success: true,
-    message: 'Синхронизация заказов завершена',
+    message: 'Импорт заказов завершен',
     stats: {
       updated,
       errors
     }
   });
-}
-
-async function updateInventory(client: any, inventory: any[]) {
-  let updated = 0;
-  let errors = 0;
-
-  for (const item of inventory) {
-    try {
-      await client.query(`
-        UPDATE products 
-        SET 
-          stock = $1,
-          "updatedAt" = NOW()
-        WHERE sku = $2
-      `, [item.stock, item.sku]);
-      updated++;
-    } catch (error) {
-      console.error('Error updating inventory:', item, error);
-      errors++;
-    }
-  }
-
-  return NextResponse.json({
-    success: true,
-    message: 'Обновление остатков завершено',
-    stats: {
-      updated,
-      errors
-    }
-  });
-}
-
-async function createOrder(client: any, orderData: any) {
-  try {
-    const orderNumber = `SADO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-    
-    const result = await client.query(`
-      INSERT INTO orders (
-        "orderNumber", "userId", status, "totalAmount", currency, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id
-    `, [
-      orderNumber,
-      orderData.userId,
-      'pending',
-      orderData.totalAmount,
-      orderData.currency || 'AZN',
-      orderData.notes
-    ]);
-
-    const orderId = result.rows[0].id;
-
-    // Add order items
-    for (const item of orderData.items) {
-      await client.query(`
-        INSERT INTO order_items (
-          "orderId", "productId", quantity, price
-        ) VALUES ($1, $2, $3, $4)
-      `, [orderId, item.productId, item.quantity, item.price]);
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Заказ успешно создан',
-      orderId,
-      orderNumber
-    });
-
-  } catch (error: any) {
-    console.error('Error creating order:', error);
-    return NextResponse.json(
-      { error: `Ошибка создания заказа: ${error.message}` },
-      { status: 500 }
-    );
-  }
-}
-
-// XML generation functions
-function generateProductsXML(products: any[]) {
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<products>\n';
-  
-  for (const product of products) {
-    xml += '  <product>\n';
-    xml += `    <id>${product.id}</id>\n`;
-    xml += `    <name>${escapeXml(product.name)}</name>\n`;
-    xml += `    <description>${escapeXml(product.description || '')}</description>\n`;
-    xml += `    <price>${product.price}</price>\n`;
-    xml += `    <salePrice>${product.salePrice || ''}</salePrice>\n`;
-    xml += `    <sku>${escapeXml(product.sku || '')}</sku>\n`;
-    xml += `    <artikul>${escapeXml(product.artikul || '')}</artikul>\n`;
-    xml += `    <catalogNumber>${escapeXml(product.catalogNumber || '')}</catalogNumber>\n`;
-    xml += `    <stock>${product.stock}</stock>\n`;
-    xml += `    <category>${escapeXml(product.category || '')}</category>\n`;
-    xml += `    <isActive>${product.isActive}</isActive>\n`;
-    xml += `    <isFeatured>${product.isFeatured}</isFeatured>\n`;
-    xml += `    <createdAt>${product.createdAt}</createdAt>\n`;
-    xml += `    <updatedAt>${product.updatedAt}</updatedAt>\n`;
-    xml += '  </product>\n';
-  }
-  
-  xml += '</products>';
-  return xml;
-}
-
-function generateOrdersXML(orders: any[]) {
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<orders>\n';
-  
-  for (const order of orders) {
-    xml += '  <order>\n';
-    xml += `    <id>${order.id}</id>\n`;
-    xml += `    <orderNumber>${order.orderNumber}</orderNumber>\n`;
-    xml += `    <status>${order.status}</status>\n`;
-    xml += `    <totalAmount>${order.totalAmount}</totalAmount>\n`;
-    xml += `    <currency>${order.currency}</currency>\n`;
-    xml += `    <notes>${escapeXml(order.notes || '')}</notes>\n`;
-    xml += '    <customer>\n';
-    xml += `      <firstName>${escapeXml(order.customer.firstName || '')}</firstName>\n`;
-    xml += `      <lastName>${escapeXml(order.customer.lastName || '')}</lastName>\n`;
-    xml += `      <email>${escapeXml(order.customer.email || '')}</email>\n`;
-    xml += `      <phone>${escapeXml(order.customer.phone || '')}</phone>\n`;
-    xml += `      <inn>${escapeXml(order.customer.inn || '')}</inn>\n`;
-    xml += '    </customer>\n';
-    xml += `    <createdAt>${order.createdAt}</createdAt>\n`;
-    xml += `    <updatedAt>${order.updatedAt}</updatedAt>\n`;
-    xml += '  </order>\n';
-  }
-  
-  xml += '</orders>';
-  return xml;
-}
-
-function generateCategoriesXML(categories: any[]) {
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<categories>\n';
-  
-  for (const category of categories) {
-    xml += '  <category>\n';
-    xml += `    <id>${category.id}</id>\n`;
-    xml += `    <name>${escapeXml(category.name)}</name>\n`;
-    xml += `    <description>${escapeXml(category.description || '')}</description>\n`;
-    xml += `    <isActive>${category.isActive}</isActive>\n`;
-    xml += `    <createdAt>${category.createdAt}</createdAt>\n`;
-    xml += `    <updatedAt>${category.updatedAt}</updatedAt>\n`;
-    xml += '  </category>\n';
-  }
-  
-  xml += '</categories>';
-  return xml;
-}
-
-function generateInventoryXML(inventory: any[]) {
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<inventory>\n';
-  
-  for (const item of inventory) {
-    xml += '  <item>\n';
-    xml += `    <id>${item.id}</id>\n`;
-    xml += `    <name>${escapeXml(item.name)}</name>\n`;
-    xml += `    <sku>${escapeXml(item.sku || '')}</sku>\n`;
-    xml += `    <stock>${item.stock}</stock>\n`;
-    xml += `    <category>${escapeXml(item.category || '')}</category>\n`;
-    xml += `    <isActive>${item.isActive}</isActive>\n`;
-    xml += '  </item>\n';
-  }
-  
-  xml += '</inventory>';
-  return xml;
-}
-
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 // Export functions
 async function getExportJobs(client: any) {
   try {
-    // Create export_jobs table if it doesn't exist
     await client.query(`
       CREATE TABLE IF NOT EXISTS export_jobs (
         id SERIAL PRIMARY KEY,
@@ -635,7 +530,6 @@ async function exportData(client: any, body: any) {
       );
     }
 
-    // Create export job record
     const jobResult = await client.query(`
       INSERT INTO export_jobs (
         type, data_type, format, status
@@ -653,20 +547,41 @@ async function exportData(client: any, body: any) {
     let data: any[] = [];
     let fileName = '';
 
-    // Get data based on type
     switch (data_type) {
-      case 'products':
-        const productsResult = await client.query(`
+      case 'catalog':
+        const catalogResult = await client.query(`
           SELECT 
             p.*,
-            c.name as category
+            c.name as category_name,
+            c.id as category_id
           FROM products p
           LEFT JOIN categories c ON p."categoryId" = c.id
           WHERE p."isActive" = true
           ORDER BY p."createdAt" DESC
         `);
-        data = productsResult.rows;
-        fileName = `products_export_${Date.now()}`;
+        data = catalogResult.rows;
+        fileName = `catalog_export_${Date.now()}`;
+        break;
+
+      case 'offers':
+        const offersResult = await client.query(`
+          SELECT 
+            p.id,
+            p.name,
+            p.price,
+            p."salePrice",
+            p.sku,
+            p.stock,
+            p.artikul,
+            p."catalogNumber",
+            c.name as category_name
+          FROM products p
+          LEFT JOIN categories c ON p."categoryId" = c.id
+          WHERE p."isActive" = true AND p.stock > 0
+          ORDER BY p.name
+        `);
+        data = offersResult.rows;
+        fileName = `offers_export_${Date.now()}`;
         break;
 
       case 'orders':
@@ -677,50 +592,24 @@ async function exportData(client: any, body: any) {
             u."lastName",
             u.email,
             u.phone,
-            u.inn
+            u.inn,
+            u.address
           FROM orders o
           LEFT JOIN users u ON o."userId" = u.id
           ORDER BY o."createdAt" DESC
         `);
-        data = ordersResult.rows.map((order: any) => ({
-          ...order,
-          customer: {
-            firstName: order.firstName,
-            lastName: order.lastName,
-            email: order.email,
-            phone: order.phone,
-            inn: order.inn
-          }
-        }));
+        data = ordersResult.rows;
         fileName = `orders_export_${Date.now()}`;
         break;
 
-      case 'categories':
-        const categoriesResult = await client.query(`
+      case 'classifier':
+        const classifierResult = await client.query(`
           SELECT * FROM categories 
           WHERE "isActive" = true
           ORDER BY "createdAt" DESC
         `);
-        data = categoriesResult.rows;
-        fileName = `categories_export_${Date.now()}`;
-        break;
-
-      case 'inventory':
-        const inventoryResult = await client.query(`
-          SELECT 
-            p.id,
-            p.name,
-            p.sku,
-            p.stock,
-            c.name as category,
-            p."isActive"
-          FROM products p
-          LEFT JOIN categories c ON p."categoryId" = c.id
-          WHERE p."isActive" = true
-          ORDER BY p.name
-        `);
-        data = inventoryResult.rows;
-        fileName = `inventory_export_${Date.now()}`;
+        data = classifierResult.rows;
+        fileName = `classifier_export_${Date.now()}`;
         break;
 
       default:
@@ -730,7 +619,6 @@ async function exportData(client: any, body: any) {
     let fileContent = '';
     let fileUrl = '';
 
-    // Generate file content based on format
     switch (format) {
       case 'json':
         fileContent = JSON.stringify(data, null, 2);
@@ -739,17 +627,17 @@ async function exportData(client: any, body: any) {
 
       case 'xml':
         switch (data_type) {
-          case 'products':
-            fileContent = generateProductsXML(data);
+          case 'catalog':
+            fileContent = generateCommerceMLCatalog(data);
+            break;
+          case 'offers':
+            fileContent = generateCommerceMLOffers(data);
             break;
           case 'orders':
-            fileContent = generateOrdersXML(data);
+            fileContent = generateCommerceMLOrders(data);
             break;
-          case 'categories':
-            fileContent = generateCategoriesXML(data);
-            break;
-          case 'inventory':
-            fileContent = generateInventoryXML(data);
+          case 'classifier':
+            fileContent = generateCommerceMLClassifier(data);
             break;
         }
         fileName += '.xml';
@@ -776,33 +664,12 @@ async function exportData(client: any, body: any) {
         fileName += '.csv';
         break;
 
-      case 'xlsx':
-        // For XLSX, we'll create a simple CSV-like structure
-        if (data.length > 0) {
-          const headers = Object.keys(data[0]);
-          const csvRows = [headers.join('\t')];
-          
-          for (const row of data) {
-            const values = headers.map(header => {
-              const value = row[header];
-              return value || '';
-            });
-            csvRows.push(values.join('\t'));
-          }
-          
-          fileContent = csvRows.join('\n');
-        }
-        fileName += '.xlsx';
-        break;
-
       default:
         throw new Error('Неподдерживаемый формат');
     }
 
-    // Create file URL (in production, you might want to save to cloud storage)
     fileUrl = `data:text/plain;base64,${Buffer.from(fileContent).toString('base64')}`;
 
-    // Update job as completed
     await client.query(`
       UPDATE export_jobs 
       SET 
@@ -823,7 +690,6 @@ async function exportData(client: any, body: any) {
   } catch (error: any) {
     console.error('Error exporting data:', error);
     
-    // Update job with error if jobId exists
     if (client) {
       try {
         await client.query(`
@@ -843,4 +709,163 @@ async function exportData(client: any, body: any) {
       { status: 500 }
     );
   }
+}
+
+// CommerceML 2.05 XML Generation Functions
+function generateCommerceMLCatalog(products: any[]) {
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="' + new Date().toISOString() + '">\n';
+  xml += '  <Классификатор>\n';
+  xml += '    <Ид>1</Ид>\n';
+  xml += '    <Наименование>Каталог товаров</Наименование>\n';
+  xml += '  </Классификатор>\n';
+  xml += '  <Каталог СодержитТолькоИзменения="false">\n';
+  xml += '    <Ид>1</Ид>\n';
+  xml += '    <ИдКлассификатора>1</ИдКлассификатора>\n';
+  xml += '    <Наименование>Каталог товаров</Наименование>\n';
+  
+  for (const product of products) {
+    xml += '    <Товар>\n';
+    xml += `      <Ид>${product.id}</Ид>\n`;
+    xml += `      <Наименование>${escapeXml(product.name)}</Наименование>\n`;
+    if (product.description) {
+      xml += `      <Описание>${escapeXml(product.description)}</Описание>\n`;
+    }
+    xml += `      <Артикул>${escapeXml(product.artikul || '')}</Артикул>\n`;
+    xml += `      <БазоваяЕдиница Код="796" НаименованиеПолное="Штука" МеждународноеСокращение="PCE">шт</БазоваяЕдиница>\n`;
+    xml += `      <Группы>\n`;
+    xml += `        <Ид>${product.category?.id || '1'}</Ид>\n`;
+    xml += `      </Группы>\n`;
+    xml += `      <СтавкиНалогов>\n`;
+    xml += `        <СтавкаНалога>\n`;
+    xml += `          <Наименование>НДС</Наименование>\n`;
+    xml += `          <Ставка>20</Ставка>\n`;
+    xml += `        </СтавкаНалога>\n`;
+    xml += `      </СтавкиНалогов>\n`;
+    xml += '    </Товар>\n';
+  }
+  
+  xml += '  </Каталог>\n';
+  xml += '</КоммерческаяИнформация>';
+  return xml;
+}
+
+function generateCommerceMLOffers(offers: any[]) {
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="' + new Date().toISOString() + '">\n';
+  xml += '  <ПакетПредложений СодержитТолькоИзменения="false">\n';
+  xml += '    <Ид>1</Ид>\n';
+  xml += '    <Наименование>Прайс-лист</Наименование>\n';
+  xml += '    <ИдКаталога>1</ИдКаталога>\n';
+  xml += '    <ИдКлассификатора>1</ИдКлассификатора>\n';
+  xml += '    <Владелец>\n';
+  xml += '      <Ид>1</Ид>\n';
+  xml += '      <Наименование>Sado-Parts</Наименование>\n';
+  xml += '      <ПолноеНаименование>Sado-Parts</ПолноеНаименование>\n';
+  xml += '    </Владелец>\n';
+  xml += '    <ТипыЦен>\n';
+  xml += '      <ТипЦены>\n';
+  xml += '        <Ид>1</Ид>\n';
+  xml += '        <Наименование>Розничная</Наименование>\n';
+  xml += '      </ТипЦены>\n';
+  xml += '    </ТипыЦен>\n';
+  
+  for (const offer of offers) {
+    xml += '    <Предложение>\n';
+    xml += `      <Ид>${offer.id}</Ид>\n`;
+    xml += `      <ИдТовара>${offer.id}</ИдТовара>\n`;
+    xml += `      <Количество>${offer.stock}</Количество>\n`;
+    xml += '      <Цены>\n';
+    xml += '        <Цена>\n';
+    xml += '          <ИдТипаЦены>1</ИдТипаЦены>\n';
+    xml += `          <ЦенаЗаЕдиницу>${offer.price}</ЦенаЗаЕдиницу>\n`;
+    xml += '          <Валюта>AZN</Валюта>\n';
+    xml += '          <Налог>\n';
+    xml += '            <Наименование>НДС</Наименование>\n';
+    xml += '            <УчтеноВСумме>false</УчтеноВСумме>\n';
+    xml += '          </Налог>\n';
+    xml += '        </Цена>\n';
+    xml += '      </Цены>\n';
+    xml += '    </Предложение>\n';
+  }
+  
+  xml += '  </ПакетПредложений>\n';
+  xml += '</КоммерческаяИнформация>';
+  return xml;
+}
+
+function generateCommerceMLOrders(orders: any[]) {
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="' + new Date().toISOString() + '">\n';
+  xml += '  <Документы>\n';
+  
+  for (const order of orders) {
+    xml += '    <Документ>\n';
+    xml += '      <Ид>' + order.orderNumber + '</Ид>\n';
+    xml += '      <Номер>' + order.orderNumber + '</Номер>\n';
+    xml += '      <Дата>' + new Date(order.createdAt).toISOString().split('T')[0] + '</Дата>\n';
+    xml += '      <ХозОперация>Заказ товара</ХозОперация>\n';
+    xml += '      <Роль>Продавец</Роль>\n';
+    xml += '      <Валюта>' + (order.currency || 'AZN') + '</Валюта>\n';
+    xml += '      <Курс>1</Курс>\n';
+    xml += '      <Сумма>' + order.totalAmount + '</Сумма>\n';
+    xml += '      <Контрагенты>\n';
+    xml += '        <Контрагент>\n';
+    xml += '          <Ид>1</Ид>\n';
+    xml += '          <Наименование>' + escapeXml(order.customer?.firstName + ' ' + order.customer?.lastName) + '</Наименование>\n';
+    xml += '          <ПолноеНаименование>' + escapeXml(order.customer?.firstName + ' ' + order.customer?.lastName) + '</ПолноеНаименование>\n';
+    xml += '          <Роль>Покупатель</Роль>\n';
+    if (order.customer?.email) {
+      xml += '          <Контакты>\n';
+      xml += '            <Контакт>\n';
+      xml += '              <Тип>Почта</Тип>\n';
+      xml += '              <Значение>' + escapeXml(order.customer.email) + '</Значение>\n';
+      xml += '            </Контакт>\n';
+      xml += '          </Контакты>\n';
+    }
+    xml += '        </Контрагент>\n';
+    xml += '      </Контрагенты>\n';
+    xml += '      <Товары>\n';
+    // Here you would add order items if available
+    xml += '      </Товары>\n';
+    xml += '    </Документ>\n';
+  }
+  
+  xml += '  </Документы>\n';
+  xml += '</КоммерческаяИнформация>';
+  return xml;
+}
+
+function generateCommerceMLClassifier(categories: any[]) {
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="' + new Date().toISOString() + '">\n';
+  xml += '  <Классификатор>\n';
+  xml += '    <Ид>1</Ид>\n';
+  xml += '    <Наименование>Классификатор товаров</Наименование>\n';
+  xml += '    <Группы>\n';
+  
+  for (const category of categories) {
+    xml += '      <Группа>\n';
+    xml += `        <Ид>${category.id}</Ид>\n`;
+    xml += `        <Наименование>${escapeXml(category.name)}</Наименование>\n`;
+    if (category.description) {
+      xml += `        <Описание>${escapeXml(category.description)}</Описание>\n`;
+    }
+    xml += '      </Группа>\n';
+  }
+  
+  xml += '    </Группы>\n';
+  xml += '  </Классификатор>\n';
+  xml += '</КоммерческаяИнформация>';
+  return xml;
+}
+
+function escapeXml(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 } 

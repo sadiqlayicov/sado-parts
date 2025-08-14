@@ -20,7 +20,7 @@ export default function Admin1CExport() {
   const [loading, setLoading] = useState(false);
   const [exportJobs, setExportJobs] = useState<ExportJob[]>([]);
   const [selectedFormat, setSelectedFormat] = useState<'json' | 'xml' | 'csv' | 'xlsx'>('json');
-  const [selectedData, setSelectedData] = useState<'products' | 'orders' | 'categories' | 'inventory'>('products');
+  const [selectedData, setSelectedData] = useState<'catalog' | 'offers' | 'orders' | 'classifier'>('catalog');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -130,10 +130,10 @@ export default function Admin1CExport() {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          1C Экспорт данных
+          CommerceML 2.05 Экспорт
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Экспорт данных для интеграции с 1C ERP системой
+          Экспорт данных по стандарту CommerceML 2.05 для интеграции с 1C
         </p>
       </div>
 
@@ -154,10 +154,10 @@ export default function Admin1CExport() {
               onChange={(e) => setSelectedData(e.target.value as any)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
-              <option value="products">Товары</option>
-              <option value="orders">Заказы</option>
-              <option value="categories">Категории</option>
-              <option value="inventory">Остатки</option>
+                             <option value="catalog">Каталог товаров</option>
+               <option value="offers">Коммерческие предложения</option>
+               <option value="orders">Заказы</option>
+               <option value="classifier">Классификатор</option>
             </select>
           </div>
 
@@ -274,36 +274,36 @@ export default function Admin1CExport() {
       {/* API Documentation */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          API для 1C интеграции
+          API для CommerceML 2.05 интеграции
         </h2>
         
         <div className="space-y-4">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 dark:text-white mb-2">
-              Получение товаров
-            </h3>
-            <code className="text-sm text-gray-600 dark:text-gray-400">
-              GET /api/1c-exchange?action=get_products&format=json
-            </code>
-          </div>
-          
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 dark:text-white mb-2">
-              Синхронизация товаров
-            </h3>
-            <code className="text-sm text-gray-600 dark:text-gray-400">
-              POST /api/1c-exchange?action=sync_products
-            </code>
-          </div>
-          
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 dark:text-white mb-2">
-              Обновление остатков
-            </h3>
-            <code className="text-sm text-gray-600 dark:text-gray-400">
-              POST /api/1c-exchange?action=update_inventory
-            </code>
-          </div>
+                     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+             <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+               Получение каталога товаров
+             </h3>
+             <code className="text-sm text-gray-600 dark:text-gray-400">
+               GET /api/1c-exchange?action=get_catalog&format=xml
+             </code>
+           </div>
+           
+           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+             <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+               Получение коммерческих предложений
+             </h3>
+             <code className="text-sm text-gray-600 dark:text-gray-400">
+               GET /api/1c-exchange?action=get_offers&format=xml
+             </code>
+           </div>
+           
+           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+             <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+               Получение классификатора
+             </h3>
+             <code className="text-sm text-gray-600 dark:text-gray-400">
+               GET /api/1c-exchange?action=get_classifier&format=xml
+             </code>
+           </div>
         </div>
       </div>
     </div>
