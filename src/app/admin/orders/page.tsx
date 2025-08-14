@@ -108,37 +108,37 @@ export default function AdminOrdersPage() {
       if (data.success) {
         await fetchAllOrders(); // Refresh orders
         const statusMessages = {
-          'confirmed': 'təsdiqləndi',
-          'processing': 'işləməyə başladı',
-          'shipped': 'göndərildi',
-          'delivered': 'çatdırıldı',
-          'cancelled': 'ləğv edildi'
+          'confirmed': 'подтвержден',
+          'processing': 'в обработке',
+          'shipped': 'отправлен',
+          'delivered': 'доставлен',
+          'cancelled': 'отменен'
         };
-        alert(`Sifariş statusu uğurla ${statusMessages[status as keyof typeof statusMessages] || 'dəyişdirildi'}`);
+        alert(`Статус заказа успешно изменен на: ${statusMessages[status as keyof typeof statusMessages] || 'изменен'}`);
       } else {
         console.error('API returned success: false:', data);
-        alert(`Status yeniləmə zamanı xəta: ${data.error || 'Naməlum xəta'}`);
+        alert(`Ошибка при обновлении статуса: ${data.error || 'Неизвестная ошибка'}`);
       }
     } catch (error) {
       console.error('Error updating order status:', error);
-      alert(`Status yeniləmə zamanı xəta baş verdi: ${error instanceof Error ? error.message : 'Naməlum xəta'}`);
+      alert(`Произошла ошибка при обновлении статуса: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-1 py-0.5 bg-yellow-500 text-white text-xs rounded-full whitespace-nowrap">Gözləyir</span>;
+        return <span className="px-1 py-0.5 bg-yellow-500 text-white text-xs rounded-full whitespace-nowrap">В ожидании</span>;
       case 'confirmed':
-        return <span className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded-full whitespace-nowrap">Təsdiqləndi</span>;
+        return <span className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded-full whitespace-nowrap">Подтвержден</span>;
       case 'processing':
-        return <span className="px-1 py-0.5 bg-purple-500 text-white text-xs rounded-full whitespace-nowrap">İşlənir</span>;
+        return <span className="px-1 py-0.5 bg-purple-500 text-white text-xs rounded-full whitespace-nowrap">В обработке</span>;
       case 'shipped':
-        return <span className="px-1 py-0.5 bg-indigo-500 text-white text-xs rounded-full whitespace-nowrap">Göndərildi</span>;
+        return <span className="px-1 py-0.5 bg-indigo-500 text-white text-xs rounded-full whitespace-nowrap">Отправлен</span>;
       case 'delivered':
-        return <span className="px-1 py-0.5 bg-green-500 text-white text-xs rounded-full whitespace-nowrap">Çatdırıldı</span>;
+        return <span className="px-1 py-0.5 bg-green-500 text-white text-xs rounded-full whitespace-nowrap">Доставлен</span>;
       case 'cancelled':
-        return <span className="px-1 py-0.5 bg-red-500 text-white text-xs rounded-full whitespace-nowrap">Ləğv edildi</span>;
+        return <span className="px-1 py-0.5 bg-red-500 text-white text-xs rounded-full whitespace-nowrap">Отменен</span>;
       default:
         return <span className="px-1 py-0.5 bg-gray-500 text-white text-xs rounded-full whitespace-nowrap">{status}</span>;
     }
@@ -152,13 +152,13 @@ export default function AdminOrdersPage() {
             onClick={() => updateOrderStatus(order.id, 'confirmed')}
             className="px-1 py-0.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition whitespace-nowrap"
           >
-            Təsdiqlə
+            Подтвердить
           </button>
           <button
             onClick={() => updateOrderStatus(order.id, 'cancelled')}
             className="px-1 py-0.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition whitespace-nowrap"
           >
-            Ləğv et
+            Отменить
           </button>
         </>
       );
@@ -169,7 +169,7 @@ export default function AdminOrdersPage() {
             onClick={() => updateOrderStatus(order.id, 'processing')}
             className="px-1 py-0.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded transition whitespace-nowrap"
           >
-            İşləməyə başla
+            Начать обработку
           </button>
         </>
       );
@@ -180,7 +180,7 @@ export default function AdminOrdersPage() {
             onClick={() => updateOrderStatus(order.id, 'shipped')}
             className="px-1 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded transition whitespace-nowrap"
           >
-            Göndər
+            Отправить
           </button>
         </>
       );
@@ -191,7 +191,7 @@ export default function AdminOrdersPage() {
             onClick={() => updateOrderStatus(order.id, 'delivered')}
             className="px-1 py-0.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition whitespace-nowrap"
           >
-            Çatdırıldı
+            Доставить
           </button>
         </>
       );
@@ -207,7 +207,7 @@ export default function AdminOrdersPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="text-white text-xl">Yüklənir...</div>
+          <div className="text-white text-xl">Загрузка...</div>
         </div>
       </div>
     );
@@ -217,27 +217,27 @@ export default function AdminOrdersPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
       <div className="max-w-[1600px] mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Sifarişlər</h1>
-          <p className="text-gray-300">Bütün sifarişləri idarə edin</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Заказы</h1>
+          <p className="text-gray-300">Управление всеми заказами</p>
         </div>
 
         <div className="bg-[#1e293b] rounded-xl p-4 shadow-2xl">
           {orders.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-gray-400 text-xl">Hələ sifariş yoxdur</div>
+              <div className="text-gray-400 text-xl">Заказов пока нет</div>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-gray-600">
-                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[140px]">Sifariş №</th>
-                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[180px]">Müştəri</th>
-                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[220px]">INN</th>
-                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[100px]">Ümumi</th>
-                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[100px]">Status</th>
-                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[120px]">Tarix</th>
-                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[120px]">Əməliyyatlar</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[140px]">Заказ №</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[180px]">Клиент</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[220px]">ИНН</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[100px]">Общая сумма</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[100px]">Статус</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[120px]">Дата</th>
+                    <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[120px]">Операции</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -249,7 +249,7 @@ export default function AdminOrdersPage() {
                       <td className="py-3 px-3 text-gray-300">
                         <div className="w-[180px]">
                           <div className="font-medium text-white text-xs truncate">
-                            {order.customerName || 'Müştəri'}
+                            {order.customerName || 'Клиент'}
                           </div>
                           <div className="text-xs text-gray-400 mt-1 truncate">{order.customerEmail}</div>
                         </div>
@@ -257,16 +257,16 @@ export default function AdminOrdersPage() {
                       <td className="py-3 px-3 text-gray-300">
                         <div className="w-[220px]">
                           <div className="text-xs font-medium text-white">
-                            INN: {order.customerInn || 'Təyin edilməyib'}
+                            ИНН: {order.customerInn || 'Не указан'}
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
-                            {order.items?.length || 0} məhsul
+                            {order.items?.length || 0} товаров
                           </div>
                         </div>
                       </td>
                       <td className="py-3 px-3 text-cyan-400 font-semibold">
                         <div className="text-sm">{(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₽</div>
-                        <div className="text-xs text-gray-400 mt-1">Endirimli qiymət</div>
+                        <div className="text-xs text-gray-400 mt-1">Цена со скидкой</div>
                       </td>
                       <td className="py-3 px-3">
                         <div className="w-[100px]">
@@ -290,7 +290,7 @@ export default function AdminOrdersPage() {
                             onClick={() => handleOrderClick(order.id)}
                             className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition flex items-center justify-center gap-1"
                           >
-                            👁️ Detallar
+                            👁️ Детали
                           </button>
                           {getStatusActions(order)}
                         </div>

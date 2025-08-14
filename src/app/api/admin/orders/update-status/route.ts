@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     if (!orderId || !status) {
       return NextResponse.json(
-        { error: 'Sifariş ID və status tələb olunur' },
+        { error: 'Требуется ID заказа и статус' },
         { status: 400 }
       );
     }
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
-        { error: 'Etibarsız status' },
+        { error: 'Недействительный статус' },
         { status: 400 }
       );
     }
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     if (result.rowCount === 0) {
       return NextResponse.json(
-        { error: 'Sifariş tapılmadı' },
+        { error: 'Заказ не найден' },
         { status: 404 }
       );
     }
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Sifariş statusu uğurla yeniləndi',
+      message: 'Статус заказа успешно обновлен',
       order: {
         id: updatedOrder.id,
         orderNumber: updatedOrder.orderNumber,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Update order status error:', error);
     return NextResponse.json(
-      { error: 'Status yeniləmə zamanı xəta baş verdi' },
+      { error: 'Произошла ошибка при обновлении статуса' },
       { status: 500 }
     );
   } finally {

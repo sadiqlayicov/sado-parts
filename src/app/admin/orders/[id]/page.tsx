@@ -56,12 +56,12 @@ export default function AdminOrderDetailsPage() {
       if (data.success) {
         setOrder(data.order);
       } else {
-        alert('Sifariş məlumatları alına bilmədi');
+        alert('Не удалось получить данные заказа');
         router.push('/admin/orders');
       }
     } catch (error) {
       console.error('Error fetching order details:', error);
-      alert('Sifariş məlumatları alına bilmədi');
+      alert('Не удалось получить данные заказа');
       router.push('/admin/orders');
     } finally {
       setLoading(false);
@@ -93,20 +93,20 @@ export default function AdminOrderDetailsPage() {
           };
         });
         const statusMessages = {
-          'confirmed': 'təsdiqləndi',
-          'processing': 'işləməyə başladı',
-          'shipped': 'göndərildi',
-          'delivered': 'çatdırıldı',
-          'cancelled': 'ləğv edildi',
-          'pending': 'gözləmədə'
+          'confirmed': 'подтвержден',
+          'processing': 'в обработке',
+          'shipped': 'отправлен',
+          'delivered': 'доставлен',
+          'cancelled': 'отменен',
+          'pending': 'в ожидании'
         };
-        alert(`Sifariş statusu uğurla ${statusMessages[status as keyof typeof statusMessages] || 'dəyişdirildi'}`);
+        alert(`Статус заказа успешно изменен на: ${statusMessages[status as keyof typeof statusMessages] || 'изменен'}`);
       } else {
-        alert('Status yeniləmə zamanı xəta baş verdi');
+        alert('Произошла ошибка при обновлении статуса');
       }
     } catch (error) {
       console.error('Error updating order status:', error);
-      alert('Status yeniləmə zamanı xəta baş verdi');
+      alert('Произошла ошибка при обновлении статуса');
     }
   };
 
@@ -152,16 +152,16 @@ export default function AdminOrderDetailsPage() {
         console.log('Item quantity updated successfully:', { itemId, newQuantity, orderTotal: data.data.orderTotal });
       } else {
         console.error('API returned error:', data.error);
-        alert('Məhsul sayı yeniləmə zamanı xəta baş verdi: ' + (data.error || 'Naməlum xəta'));
+        alert('Произошла ошибка при обновлении количества товара: ' + (data.error || 'Неизвестная ошибка'));
       }
     } catch (error) {
       console.error('Error updating item quantity:', error);
-      alert('Məhsul sayı yeniləmə zamanı xəta baş verdi');
+      alert('Произошла ошибка при обновлении количества товара');
     }
   };
 
   const removeItem = async (itemId: string) => {
-    if (!confirm('Bu məhsulu sifarişdən silmək istədiyinizə əminsiniz?')) {
+    if (!confirm('Вы уверены, что хотите удалить этот товар из заказа?')) {
       return;
     }
 
@@ -189,26 +189,30 @@ export default function AdminOrderDetailsPage() {
             totalAmount: data.data.orderTotal
           };
         });
-        alert('Məhsul uğurla silindi');
+        alert('Товар успешно удален');
       } else {
-        alert('Məhsul silmə zamanı xəta baş verdi');
+        alert('Произошла ошибка при удалении товара');
       }
     } catch (error) {
       console.error('Error removing item:', error);
-      alert('Məhsul silmə zamanı xəta baş verdi');
+      alert('Произошла ошибка при удалении товара');
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-3 py-1 bg-yellow-500 text-white text-sm rounded-full">Gözləmədə</span>;
-      case 'completed':
-        return <span className="px-3 py-1 bg-blue-500 text-white text-sm rounded-full">Təsdiq gözləyir</span>;
-      case 'approved':
-        return <span className="px-3 py-1 bg-green-500 text-white text-sm rounded-full">Təsdiqləndi</span>;
-      case 'rejected':
-        return <span className="px-3 py-1 bg-red-500 text-white text-sm rounded-full">Rədd edildi</span>;
+        return <span className="px-3 py-1 bg-yellow-500 text-white text-sm rounded-full">В ожидании</span>;
+      case 'confirmed':
+        return <span className="px-3 py-1 bg-green-500 text-white text-sm rounded-full">Подтвержден</span>;
+      case 'processing':
+        return <span className="px-3 py-1 bg-purple-500 text-white text-sm rounded-full">В обработке</span>;
+      case 'shipped':
+        return <span className="px-3 py-1 bg-indigo-500 text-white text-sm rounded-full">Отправлен</span>;
+      case 'delivered':
+        return <span className="px-3 py-1 bg-blue-500 text-white text-sm rounded-full">Доставлен</span>;
+      case 'cancelled':
+        return <span className="px-3 py-1 bg-red-500 text-white text-sm rounded-full">Отменен</span>;
       default:
         return <span className="px-3 py-1 bg-gray-500 text-white text-sm rounded-full">{status}</span>;
     }
@@ -218,7 +222,7 @@ export default function AdminOrderDetailsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
         <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="text-white text-xl">Yüklənir...</div>
+                     <div className="text-white text-xl">Загрузка...</div>
         </div>
       </div>
     );
@@ -228,7 +232,7 @@ export default function AdminOrderDetailsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
         <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="text-white text-xl">Sifariş tapılmadı</div>
+                     <div className="text-white text-xl">Заказ не найден</div>
         </div>
       </div>
     );
@@ -241,14 +245,14 @@ export default function AdminOrderDetailsPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Sifariş Detalları</h1>
-              <p className="text-gray-300">Sifariş #{order.orderNumber}</p>
+                             <h1 className="text-3xl font-bold text-white mb-2">Детали заказа</h1>
+               <p className="text-gray-300">Заказ #{order.orderNumber}</p>
             </div>
             <button
               onClick={() => router.push('/admin/orders')}
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition"
             >
-              ← Geri
+                             ← Назад
             </button>
           </div>
         </div>
@@ -258,22 +262,22 @@ export default function AdminOrderDetailsPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Order Info */}
             <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-              <h2 className="text-xl font-bold text-white mb-4">Sifariş Məlumatları</h2>
+                             <h2 className="text-xl font-bold text-white mb-4">Информация о заказе</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Sifariş Nömrəsi</p>
+                                     <p className="text-gray-400 text-sm">Номер заказа</p>
                   <p className="text-white font-mono text-lg">{order.orderNumber}</p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Status</p>
+                                     <p className="text-gray-400 text-sm">Статус</p>
                   <div className="mt-1">{getStatusBadge(order.status)}</div>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Tarix</p>
+                                     <p className="text-gray-400 text-sm">Дата</p>
                   <p className="text-white">{new Date(order.createdAt).toLocaleDateString('az-AZ')}</p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Saat</p>
+                                     <p className="text-gray-400 text-sm">Время</p>
                   <p className="text-white">
                     {new Date(order.createdAt).toLocaleTimeString('az-AZ', { 
                       hour: '2-digit', 
@@ -282,19 +286,19 @@ export default function AdminOrderDetailsPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Ümumi Məbləğ</p>
+                                     <p className="text-gray-400 text-sm">Общая сумма</p>
                   <p className="text-cyan-400 font-bold text-2xl">
                     {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} {order.currency}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Məhsul Sayı</p>
-                  <p className="text-white text-lg">{order.items.length} növ</p>
+                                     <p className="text-gray-400 text-sm">Количество товаров</p>
+                                     <p className="text-white text-lg">{order.items.length} видов</p>
                 </div>
               </div>
               {order.notes && (
                 <div className="mt-4">
-                  <p className="text-gray-400 text-sm">Qeydlər</p>
+                                     <p className="text-gray-400 text-sm">Примечания</p>
                   <p className="text-white bg-[#0f172a] p-3 rounded mt-1">{order.notes}</p>
                 </div>
               )}
@@ -302,11 +306,11 @@ export default function AdminOrderDetailsPage() {
 
             {/* Customer Info */}
             <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-              <h2 className="text-xl font-bold text-white mb-4">Müştəri Məlumatları</h2>
+                             <h2 className="text-xl font-bold text-white mb-4">Информация о клиенте</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Ad Soyad</p>
-                  <p className="text-white font-medium">{order.customerName || 'Müştəri'}</p>
+                                     <p className="text-gray-400 text-sm">Имя Фамилия</p>
+                   <p className="text-white font-medium">{order.customerName || 'Клиент'}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Email</p>
@@ -314,12 +318,12 @@ export default function AdminOrderDetailsPage() {
                 </div>
                 {order.customerPhone && (
                   <div>
-                    <p className="text-gray-400 text-sm">Telefon</p>
+                    <p className="text-gray-400 text-sm">Телефон</p>
                     <p className="text-white">📞 {order.customerPhone}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-gray-400 text-sm">Müştəri ID</p>
+                                     <p className="text-gray-400 text-sm">ID клиента</p>
                   <p className="text-white font-mono text-sm">{order.userId}</p>
                 </div>
               </div>
@@ -327,7 +331,7 @@ export default function AdminOrderDetailsPage() {
 
             {/* Products */}
             <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-              <h2 className="text-xl font-bold text-white mb-4">Məhsullar ({order.items.length})</h2>
+                             <h2 className="text-xl font-bold text-white mb-4">Товары ({order.items.length})</h2>
               <div className="space-y-4">
                 {order.items.map((item, index) => (
                   <div key={item.id} className="bg-[#0f172a] rounded-lg p-4">
@@ -337,16 +341,16 @@ export default function AdminOrderDetailsPage() {
                           <span className="text-gray-400 text-sm">#{index + 1}</span>
                           <div>
                             <h3 className="text-white font-medium">{item.name}</h3>
-                            <p className="text-gray-400 text-sm">SKU: {item.sku}</p>
+                                                         <p className="text-gray-400 text-sm">Артикул: {item.sku}</p>
                             {item.categoryName && (
-                              <p className="text-gray-400 text-sm">Kateqoriya: {item.categoryName}</p>
+                                                             <p className="text-gray-400 text-sm">Категория: {item.categoryName}</p>
                             )}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-white font-medium">Sayı:</span>
+                                                     <span className="text-white font-medium">Количество:</span>
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
@@ -375,7 +379,7 @@ export default function AdminOrderDetailsPage() {
                           onClick={() => removeItem(item.id)}
                           className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition"
                         >
-                          🗑️ Sil
+                                                     🗑️ Удалить
                         </button>
                       </div>
                     </div>
@@ -389,51 +393,51 @@ export default function AdminOrderDetailsPage() {
           <div className="space-y-6">
             {/* Actions */}
             <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-              <h2 className="text-xl font-bold text-white mb-4">Əməliyyatlar</h2>
+                             <h2 className="text-xl font-bold text-white mb-4">Операции</h2>
               <div className="space-y-3">
                 <button
                   onClick={() => updateOrderStatus('confirmed')}
                   className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded transition font-medium"
                 >
-                  ✅ Təsdiqlə
+                                     ✅ Подтвердить
                 </button>
                 <button
                   onClick={() => updateOrderStatus('cancelled')}
                   className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded transition font-medium"
                 >
-                  ❌ Rədd et
+                                     ❌ Отклонить
                 </button>
                 <button
                   onClick={() => updateOrderStatus('delivered')}
                   className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition font-medium"
                 >
-                  🔄 Tamamla
+                                     🔄 Завершить
                 </button>
                 <button
                   onClick={() => updateOrderStatus('pending')}
                   className="w-full px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition font-medium"
                 >
-                  ⏳ Gözləmədə
+                                     ⏳ В ожидании
                 </button>
               </div>
             </div>
 
             {/* Summary */}
             <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-              <h2 className="text-xl font-bold text-white mb-4">Xülasə</h2>
+                             <h2 className="text-xl font-bold text-white mb-4">Сводка</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Məhsul növləri:</span>
+                                     <span className="text-gray-400">Виды товаров:</span>
                   <span className="text-white font-medium">{order.items.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Ümumi ədəd:</span>
+                                     <span className="text-gray-400">Общее количество:</span>
                   <span className="text-white font-medium">
                     {order.items.reduce((sum, item) => sum + item.quantity, 0)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Ümumi məbləğ:</span>
+                                     <span className="text-gray-400">Общая сумма:</span>
                   <span className="text-cyan-400 font-bold">
                     {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼
                   </span>
