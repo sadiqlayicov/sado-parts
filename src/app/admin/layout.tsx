@@ -20,7 +20,8 @@ import {
   FaFileExcel,
   FaDatabase,
   FaShieldAlt,
-  FaExchangeAlt
+  FaExchangeAlt,
+  FaDownload
 } from 'react-icons/fa';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
