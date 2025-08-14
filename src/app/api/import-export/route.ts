@@ -23,7 +23,7 @@ interface ProductRow {
   name?: string;
   description?: string;
   price?: number;
-  salePrice?: number;
+  salePrice?: number | null;
   stock?: number;
   sku?: string;
   catalogNumber?: string;
