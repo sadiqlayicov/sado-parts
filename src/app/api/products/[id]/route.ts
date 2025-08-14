@@ -4,9 +4,9 @@ import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/a
 
 // Create a connection pool optimized for Supabase
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false
+      rejectUnauthorized: false
   },
   max: 3, // Increase connection limit for Supabase
   idleTimeoutMillis: 60000, // Increase idle timeout
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     client = await pool.connect();
-
+    
     const result = await client.query(`
       SELECT 
         p.id,
@@ -317,4 +317,4 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       client.release()
     }
   }
-}
+} 

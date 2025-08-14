@@ -92,7 +92,15 @@ export default function AdminOrderDetailsPage() {
             status: status
           };
         });
-        alert(`Sifariş statusu uğurla ${status === 'approved' ? 'təsdiqləndi' : status === 'rejected' ? 'rədd edildi' : 'dəyişdirildi'}`);
+        const statusMessages = {
+          'confirmed': 'təsdiqləndi',
+          'processing': 'işləməyə başladı',
+          'shipped': 'göndərildi',
+          'delivered': 'çatdırıldı',
+          'cancelled': 'ləğv edildi',
+          'pending': 'gözləmədə'
+        };
+        alert(`Sifariş statusu uğurla ${statusMessages[status as keyof typeof statusMessages] || 'dəyişdirildi'}`);
       } else {
         alert('Status yeniləmə zamanı xəta baş verdi');
       }
@@ -384,19 +392,19 @@ export default function AdminOrderDetailsPage() {
               <h2 className="text-xl font-bold text-white mb-4">Əməliyyatlar</h2>
               <div className="space-y-3">
                 <button
-                  onClick={() => updateOrderStatus('approved')}
+                  onClick={() => updateOrderStatus('confirmed')}
                   className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded transition font-medium"
                 >
                   ✅ Təsdiqlə
                 </button>
                 <button
-                  onClick={() => updateOrderStatus('rejected')}
+                  onClick={() => updateOrderStatus('cancelled')}
                   className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded transition font-medium"
                 >
                   ❌ Rədd et
                 </button>
                 <button
-                  onClick={() => updateOrderStatus('completed')}
+                  onClick={() => updateOrderStatus('delivered')}
                   className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition font-medium"
                 >
                   🔄 Tamamla

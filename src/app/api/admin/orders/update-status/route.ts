@@ -1,23 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { Pool } from 'pg';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-let supabase: any = null;
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-}
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 2,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
 export async function POST(request: NextRequest) {
+  let client: any;
+  
   try {
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Supabase client is not configured' },
-        { status: 500 }
-      );
-    }
-
     const { orderId, status } = await request.json();
     
     console.log('POST /api/admin/orders/update-status called with:', { orderId, status });
@@ -37,33 +32,26 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    client = await pool.connect();
     
     // Update order status
-    const { data: updatedOrder, error: updateError } = await supabase
-      .from('orders')
-      .update({ 
-        status: status, 
-        updatedAt: new Date().toISOString() 
-      })
-      .eq('id', orderId)
-      .select('id, orderNumber, status')
-      .single();
+    const result = await client.query(
+      `UPDATE orders 
+       SET status = $1, "updatedAt" = NOW() 
+       WHERE id = $2 
+       RETURNING id, "orderNumber", status`,
+      [status, orderId]
+    );
 
-    if (updateError) {
-      console.error('Error updating order status:', updateError);
-      return NextResponse.json(
-        { error: 'Status yeniləmə zamanı xəta baş verdi' },
-        { status: 500 }
-      );
-    }
-
-    if (!updatedOrder) {
+    if (result.rowCount === 0) {
       return NextResponse.json(
         { error: 'Sifariş tapılmadı' },
         { status: 404 }
       );
     }
 
+    const updatedOrder = result.rows[0];
     console.log('Order status updated:', updatedOrder);
 
     return NextResponse.json({
@@ -82,5 +70,9 @@ export async function POST(request: NextRequest) {
       { error: 'Status yeniləmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 } 

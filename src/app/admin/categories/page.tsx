@@ -110,9 +110,9 @@ export default function AdminCategoriesPage() {
     setError(null);
     
     try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    const res = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           name: newName, 
           description: newDesc
@@ -131,9 +131,9 @@ export default function AdminCategoriesPage() {
       
       const data = await res.json();
       if (data.success) {
-        setNewName("");
-        setNewDesc("");
-        fetchCategories();
+      setNewName("");
+      setNewDesc("");
+      fetchCategories();
         setSuccessMessage('Kateqoriya uğurla əlavə edildi');
       } else {
         setError(`Kateqoriya əlavə edilə bilmədi: ${data.error || 'Naməlum xəta'}`);
@@ -184,7 +184,7 @@ export default function AdminCategoriesPage() {
       
       const data = await res.json();
       if (data.success) {
-        fetchCategories();
+    fetchCategories();
         if (productCount > 0) {
           setSuccessMessage(`Kateqoriya uğurla silindi və ${productCount} məhsul "Ümumi" kateqoriyasına köçürüldü`);
         } else {
@@ -221,8 +221,8 @@ export default function AdminCategoriesPage() {
     
     try {
       const res = await fetch(`/api/categories/${editing.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           name: editName, 
           description: editDesc
@@ -241,8 +241,8 @@ export default function AdminCategoriesPage() {
       
       const data = await res.json();
       if (data.success) {
-        setEditing(null);
-        fetchCategories();
+    setEditing(null);
+    fetchCategories();
         setSuccessMessage('Kateqoriya uğurla yeniləndi');
       } else {
         setError(`Kateqoriya yenilənə bilmədi: ${data.error || 'Naməlum xəta'}`);
@@ -381,7 +381,7 @@ export default function AdminCategoriesPage() {
 
   return (
     <div style={{ maxWidth: '100%', margin: "40px auto", background: "#232b3b", color: "#fff", padding: 24, borderRadius: 10, boxShadow: '0 4px 24px #0002' }}>
-      <h2 style={{ fontSize: 28, marginBottom: 24, textAlign: 'left', letterSpacing: 1 }}>Категории</h2>
+              <h2 style={{ fontSize: 28, marginBottom: 24, textAlign: 'left', letterSpacing: 1 }}>Категории</h2>
       
       {/* Success Message */}
       {successMessage && (
@@ -451,7 +451,7 @@ export default function AdminCategoriesPage() {
         </div>
       )}
       
-      {loading ? <div>Загрузка...</div> : null}
+              {loading ? <div>Загрузка...</div> : null}
       
       <div style={{ marginBottom: 24, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <input 
@@ -506,22 +506,22 @@ export default function AdminCategoriesPage() {
       </div>
       
       <div style={{overflowX:'auto'}}>
-        <table style={{ width: "100%", background: "#1a2233", color: "#fff", borderCollapse: "collapse", minWidth: 600 }}>
-          <thead>
-            <tr>
-              <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>ID</th>
-              <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ad</th>
-              <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Təsvir</th>
+      <table style={{ width: "100%", background: "#1a2233", color: "#fff", borderCollapse: "collapse", minWidth: 600 }}>
+        <thead>
+          <tr>
+            <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>ID</th>
+            <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ad</th>
+            <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Təsvir</th>
               {/* Temporarily disabled parent category column
               <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ana Kateqoriya</th>
               */}
-              <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'center' }}>Əməliyyatlar</th>
-            </tr>
-          </thead>
-          <tbody>
+            <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'center' }}>Əməliyyatlar</th>
+          </tr>
+        </thead>
+        <tbody>
             {renderCategories(categories, 0)}
-          </tbody>
-        </table>
+        </tbody>
+      </table>
       </div>
     </div>
   );
