@@ -809,7 +809,7 @@ function InvoiceContent({ order, companySettings }: {
                 <tr key={item.id}>
                   <td className="border border-gray-300 p-2">{index + 1}</td>
                   <td className="border border-gray-300 p-2">{item.name}</td>
-                  <td className="border border-gray-300 p-2">{item.sku}</td>
+                  <td className="border border-gray-300 p-2">{(item as any).artikul || item.sku || ''}</td>
                   <td className="border border-gray-300 p-2">{item.quantity}</td>
                   <td className="border border-gray-300 p-2">шт.</td>
                   <td className="border border-gray-300 p-2">{item.price.toLocaleString('ru-RU')} ₽</td>

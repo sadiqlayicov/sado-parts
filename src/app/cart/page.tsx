@@ -16,6 +16,8 @@ interface CartItem {
   images: string[];
   stock: number;
   sku: string;
+  artikul?: string;
+  catalogNumber?: string;
   categoryName: string;
   quantity: number;
   totalPrice: number;
@@ -280,7 +282,10 @@ export default function CartPage() {
                 <div key={item.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold">{translatedItem.name}</h3>
-                    <p className="text-sm text-gray-300">Артикул: {translatedItem.sku}</p>
+                    <p className="text-sm text-gray-300">Артикул: {translatedItem.artikul || translatedItem.sku}</p>
+                    {translatedItem.catalogNumber && (
+                      <p className="text-sm text-gray-300">Каталожный №: {translatedItem.catalogNumber}</p>
+                    )}
                     <p className="text-sm text-gray-300">
                       Цена: {isApproved && user && user.discountPercentage > 0 ? (
                         <span>

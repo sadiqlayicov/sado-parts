@@ -49,7 +49,9 @@ async function getProductInfo(productId: string) {
           name: product.name,
           price: parseFloat(product.price) || 100,
           salePrice: parseFloat(product.salePrice) || null,
-          sku: product.sku || product.artikul || `SKU-${productId}`,
+          sku: product.sku || '',
+          artikul: product.artikul || '',
+          catalogNumber: product.catalogNumber || '',
           categoryName: product.category_name || 'General'
         };
         
@@ -364,7 +366,7 @@ export async function POST(request: NextRequest) {
           originalPrice, // salePrice = normal price (no discount at cart level)
           [], // images array
           10, // stock
-          productInfo.sku,
+          productInfo.artikul || productInfo.sku,
           productInfo.categoryName,
           quantity,
           originalPrice * quantity,
