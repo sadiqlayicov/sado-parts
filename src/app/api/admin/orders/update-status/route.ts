@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
+import nodemailer from 'nodemailer';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -53,6 +54,63 @@ export async function POST(request: NextRequest) {
 
     const updatedOrder = result.rows[0];
     console.log('Order status updated:', updatedOrder);
+
+    // Fetch user email for notifications
+    const userRes = await client.query(
+      `SELECT u.email, u."firstName", u."lastName" FROM orders o LEFT JOIN users u ON o."userId" = u.id WHERE o.id = $1`,
+      [orderId]
+    );
+    const customer = userRes.rows[0] || {};
+
+    // Prepare mail transporter (use SMTP envs)
+    const smtpHost = process.env.SMTP_HOST as string;
+    const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+    const smtpUser = process.env.SMTP_USER as string;
+    const smtpPass = process.env.SMTP_PASS as string;
+    const adminEmail = process.env.ADMIN_EMAIL || customer.email || 'admin@example.com';
+
+    if (smtpHost && smtpUser && smtpPass) {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPass }
+      });
+
+      const statusMap: Record<string, string> = {
+        pending: 'В ожидании',
+        confirmed: 'Подтвержден',
+        processing: 'В обработке',
+        shipped: 'Отправлен',
+        delivered: 'Доставлен',
+        cancelled: 'Отменен'
+      };
+
+      const subject = `Заказ #${updatedOrder.orderNumber}: статус изменен на "${statusMap[updatedOrder.status] || updatedOrder.status}"`;
+      const html = `
+        <p>Здравствуйте${customer.firstName ? ', ' + customer.firstName : ''}!</p>
+        <p>Статус вашего заказа <strong>#${updatedOrder.orderNumber}</strong> изменен на <strong>${statusMap[updatedOrder.status] || updatedOrder.status}</strong>.</p>
+        <p>Если это были вы — ничего делать не нужно. В ином случае свяжитесь с поддержкой.</p>
+        <p>С уважением, Bilal-Parts</p>
+      `;
+
+      const adminHtml = `
+        <p>Статус заказа <strong>#${updatedOrder.orderNumber}</strong> изменен на <strong>${statusMap[updatedOrder.status] || updatedOrder.status}</strong>.</p>
+      `;
+
+      try {
+        const mailTasks = [] as Promise<any>[];
+        if (customer.email) {
+          mailTasks.push(transporter.sendMail({ from: smtpUser, to: customer.email, subject, html }));
+        }
+        mailTasks.push(transporter.sendMail({ from: smtpUser, to: adminEmail, subject: `[ADMIN] ${subject}`, html: adminHtml }));
+        await Promise.all(mailTasks);
+      } catch (mailErr) {
+        console.error('Mail send error:', mailErr);
+      }
+    } else {
+      console.warn('SMTP envs not configured; skipping email notifications');
+    }
 
     return NextResponse.json({
       success: true,
