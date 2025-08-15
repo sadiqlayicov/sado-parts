@@ -77,11 +77,10 @@ function InvoiceContent({ order, companySettings }: {
       return;
     }
     try {
-      const res = await fetch('/api/payments', {
+      const res = await fetch('/api/payments?action=create_payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'create_payment',
           orderId: order.id,
           userId: user.id,
           amount: order.totalAmount,

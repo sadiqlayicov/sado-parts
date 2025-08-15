@@ -93,13 +93,12 @@ function PaymentPageContent() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/payments', {
+      const response = await fetch('/api/payments?action=create_payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'create_payment',
           orderId: parseInt(orderId),
           userId: user?.id,
           amount: orderDetails?.totalAmount || totalSalePrice,
