@@ -396,6 +396,28 @@ export default function AdminOrderDetailsPage() {
                              <h2 className="text-xl font-bold text-white mb-4">Операции</h2>
               <div className="space-y-3">
                 <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/payments?action=approve_payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentId: order.id })
+                      });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        await updateOrderStatus('confirmed');
+                      } else {
+                        alert(data.error || 'Не удалось подтвердить оплату');
+                      }
+                    } catch (e:any) {
+                      alert(e.message || 'Не удалось подтвердить оплату');
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition font-medium"
+                >
+                  💳 Отметить как оплачено
+                </button>
+                <button
                   onClick={() => updateOrderStatus('confirmed')}
                   className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded transition font-medium"
                 >
