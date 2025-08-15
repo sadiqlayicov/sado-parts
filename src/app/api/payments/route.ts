@@ -9,7 +9,7 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-// Ödəniş sistemləri konfiqurasiyası
+// Ödəniş sistemləri konfiqurasiyası (yalnız Bank köçürməsi və P2P)
 const PAYMENT_SYSTEMS = {
   bank_transfer: {
     name: 'Банковский перевод',
@@ -20,53 +20,13 @@ const PAYMENT_SYSTEMS = {
     maxAmount: 1000000,
     requiresInn: true
   },
-  sberbank: {
-    name: 'Сбербанк Онлайн',
-    icon: '🏦',
-    description: 'Оплата через Сбербанк Онлайн',
-    commission: 2.5,
+  p2p: {
+    name: 'P2P перевод (карта)',
+    icon: '💳',
+    description: 'Оплата переводом с карты на карту',
+    commission: 0,
     minAmount: 10,
     maxAmount: 100000
-  },
-  yoomoney: {
-    name: 'ЮMoney',
-    icon: '💳',
-    description: 'Оплата через ЮMoney кошелек',
-    commission: 2.0,
-    minAmount: 1,
-    maxAmount: 75000
-  },
-  qiwi: {
-    name: 'QIWI Кошелек',
-    icon: '📱',
-    description: 'Оплата через QIWI кошелек',
-    commission: 2.3,
-    minAmount: 1,
-    maxAmount: 15000
-  },
-  tinkoff: {
-    name: 'Тинькофф',
-    icon: '🔵',
-    description: 'Оплата картой Тинькофф',
-    commission: 2.0,
-    minAmount: 10,
-    maxAmount: 600000
-  },
-  alfa: {
-    name: 'Альфа-Банк',
-    icon: '🔴',
-    description: 'Оплата картой Альфа-Банк',
-    commission: 2.1,
-    minAmount: 10,
-    maxAmount: 500000
-  },
-  vtb: {
-    name: 'ВТБ',
-    icon: '🔵',
-    description: 'Оплата картой ВТБ',
-    commission: 2.2,
-    minAmount: 10,
-    maxAmount: 300000
   }
 };
 
@@ -586,18 +546,8 @@ async function generatePaymentUrl(paymentId: number, paymentSystem: string, amou
   switch (paymentSystem) {
     case 'bank_transfer':
       return `${baseUrl}/payment/bank-transfer/${paymentId}`;
-    case 'sberbank':
-      return `${baseUrl}/payment/sberbank/${paymentId}`;
-    case 'yoomoney':
-      return `${baseUrl}/payment/yoomoney/${paymentId}`;
-    case 'qiwi':
-      return `${baseUrl}/payment/qiwi/${paymentId}`;
-    case 'tinkoff':
-      return `${baseUrl}/payment/tinkoff/${paymentId}`;
-    case 'alfa':
-      return `${baseUrl}/payment/alfa/${paymentId}`;
-    case 'vtb':
-      return `${baseUrl}/payment/vtb/${paymentId}`;
+    case 'p2p':
+      return `${baseUrl}/payment/p2p/${paymentId}`;
     default:
       return `${baseUrl}/payment/process/${paymentId}`;
   }
