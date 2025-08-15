@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 import bcrypt from 'bcryptjs';
 
-export async function POST(_request: NextRequest) {
+async function ensureAdmin() {
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
@@ -32,18 +32,38 @@ export async function POST(_request: NextRequest) {
          WHERE email = $2`
       , [hashed, email]);
     } else {
+      const id = `admin_${Date.now()}`;
       await client.query(
         `INSERT INTO users (id, email, password, name, role, "isApproved", "isActive", "firstName", "lastName", "discountPercentage", "emailVerified", "createdAt", "updatedAt")
-         VALUES (gen_random_uuid(), $1, $2, $3, 'ADMIN', true, true, 'Admin', 'User', 0, true, NOW(), NOW())`
-      , [email, hashed, 'Admin User']);
+         VALUES ($1, $2, $3, $4, 'ADMIN', true, true, 'Admin', 'User', 0, true, NOW(), NOW())`
+      , [id, email, hashed, 'Admin User']);
     }
 
-    return NextResponse.json({ success: true, message: 'Admin ensured with default credentials', email, password });
+    return { success: true, message: 'Admin ensured with default credentials', email, password };
   } catch (error: any) {
     console.error('ensure-admin error:', error);
-    return NextResponse.json({ success: false, error: error?.message || 'Unknown error' }, { status: 500 });
+    throw error;
   } finally {
     await client.end();
+  }
+}
+
+export async function POST(_request: NextRequest) {
+  try {
+    const res = await ensureAdmin();
+    return NextResponse.json(res);
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error?.message || 'Unknown error' }, { status: 500 });
+  }
+}
+
+// Allow GET for convenience (so it can be opened in a browser)
+export async function GET(_request: NextRequest) {
+  try {
+    const res = await ensureAdmin();
+    return NextResponse.json(res);
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error?.message || 'Unknown error' }, { status: 500 });
   }
 }
 
