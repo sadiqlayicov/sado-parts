@@ -65,6 +65,9 @@ interface Settings {
     paypalClientId: string;
     bankTransferEnabled: boolean;
     bankDetails: string;
+    p2pCardNumber?: string;
+    p2pCardHolder?: string;
+    p2pBankName?: string;
   };
   shipping: {
     freeShippingThreshold: number;
@@ -126,7 +129,10 @@ export default function SettingsPage() {
       paypalEnabled: false,
       paypalClientId: '',
       bankTransferEnabled: true,
-      bankDetails: 'Банк: Сбербанк\nР/с: 40702810123456789012\nИНН: 7707083893'
+      bankDetails: 'Банк: Сбербанк\nР/с: 40702810123456789012\nИНН: 7707083893',
+      p2pCardNumber: '',
+      p2pCardHolder: '',
+      p2pBankName: ''
     },
     shipping: {
       freeShippingThreshold: 10000,
@@ -219,7 +225,10 @@ export default function SettingsPage() {
         bankBik: settings.company.bankBik,
         bankAccountNumber: settings.company.bankAccountNumber,
         directorName: settings.company.directorName,
-        accountantName: settings.company.accountantName
+        accountantName: settings.company.accountantName,
+        p2pCardNumber: settings.payment.p2pCardNumber || '',
+        p2pCardHolder: settings.payment.p2pCardHolder || '',
+        p2pBankName: settings.payment.p2pBankName || ''
       };
 
       const response = await fetch('/api/admin/settings', {
@@ -911,6 +920,54 @@ export default function SettingsPage() {
                         </div>
                       )}
                     </div>
+
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium text-gray-900 dark:text-white">P2P перевод (карта)</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Номер карты</label>
+                          <input
+                            type="text"
+                            value={settings.payment.p2pCardNumber || ''}
+                            onChange={(e) => setSettings(prev => ({
+                              ...prev,
+                              payment: { ...prev.payment, p2pCardNumber: e.target.value }
+                            }))}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            placeholder="0000 0000 0000 0000"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Владелец карты</label>
+                          <input
+                            type="text"
+                            value={settings.payment.p2pCardHolder || ''}
+                            onChange={(e) => setSettings(prev => ({
+                              ...prev,
+                              payment: { ...prev.payment, p2pCardHolder: e.target.value }
+                            }))}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            placeholder="IVAN IVANOV"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Банк</label>
+                          <input
+                            type="text"
+                            value={settings.payment.p2pBankName || ''}
+                            onChange={(e) => setSettings(prev => ({
+                              ...prev,
+                              payment: { ...prev.payment, p2pBankName: e.target.value }
+                            }))}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            placeholder="Сбербанк"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               )}
