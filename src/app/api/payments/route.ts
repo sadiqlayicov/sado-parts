@@ -9,6 +9,30 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
+// Ensure payments table exists (compatible types)
+async function ensurePaymentsTable(client: any) {
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id SERIAL PRIMARY KEY,
+      order_id TEXT,
+      user_id TEXT,
+      amount DECIMAL(10,2) NOT NULL,
+      currency VARCHAR(10) DEFAULT 'RUB',
+      payment_system VARCHAR(50) NOT NULL,
+      status VARCHAR(20) DEFAULT 'pending',
+      transaction_id VARCHAR(100),
+      payment_data JSONB,
+      commission DECIMAL(10,2) DEFAULT 0,
+      total_amount DECIMAL(10,2) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW(),
+      processed_at TIMESTAMP,
+      error_message TEXT,
+      receipt_image TEXT
+    )
+  `);
+}
+
 // Ödəniş sistemləri konfiqurasiyası (yalnız Bank köçürməsi və P2P)
 const PAYMENT_SYSTEMS = {
   bank_transfer: {
@@ -205,28 +229,7 @@ async function getBankDetails() {
 // Ödənişləri al
 async function getPayments(client: any) {
   try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS payments (
-        id SERIAL PRIMARY KEY,
-        order_id INTEGER REFERENCES orders(id),
-        user_id INTEGER REFERENCES users(id),
-        amount DECIMAL(10,2) NOT NULL,
-        currency VARCHAR(3) DEFAULT 'RUB',
-        payment_system VARCHAR(50) NOT NULL,
-        status VARCHAR(20) DEFAULT 'pending',
-        transaction_id VARCHAR(100),
-        payment_data JSONB,
-        commission DECIMAL(5,2) DEFAULT 0,
-        total_amount DECIMAL(10,2) NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW(),
-        processed_at TIMESTAMP,
-        error_message TEXT
-      )
-    `);
-
-    // Ensure optional columns exist
-    await client.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_image TEXT`);
+    await ensurePaymentsTable(client);
 
     const result = await client.query(`
       SELECT 
@@ -266,6 +269,7 @@ async function getPayment(client: any, paymentId: string | null) {
   }
 
   try {
+    await ensurePaymentsTable(client);
     const result = await client.query(`
       SELECT 
         p.*,
@@ -319,6 +323,7 @@ async function createPayment(client: any, body: any) {
   }
 
   try {
+    await ensurePaymentsTable(client);
     const system = PAYMENT_SYSTEMS[paymentSystem as keyof typeof PAYMENT_SYSTEMS];
     
     // Bank köçürməsi üçün INN yoxlaması
@@ -386,6 +391,7 @@ async function processPayment(client: any, body: any) {
   }
 
   try {
+    await ensurePaymentsTable(client);
     // Ödənişi yenilə
     await client.query(`
       UPDATE payments 
