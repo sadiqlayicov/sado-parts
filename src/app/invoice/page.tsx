@@ -52,6 +52,52 @@ function InvoiceContent({ order, companySettings }: {
   const [error, setError] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentSystems, setPaymentSystems] = useState<Record<string, any>>({});
+  const [selectedPaymentSystem, setSelectedPaymentSystem] = useState<string>('');
+
+  useEffect(() => {
+    const loadPaymentSystems = async () => {
+      try {
+        const res = await fetch('/api/payments?action=get_systems', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          setPaymentSystems(data.systems || {});
+        }
+      } catch (_e) {
+        // ignore
+      }
+    };
+    loadPaymentSystems();
+  }, []);
+
+  const handleCreatePayment = async () => {
+    if (!order || !user) return;
+    if (!selectedPaymentSystem) {
+      alert('Выберите способ оплаты');
+      return;
+    }
+    try {
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_payment',
+          orderId: order.id,
+          userId: user.id,
+          amount: order.totalAmount,
+          paymentSystem: selectedPaymentSystem
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        window.location.href = data.payment.paymentUrl;
+      } else {
+        alert(data.error || 'Ошибка создания платежа');
+      }
+    } catch (_e) {
+      alert('Ошибка создания платежа');
+    }
+  };
 
   // Function to convert number to Russian text
   const numberToRussianText = (num: number): string => {
@@ -773,6 +819,33 @@ function InvoiceContent({ order, companySettings }: {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Payment Methods */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3">Способ оплаты</h3>
+          <div className="space-y-3">
+            {Object.entries(paymentSystems).map(([key, ps]: any) => (
+              <div
+                key={key}
+                className={`flex items-center justify-between p-3 border rounded cursor-pointer ${selectedPaymentSystem === key ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+                onClick={() => setSelectedPaymentSystem(key)}
+              >
+                <div>
+                  <div className="font-medium">{ps.name}</div>
+                  <div className="text-sm text-gray-600">{ps.description}</div>
+                </div>
+                <div className="text-sm text-gray-600">Комиссия: {ps.commission}%</div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={handleCreatePayment}
+            disabled={!selectedPaymentSystem}
+            className="mt-4 bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50"
+          >
+            Оплатить
+          </button>
         </div>
 
         {/* Summary */}
