@@ -46,7 +46,7 @@ function InvoiceContent({ order, companySettings }: {
   };
 }) {
   const { user, isAuthenticated, isApproved, calculateDiscountedPrice } = useAuth();
-  const { cartItems, totalPrice, totalSalePrice, savings } = useCart();
+  const { cartItems, totalPrice, totalSalePrice, savings, clearCart, refreshCart } = useCart();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -549,14 +549,9 @@ function InvoiceContent({ order, companySettings }: {
       
       if (response.ok) {
         setIsConfirmed(true);
-        // Clear cart after successful order
-        await fetch('/api/cart/clear', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId: user.id }),
-        });
+        // Clear cart in client state and backend via provider
+        await clearCart();
+        await refreshCart();
       } else {
         console.error('Order creation failed:', responseData.error);
         setError(`Sifariş xatası: ${responseData.error || 'Sifariş təsdiqlənərkən xəta baş verdi'}`);
