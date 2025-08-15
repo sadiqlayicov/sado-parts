@@ -617,7 +617,12 @@ async function refundPayment(client: any, body: any) {
 
 // Ödəniş linki yarat
 async function generatePaymentUrl(paymentId: number, paymentSystem: string, amount: number): Promise<string> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  // Prefer VERCEL_URL if available, otherwise public site URL envs, fallback to localhost
+  let baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'http://localhost:3000');
+  // Ensure baseUrl has protocol
+  if (!baseUrl.startsWith('http')) {
+    baseUrl = `https://${baseUrl}`;
+  }
   
   // Hər ödəniş sistemi üçün fərqli link
   switch (paymentSystem) {
