@@ -273,10 +273,8 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Show success message briefly, then redirect to home page
-        alert('Регистрация успешно завершена! Вы будете перенаправлены на главную страницу.');
-        
-        // Reset form
+        alert(data.requiresVerification ? 'Регистрация успешно завершена! Проверьте email и введите код при входе.' : 'Регистрация успешно завершена!');
+
         setFormData({
           firstName: '',
           lastName: '',
@@ -290,11 +288,8 @@ export default function RegisterPage() {
           confirmPassword: '',
           terms: false
         });
-        
-        // Redirect to home page after a short delay
-        setTimeout(() => {
-          router.push('/');
-        }, 1000);
+        // yönləndirmə: login səhifəsi
+        setTimeout(() => router.push('/login'), 800);
       } else {
         alert(data.error || 'Произошла ошибка при регистрации');
       }
