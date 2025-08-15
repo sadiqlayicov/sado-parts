@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error: any) {
     console.error('Register error:', error);
-    return NextResponse.json({ success: false, error: 'Qeydiyyat zamanı xəta baş verdi' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Qeydiyyat zamanı xəta baş verdi', details: (error && (error.message || error.code || String(error))) }, { status: 500 });
   } finally {
     if (client) await client.end();
   }
