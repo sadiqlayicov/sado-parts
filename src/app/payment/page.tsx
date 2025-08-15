@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
 import { useCart } from '../../components/CartProvider';
-import { FaCreditCard, FaWallet, FaMobile, FaBank, FaArrowLeft, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaCreditCard, FaWallet, FaMobile, FaArrowLeft, FaCheck, FaTimes } from 'react-icons/fa';
 
 interface PaymentSystem {
   name: string;
@@ -23,7 +23,7 @@ export default function PaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, user } = useAuth();
-  const { cart, totalAmount, clearCart } = useCart();
+  const { cartItems, totalSalePrice, clearCart } = useCart();
   
   const [paymentSystems, setPaymentSystems] = useState<PaymentSystems>({});
   const [selectedSystem, setSelectedSystem] = useState<string>('');
@@ -102,7 +102,7 @@ export default function PaymentPage() {
           action: 'create_payment',
           orderId: parseInt(orderId),
           userId: user?.id,
-          amount: orderDetails?.totalAmount || totalAmount,
+          amount: orderDetails?.totalAmount || totalSalePrice,
           paymentSystem: selectedSystem
         }),
       });
@@ -253,19 +253,19 @@ export default function PaymentPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Сумма заказа:</span>
                       <span className="font-medium">
-                        {orderDetails?.totalAmount || totalAmount} ₽
+                        {orderDetails?.totalAmount || totalSalePrice} ₽
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Комиссия:</span>
                       <span className="font-medium">
-                        {((orderDetails?.totalAmount || totalAmount) * paymentSystems[selectedSystem].commission / 100).toFixed(2)} ₽
+                        {((orderDetails?.totalAmount || totalSalePrice) * paymentSystems[selectedSystem].commission / 100).toFixed(2)} ₽
                       </span>
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="font-medium text-gray-900 dark:text-white">Итого к оплате:</span>
                       <span className="font-bold text-lg text-blue-600">
-                        {((orderDetails?.totalAmount || totalAmount) * (1 + paymentSystems[selectedSystem].commission / 100)).toFixed(2)} ₽
+                        {((orderDetails?.totalAmount || totalSalePrice) * (1 + paymentSystems[selectedSystem].commission / 100)).toFixed(2)} ₽
                       </span>
                     </div>
                   </div>
@@ -345,14 +345,14 @@ export default function PaymentPage() {
                   <div>
                     <span className="text-sm text-gray-600 dark:text-gray-400">Сумма корзины:</span>
                     <p className="font-bold text-lg text-blue-600">
-                      {totalAmount} ₽
+                      {totalSalePrice} ₽
                     </p>
                   </div>
 
                   <div>
                     <span className="text-sm text-gray-600 dark:text-gray-400">Товары в корзине:</span>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {cart.length} шт.
+                      {cartItems.length} шт.
                     </p>
                   </div>
                 </div>
