@@ -76,18 +76,23 @@ export async function POST(request: NextRequest) {
     );
 
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || '465'),
-        secure: (process.env.SMTP_PORT || '465') === '465',
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      });
-      await transporter.sendMail({
-        from: process.env.SMTP_USER,
-        to: email,
-        subject: 'Код подтверждения регистрации',
-        text: `Ваш код подтверждения: ${rawCode}. Срок действия 10 минут.`,
-      });
+      try {
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT || '465'),
+          secure: (process.env.SMTP_PORT || '465') === '465',
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        });
+        await transporter.sendMail({
+          from: process.env.SMTP_USER,
+          to: email,
+          subject: 'Код подтверждения регистрации',
+          text: `Ваш код подтверждения: ${rawCode}. Срок действия 10 минут.`,
+        });
+      } catch (mailError) {
+        console.error('SendMail error on register:', mailError);
+        // продолжим без падения
+      }
     }
 
     return NextResponse.json({
