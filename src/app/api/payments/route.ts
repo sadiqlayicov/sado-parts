@@ -145,6 +145,10 @@ export async function POST(request: NextRequest) {
         return await cancelPayment(client, body);
       case 'refund_payment':
         return await refundPayment(client, body);
+      case 'upload_receipt':
+        return await uploadReceipt(client, body);
+      case 'approve_payment':
+        return await approvePayment(client, body);
       default:
         return NextResponse.json(
           { error: 'Неизвестное действие' },
@@ -220,6 +224,9 @@ async function getPayments(client: any) {
         error_message TEXT
       )
     `);
+
+    // Ensure optional columns exist
+    await client.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_image TEXT`);
 
     const result = await client.query(`
       SELECT 
@@ -425,6 +432,70 @@ async function processPayment(client: any, body: any) {
     console.error('Error processing payment:', error);
     return NextResponse.json(
       { error: `Ошибка обработки платежа: ${error.message}` },
+      { status: 500 }
+    );
+  }
+}
+
+// Upload bank transfer receipt
+async function uploadReceipt(client: any, body: any) {
+  const { paymentId, receiptImage } = body;
+
+  if (!paymentId || !receiptImage) {
+    return NextResponse.json(
+      { error: 'Требуются paymentId и receiptImage (base64 либо URL)' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    await client.query(`
+      UPDATE payments
+      SET payment_data = COALESCE(payment_data, '{}'::jsonb) || jsonb_build_object('receiptImage', $2),
+          receipt_image = $2,
+          updated_at = NOW()
+      WHERE id = $1
+    `, [paymentId, receiptImage]);
+
+    return NextResponse.json({ success: true, message: 'Квитанция успешно загружена' });
+  } catch (error: any) {
+    console.error('Error uploading receipt:', error);
+    return NextResponse.json(
+      { error: `Ошибка загрузки квитанции: ${error.message}` },
+      { status: 500 }
+    );
+  }
+}
+
+// Approve pending payment (admin)
+async function approvePayment(client: any, body: any) {
+  const { paymentId } = body;
+  if (!paymentId) {
+    return NextResponse.json(
+      { error: 'Требуется paymentId' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    await client.query(`
+      UPDATE payments
+      SET status = 'completed', processed_at = NOW(), updated_at = NOW()
+      WHERE id = $1
+    `, [paymentId]);
+
+    // Update related order to confirmed
+    await client.query(`
+      UPDATE orders
+      SET status = 'confirmed', "updatedAt" = NOW()
+      WHERE id = (SELECT order_id FROM payments WHERE id = $1)
+    `, [paymentId]);
+
+    return NextResponse.json({ success: true, message: 'Платеж подтвержден' });
+  } catch (error: any) {
+    console.error('Error approving payment:', error);
+    return NextResponse.json(
+      { error: `Ошибка подтверждения платежа: ${error.message}` },
       { status: 500 }
     );
   }

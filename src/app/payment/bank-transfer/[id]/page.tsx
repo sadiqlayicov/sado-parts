@@ -5,6 +5,53 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../../components/AuthProvider';
 import { FaPrint, FaCopy, FaCheck, FaArrowLeft, FaDownload } from 'react-icons/fa';
 
+function ReceiptUploader({ paymentId }: { paymentId: string }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState<string>('');
+
+  const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    setMessage('');
+    try {
+      const base64 = await toBase64(file);
+      const res = await fetch('/api/payments?action=upload_receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: Number(paymentId), receiptImage: base64 })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMessage('Квитанция загружена. Мы проверим оплату в ближайшее время.');
+      } else {
+        setMessage(data.error || 'Ошибка загрузки');
+      }
+    } catch (e: any) {
+      setMessage(e.message || 'Ошибка загрузки');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <input type="file" accept="image/*,.pdf" onChange={e => setFile(e.target.files?.[0] || null)} />
+      <button onClick={handleUpload} disabled={!file || uploading} className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50">
+        {uploading ? 'Загрузка...' : 'Загрузить квитанцию'}
+      </button>
+      {message && <p className="text-sm text-gray-700">{message}</p>}
+    </div>
+  );
+}
+
 interface BankDetails {
   name: string;
   account: string;
@@ -402,7 +449,7 @@ export default function BankTransferPage() {
                 <p>1. Скопируйте банковские реквизиты</p>
                 <p>2. В вашем банке создайте платежное поручение</p>
                 <p>3. В назначении платежа укажите: <strong>"Оплата заказа №{payment.id}"</strong></p>
-                <p>4. После оплаты пришлите копию платежного поручения на email: <strong>payments@sado-parts.ru</strong></p>
+                <p>4. После оплаты загрузите квитанцию об оплате ниже или пришлите на email: <strong>payments@sado-parts.ru</strong></p>
                 <p>5. Мы подтвердим получение платежа и обновим статус заказа</p>
               </div>
             </div>
@@ -418,6 +465,11 @@ export default function BankTransferPage() {
                 <p>• Подтверждение платежа происходит в течение 1-3 рабочих дней</p>
               </div>
             </div>
+          </div>
+          {/* Upload receipt section */}
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Загрузка квитанции</h2>
+            <ReceiptUploader paymentId={String(params.id)} />
           </div>
         </div>
       </div>

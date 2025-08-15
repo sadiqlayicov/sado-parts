@@ -65,7 +65,7 @@ export default function P2PPaymentPage() {
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
         <h1 className="text-2xl font-bold mb-2">P2P перевод (карта)</h1>
-        <p className="text-gray-600 mb-6">Оплатите переводом с карты на карту и приложите комментарий к платежу.</n+p>
+        <p className="text-gray-600 mb-6">Оплатите переводом с карты на карту и приложите комментарий к платежу.</p>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between p-3 border rounded">
