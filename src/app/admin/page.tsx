@@ -30,23 +30,17 @@ export default function AdminDashboard() {
 
   
   const [stats, setStats] = useState({
-    totalUsers: 1247,
-    totalProducts: 284,
-    totalOrders: 892,
-    totalRevenue: 15420000,
-    pendingOrders: 23,
-    lowStockProducts: 8,
-    newReviews: 15,
-    activePromotions: 5
+    totalUsers: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    lowStockProducts: 0,
+    newReviews: 0,
+    activePromotions: 0
   });
 
-  const [recentOrders, setRecentOrders] = useState([
-    { id: 1, customer: 'Иван Петров', amount: 12500, status: 'new', time: '2 мин назад' },
-    { id: 2, customer: 'Мария Сидорова', amount: 8500, status: 'processing', time: '15 мин назад' },
-    { id: 3, customer: 'Алексей Козлов', amount: 18500, status: 'shipped', time: '1 час назад' },
-    { id: 4, customer: 'Елена Воробьева', amount: 3200, status: 'completed', time: '2 часа назад' },
-    { id: 5, customer: 'Дмитрий Соколов', amount: 45000, status: 'new', time: '3 часа назад' }
-  ]);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   const [recentActivities, setRecentActivities] = useState([
     { id: 1, type: 'order', message: 'Новый заказ #1234 от Ивана Петрова', time: '2 мин назад' },
@@ -65,18 +59,21 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const res = await fetch('/api/analytics');
+        const res = await fetch('/api/analytics', { cache: 'no-store' });
         const data = await res.json();
-        setStats({
-          totalUsers: data.userCount || 0,
-          totalProducts: data.productCount || 0,
-          totalOrders: data.orderCount || 0,
-          totalRevenue: data.totalSales || 0,
-          pendingOrders: 0, // Əgər backend-də varsa əlavə et
-          lowStockProducts: 0, // Əgər backend-də varsa əlavə et
-          newReviews: 0, // Əgər backend-də varsa əlavə et
-          activePromotions: 0 // Əgər backend-də varsa əlavə et
-        });
+        if (data.success) {
+          setStats({
+            totalUsers: data.userCount || 0,
+            totalProducts: data.productCount || 0,
+            totalOrders: data.orderCount || 0,
+            totalRevenue: data.totalSales || 0,
+            pendingOrders: data.pendingOrders || 0,
+            lowStockProducts: data.lowStockProducts || 0,
+            newReviews: 0,
+            activePromotions: 0
+          });
+          setRecentOrders(data.recentOrders || []);
+        }
       } catch (error) {
         console.error('Failed to fetch stats:', error);
       }
@@ -296,17 +293,17 @@ export default function AdminDashboard() {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {recentOrders.map((order) => (
+              {recentOrders.map((order: any) => (
                 <div key={order.id} className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      #{order.id} - {order.customer}
+                      #{order.orderNumber || order.id} - {order.customer}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{order.time}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{new Date(order.createdAt).toLocaleString('ru-RU')}</p>
                   </div>
                   <div className="flex items-center space-x-3">
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {order.amount.toLocaleString()} ₽
+                      {Number(order.amount || 0).toLocaleString()} ₽
                     </span>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${getStatusColor(order.status)}`}>
                       {getStatusText(order.status)}
