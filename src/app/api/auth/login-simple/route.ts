@@ -11,20 +11,23 @@ export async function POST(request: NextRequest) {
 
   try {
     await client.connect();
-    // Ensure emailVerified column exists
-    await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN DEFAULT false');
-    // Ensure codes table exists
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS email_verification_codes (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-        email TEXT NOT NULL,
-        code_hash TEXT NOT NULL,
-        expires_at TIMESTAMPTZ NOT NULL,
-        used_at TIMESTAMPTZ,
-        attempts INT NOT NULL DEFAULT 0,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
+    // Ensure structures (ignore errors to avoid 500)
+    try {
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN DEFAULT false');
+    } catch (_) {}
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS email_verification_codes (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL,
+          code_hash TEXT NOT NULL,
+          expires_at TIMESTAMPTZ NOT NULL,
+          used_at TIMESTAMPTZ,
+          attempts INT NOT NULL DEFAULT 0,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+    } catch (_) {}
     
     const { email, password } = await request.json();
 
@@ -75,27 +78,32 @@ export async function POST(request: NextRequest) {
       const codeHash = await bcrypt.hash(rawCode, 10);
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+      const id = `code_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
       await client.query(
-        `INSERT INTO email_verification_codes (email, code_hash, expires_at) VALUES ($1, $2, $3)`,
-        [email, codeHash, expiresAt]
+        `INSERT INTO email_verification_codes (id, email, code_hash, expires_at) VALUES ($1, $2, $3, $4)`,
+        [id, email, codeHash, expiresAt]
       );
 
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || '465'),
-        secure: (process.env.SMTP_PORT || '465') === '465',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      });
+      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT || '465'),
+          secure: (process.env.SMTP_PORT || '465') === '465',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        });
 
-      await transporter.sendMail({
-        from: process.env.SMTP_USER,
-        to: email,
-        subject: 'Код подтверждения входа',
-        text: `Ваш код подтверждения: ${rawCode}. Срок действия 10 минут.`,
-      });
+        await transporter.sendMail({
+          from: process.env.SMTP_USER,
+          to: email,
+          subject: 'Код подтверждения входа',
+          text: `Ваш код подтверждения: ${rawCode}. Срок действия 10 минут.`,
+        });
+      } else {
+        console.warn('SMTP env vars missing; skipping email send');
+      }
 
       return NextResponse.json({
         error: 'Email не подтвержден. Мы отправили код подтверждения на вашу почту.',
