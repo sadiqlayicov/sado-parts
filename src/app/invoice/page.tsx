@@ -506,58 +506,58 @@ function InvoiceContent({ order, companySettings }: {
   };
 
   const confirmOrder = async () => {
-    if (!order || !user) return;
+    if (!user) return;
     
     setIsSubmitting(true);
     
     try {
-      console.log('Starting checkout process...');
-      console.log('User ID:', user.id);
-      console.log('cart items count:', cartItems.length);
-      console.log('cart items:', cartItems);
-      console.log('Valid cart items:', cartItems.filter(item => item && item.productId && item.name));
-      
-      const orderData = {
-        userId: user.id,
-        items: cartItems.map(item => ({
-          productId: item.productId,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          totalPrice: item.totalPrice,
-          sku: item.sku || '',
-          categoryName: item.categoryName || ''
-        })),
-        totalAmount: order.totalAmount,
-        notes: order.notes || '',
-        orderNumber: order.orderNumber
-      };
-      
-      console.log('Order data being sent:', orderData);
-      
+      // If order already exists (navigated from created order), do not create a duplicate
+      if (order && order.id) {
+        setIsConfirmed(true);
+        await clearCart();
+        await refreshCart();
+        return;
+      }
+
+      if (!cartItems || cartItems.length === 0) {
+        setError('Səbətdə məhsul yoxdur');
+        return;
+      }
+
+      const items = cartItems.map(item => ({
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        totalPrice: item.totalPrice,
+        sku: item.sku || '',
+        categoryName: item.categoryName || ''
+      }));
+
+      const orderNumber = `SADO-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      const totalAmount = isApproved && user && (user as any).discountPercentage > 0 ? totalSalePrice : totalPrice;
+
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          items,
+          totalAmount,
+          notes: 'Заказ создан из счета',
+          orderNumber
+        })
       });
 
-      console.log('Order response status:', response.status);
-      const responseData = await response.json();
-      console.log('Order response data:', responseData);
-      
-      if (response.ok) {
+      const data = await response.json();
+      if (response.ok && data.success) {
         setIsConfirmed(true);
-        // Clear cart in client state and backend via provider
         await clearCart();
         await refreshCart();
       } else {
-        console.error('Order creation failed:', responseData.error);
-        setError(`Sifariş xatası: ${responseData.error || 'Sifariş təsdiqlənərkən xəta baş verdi'}`);
+        setError(data.error || 'Sifariş təsdiqlənərkən xəta baş verdi');
       }
     } catch (error) {
-      console.error('Order confirmation error:', error);
       setError('Sifariş təsdiqlənərkən xəta baş verdi');
     } finally {
       setIsSubmitting(false);
