@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '../../components/AuthProvider';
+import { useState as useReactState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -13,6 +14,8 @@ export default function LoginPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [needVerify, setNeedVerify] = useState(false);
+  const [code, setCode] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,11 +31,28 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const success = await login(formData.email, formData.password);
-      if (success) {
-        router.push('/admin');
+      const resp = await fetch('/api/auth/login-simple', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password })
+      });
+
+      if (resp.status === 403) {
+        const data = await resp.json();
+        if (data.requiresVerification) {
+          setNeedVerify(true);
+          setError('Мы отправили код подтверждения на ваш email. Введите код ниже.');
+          return;
+        }
+      }
+
+      if (resp.ok) {
+        // Delegate to context to store user info
+        const success = await login(formData.email, formData.password);
+        if (success) router.push('/admin');
       } else {
-        setError('Неверный email или пароль');
+        const data = await resp.json();
+        setError(data.error || 'Неверный email или пароль');
       }
     } catch (error) {
       setError('Произошла ошибка при входе');
@@ -55,6 +75,7 @@ export default function LoginPage() {
           </div>
         )}
 
+        {!needVerify && (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-2">Email</label>
@@ -106,6 +127,49 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+        )}
+
+        {needVerify && (
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium mb-2">Код из email</label>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300"
+                placeholder="123456"
+              />
+            </div>
+            <button
+              onClick={async () => {
+                setIsLoading(true);
+                setError('');
+                try {
+                  const r = await fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: formData.email, code })
+                  });
+                  const data = await r.json();
+                  if (r.ok) {
+                    // now login
+                    const ok = await login(formData.email, formData.password);
+                    if (ok) router.push('/admin');
+                  } else {
+                    setError(data.error || 'Ошибка подтверждения');
+                  }
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              className="w-full px-6 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-lg"
+              disabled={isLoading}
+            >
+              Подтвердить и войти
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-300">
