@@ -141,6 +141,15 @@ export async function POST(request: NextRequest) {
 
     console.log('Order created successfully:', orderId);
 
+    // Clear user's cart after successful order creation
+    try {
+      await client.query('DELETE FROM cart_items WHERE "userId" = $1', [userId]);
+      console.log('Cart cleared for user after order creation:', userId);
+    } catch (clearError) {
+      console.error('Error clearing cart after order creation:', clearError);
+      // Continue even if cart clearing fails
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Заказ успешно создан',

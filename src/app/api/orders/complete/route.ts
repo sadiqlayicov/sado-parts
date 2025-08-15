@@ -58,24 +58,12 @@ export async function POST(request: NextRequest) {
       ['completed', orderId]
     );
 
-    // Clear cart by removing all items
+    // Clear cart directly in DB
     try {
-      const cartResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart?userId=${userId}`);
-      const cartData = await cartResponse.json();
-      
-      if (cartData.success && cartData.cart && cartData.cart.items.length > 0) {
-        for (const item of cartData.cart.items) {
-          await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/cart`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ cartItemId: item.id })
-          });
-        }
-      }
+      await dbClient.query('DELETE FROM cart_items WHERE "userId" = $1', [userId]);
+      console.log('Cart cleared for user after order completion:', userId);
     } catch (error) {
-      console.error('Error clearing cart:', error);
+      console.error('Error clearing cart after completion:', error);
       // Continue even if cart clearing fails
     }
 

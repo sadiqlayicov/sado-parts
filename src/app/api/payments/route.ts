@@ -442,6 +442,20 @@ async function processPayment(client: any, body: any) {
       )
     `, [paymentId]);
 
+    // Clear cart for the user related to this payment
+    try {
+      const orderUser = await client.query(`
+        SELECT user_id FROM payments WHERE id = $1
+      `, [paymentId]);
+      const payUserId = orderUser.rows?.[0]?.user_id;
+      if (payUserId) {
+        await client.query('DELETE FROM cart_items WHERE "userId" = $1', [payUserId]);
+        console.log('Cart cleared for user after payment processed:', payUserId);
+      }
+    } catch (clearErr) {
+      console.error('Error clearing cart after payment processed:', clearErr);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Платеж успешно обработан'
