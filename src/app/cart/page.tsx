@@ -235,9 +235,9 @@ export default function CartPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
+      <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8 neon-text">Корзина</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 neon-text">Корзина</h1>
           <div className="bg-white/10 rounded-xl p-8 text-center shadow-lg">
             <div className="text-2xl">Загрузка...</div>
           </div>
@@ -273,20 +273,20 @@ export default function CartPage() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-8 neon-text">Корзина</h1>
         
-        <div className="bg-white/10 rounded-xl p-6 shadow-lg">
+        <div className="bg-white/10 rounded-xl p-4 md:p-6 shadow-lg">
           {/* Məhsullar siyahısı */}
           <div className="space-y-4 mb-6">
             {cartItems.map((item) => {
               const translatedItem = translateProductData(item);
               return (
-                <div key={item.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold">{translatedItem.name}</h3>
-                    <p className="text-sm text-gray-300">Артикул: {translatedItem.artikul || translatedItem.sku}</p>
+                <div key={item.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 md:p-4 bg-white/5 rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base md:text-lg font-semibold break-words">{translatedItem.name}</h3>
+                    <p className="text-xs md:text-sm text-gray-300">Артикул: {translatedItem.artikul || translatedItem.sku}</p>
                     {translatedItem.catalogNumber && (
-                      <p className="text-sm text-gray-300">Каталожный №: {translatedItem.catalogNumber}</p>
+                      <p className="text-xs md:text-sm text-gray-300">Каталожный №: {translatedItem.catalogNumber}</p>
                     )}
-                    <p className="text-sm text-gray-300">
+                    <p className="text-xs md:text-sm text-gray-300">
                       Цена: {isApproved && user && user.discountPercentage > 0 ? (
                         <span>
                           <span className="line-through text-gray-400">{translatedItem.price.toLocaleString()}</span>
@@ -296,37 +296,37 @@ export default function CartPage() {
                         translatedItem.price.toLocaleString()
                       )} ₽
                     </p>
-                    <p className="text-sm text-gray-300">Категория: {translatedItem.categoryName}</p>
+                    <p className="text-xs md:text-sm text-gray-300">Категория: {translatedItem.categoryName}</p>
                   </div>
                 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center md:items-end gap-3 md:gap-4">
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                         disabled={item.quantity <= 1}
-                        className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition"
+                        className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition text-lg md:text-base"
                       >
                         -
                       </button>
-                      <span className="w-12 text-center">{item.quantity}</span>
+                      <span className="w-10 md:w-12 text-center text-base md:text-sm">{item.quantity}</span>
                       <button 
                         onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                         disabled={item.quantity >= item.stock}
-                        className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition"
+                        className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition text-lg md:text-base"
                       >
                         +
                       </button>
                     </div>
                     
-                    <div className="text-right">
-                      <div className="text-lg font-semibold">
+                    <div className="text-right min-w-[90px]">
+                      <div className="text-base md:text-lg font-semibold">
                         {isApproved && user && user.discountPercentage > 0 ? 
                           (calculateDiscountedPrice(item.price, null) * item.quantity).toLocaleString() : 
                           item.totalPrice.toLocaleString()
                         } ₽
                       </div>
                       {isApproved && user && user.discountPercentage > 0 && (
-                        <div className="text-sm text-green-400">
+                        <div className="text-xs md:text-sm text-green-400">
                           {item.totalPrice - (calculateDiscountedPrice(item.price, null) * item.quantity)} ₽ экономия
                         </div>
                       )}
@@ -334,7 +334,7 @@ export default function CartPage() {
                     
                     <button 
                       onClick={() => handleRemoveFromCart(item.id)}
-                      className="text-red-400 hover:text-red-600 transition"
+                      className="text-red-400 hover:text-red-600 transition text-lg md:text-base"
                     >
                       ✕
                     </button>
@@ -345,19 +345,19 @@ export default function CartPage() {
           </div>
           
           {/* Ümumi */}
-          <div className="border-t border-white/20 pt-6 mb-6">
+          <div className="border-t border-white/20 pt-4 md:pt-6 mb-6">
             <div className="space-y-2">
-              <div className="flex justify-between items-center text-lg">
+              <div className="flex justify-between items-center text-base md:text-lg">
                 <span>Товары: {cartItemsCount}</span>
                 <span>Итого: {totalPrice.toLocaleString()} ₽</span>
               </div>
               {isApproved && user && user.discountPercentage > 0 && (
-                <div className="flex justify-between items-center text-green-400">
+                <div className="flex justify-between items-center text-green-400 text-sm md:text-base">
                   <span>Экономия:</span>
                   <span>-{savings.toLocaleString()} ₽</span>
                 </div>
               )}
-              <div className="flex justify-between items-center text-xl font-bold border-t border-white/20 pt-2">
+              <div className="flex justify-between items-center text-lg md:text-xl font-bold border-t border-white/20 pt-2">
                 <span>К оплате:</span>
                 <span>{isApproved && user && user.discountPercentage > 0 ? totalSalePrice.toLocaleString() : totalPrice.toLocaleString()} ₽</span>
               </div>
@@ -365,24 +365,24 @@ export default function CartPage() {
           </div>
           
           {/* Düymələr */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <Link 
               href="/catalog" 
-              className="px-6 py-3 rounded-lg bg-white/10 hover:bg-cyan-600 font-semibold text-center transition"
+              className="px-5 md:px-6 py-3 rounded-lg bg-white/10 hover:bg-cyan-600 font-semibold text-center transition"
             >
               Продолжить покупки
             </Link>
             
             <Link 
               href="/profile" 
-              className="px-6 py-3 rounded-lg bg-white/10 hover:bg-cyan-600 font-semibold text-center transition"
+              className="px-5 md:px-6 py-3 rounded-lg bg-white/10 hover:bg-cyan-600 font-semibold text-center transition"
             >
               Мой профиль
             </Link>
             
             <button 
               onClick={handleClearCart}
-              className="px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 font-semibold text-center transition"
+              className="px-5 md:px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 font-semibold text-center transition"
             >
               Очистить корзину
             </button>
@@ -390,7 +390,7 @@ export default function CartPage() {
             <button 
               onClick={handleCheckout}
               disabled={checkoutLoading}
-              className="px-8 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-lg transition disabled:opacity-50 flex-1"
+              className="px-6 md:px-8 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-base md:text-lg transition disabled:opacity-50 flex-1"
             >
               {checkoutLoading ? 'Создание заказа...' : 'Оформить заказ и получить счет'}
             </button>

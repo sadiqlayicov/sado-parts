@@ -778,17 +778,17 @@ function InvoiceContent({ order, companySettings }: {
       </div>
 
       {/* Invoice Content */}
-      <div ref={invoiceRef} className="invoice-content max-w-4xl mx-auto p-8 bg-white">
+      <div ref={invoiceRef} className="invoice-content max-w-4xl mx-auto p-4 md:p-8 bg-white">
         {/* Invoice Title */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-blue-600 mb-4">СЧЕТ-ФАКТУРА</h2>
-          <div className="text-lg text-gray-600 mb-2">№ {order.orderNumber}</div>
-          <div className="text-lg text-gray-600">от {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
+        <div className="text-center mb-6 md:mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-blue-600 mb-3 md:mb-4">СЧЕТ-ФАКТУРА</h2>
+          <div className="text-base md:text-lg text-gray-600 mb-2">№ {order.orderNumber}</div>
+          <div className="text-base md:text-lg text-gray-600">от {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
         </div>
 
         {/* Supplier and Buyer Info */}
         <div className="mb-8">
-          <table className="w-full border-collapse border border-gray-300 mb-4">
+          <table className="w-full border-collapse border border-gray-300 mb-4 text-xs md:text-sm">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border border-gray-300 p-3 text-left w-1/2">Поставщик:</th>
@@ -826,7 +826,7 @@ function InvoiceContent({ order, companySettings }: {
 
         {/* Products Table */}
         <div className="mb-8">
-          <table className="w-full border-collapse border border-gray-300">
+          <table className="w-full border-collapse border border-gray-300 text-xs md:text-sm">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border border-gray-300 p-2 text-left">№</th>
