@@ -171,11 +171,27 @@ function ProfilePageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8 overflow-x-hidden">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Профиль пользователя</h1>
-          <p className="text-gray-300">Ваши заказы и платежи</p>
+        <div className="mb-8 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Профиль пользователя</h1>
+            <p className="text-gray-300">Ваши заказы и платежи</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push('/catalog')}
+              className="py-2 px-4 rounded-lg bg-cyan-600 text-white font-semibold"
+            >
+              Каталог
+            </button>
+            <button
+              onClick={() => logout()}
+              className="py-2 px-4 rounded-lg bg-red-600 text-white font-semibold"
+            >
+              Выйти
+            </button>
+          </div>
         </div>
 
         {/* Tabs + Mobile Actions */}
@@ -254,27 +270,27 @@ function ProfilePageContent() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-gray-400 text-sm">Имя</p>
-                      <p className="text-white">{profile.firstName}</p>
+                      <p className="text-white break-words leading-relaxed">{profile.firstName}</p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm">Фамилия</p>
-                      <p className="text-white">{profile.lastName}</p>
+                      <p className="text-white break-words leading-relaxed">{profile.lastName}</p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm">ИНН</p>
-                      <p className="text-white">{profile.inn || 'Не указан'}</p>
+                      <p className="text-white break-words leading-relaxed">{profile.inn || 'Не указан'}</p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm">Страна</p>
-                      <p className="text-white">{profile.country || 'Не указана'}</p>
+                      <p className="text-white break-words leading-relaxed">{profile.country || 'Не указана'}</p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm">Город</p>
-                      <p className="text-white">{profile.city || 'Не указан'}</p>
+                      <p className="text-white break-words leading-relaxed">{profile.city || 'Не указан'}</p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm">Адрес</p>
-                      <p className="text-white">{profile.address || 'Не указан'}</p>
+                      <p className="text-white break-words leading-relaxed whitespace-normal">{profile.address || 'Не указан'}</p>
                     </div>
                   </div>
                 </div>
@@ -284,7 +300,7 @@ function ProfilePageContent() {
               {statistics && (
                 <div className="bg-[#0f172a] rounded-lg p-6">
                   <h3 className="text-xl font-semibold text-white mb-4">Статистика</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center sm:text-left">
                     <div className="bg-[#0f172a] rounded-lg p-4">
                       <h3 className="text-lg font-semibold text-white mb-2">Всего заказов</h3>
                       <p className="text-3xl font-bold text-cyan-500">{statistics?.totalOrders || 0}</p>
