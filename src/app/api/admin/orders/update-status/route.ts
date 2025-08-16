@@ -5,6 +5,10 @@ import { jsPDF } from 'jspdf';
 import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
+// Ensure Node.js runtime and enough time for headless Chrome on Vercel
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
@@ -169,8 +173,13 @@ export async function POST(request: NextRequest) {
               headless: chromium.headless,
             });
             const page = await browser.newPage();
-            await page.setContent(html, { waitUntil: 'networkidle0' });
-            const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '1.5cm', right: '1.5cm', bottom: '1.5cm', left: '1.5cm' } });
+            await page.setContent(html, { waitUntil: 'load' });
+            const pdfBuffer = await page.pdf({
+              format: 'A4',
+              printBackground: true,
+              preferCSSPageSize: true,
+              margin: { top: '1.5cm', right: '1.5cm', bottom: '1.5cm', left: '1.5cm' }
+            });
             await browser.close();
             attachments = [{ filename: `invoice_${o?.orderNumber || 'order'}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }];
           } catch (e) {
