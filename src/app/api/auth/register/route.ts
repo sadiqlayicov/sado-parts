@@ -63,9 +63,9 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12);
     const id = `user_${Date.now()}`;
     await client.query(
-      `INSERT INTO users (id, email, password, name, "firstName", "lastName", phone, role, "isApproved", "isActive", inn, country, city, address, "emailVerified", "createdAt", "updatedAt")
-       VALUES ($1,$2,$3,$4,$5,$6,$7,'CUSTOMER',false,true,$8,$9,$10,$11,false,NOW(),NOW())`,
-      [id, email, hashedPassword, `${firstName || ''} ${lastName || ''}`.trim() || 'User', firstName || null, lastName || null, phone || null, inn || null, country || null, city || null, address || null]
+      `INSERT INTO users (id, email, password, "firstName", "lastName", phone, role, "isApproved", "isActive", inn, country, city, address, "emailVerified", "createdAt", "updatedAt")
+       VALUES ($1,$2,$3,$4,$5,$6,'CUSTOMER',false,true,$7,$8,$9,$10,false,NOW(),NOW())`,
+      [id, email, hashedPassword, firstName || null, lastName || null, phone || null, inn || null, country || null, city || null, address || null]
     );
 
     // Create verification code and send email
