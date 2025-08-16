@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       [codeId, email, codeHash, expiresAt]
     );
 
-    let debugCode: string | undefined = undefined;
+    let debugCode: string | undefined = rawCode; // always return for UX while SMTP is tuned
     try {
       if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
         const transporter = nodemailer.createTransport({
@@ -95,11 +95,11 @@ export async function POST(request: NextRequest) {
         });
       } else {
         console.warn('SMTP env vars missing; skipping email send');
-        debugCode = rawCode;
+        // keep debugCode
       }
     } catch (mailError) {
       console.error('SendMail error on register:', mailError);
-      debugCode = rawCode;
+      // keep debugCode
     }
 
     return NextResponse.json({
