@@ -167,16 +167,16 @@ export async function POST(request: NextRequest) {
             // Launch headless chrome on Vercel
             const executablePath = await chromium.executablePath();
             const browser = await puppeteer.launch({
-              args: chromium.args,
-              defaultViewport: chromium.defaultViewport,
+              args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+              defaultViewport: { width: 1240, height: 1754, deviceScaleFactor: 2 },
               executablePath,
               headless: chromium.headless,
             });
             const page = await browser.newPage();
-            await page.setContent(html, { waitUntil: 'load' });
+            await page.setContent(html, { waitUntil: 'networkidle0' });
             await page.emulateMediaType('screen');
-            // Ensure a default font for Cyrillic support
-            await page.addStyleTag({ content: '@font-face{font-family:system-ui;src:local("Arial"), local("Tahoma");} body{font-family:system-ui,"Arial",sans-serif;}' });
+            // Ensure a default font for Cyrillic support and table styling
+            await page.addStyleTag({ content: '@font-face{font-family:system-ui;src:local("Arial"), local("Tahoma"), local("DejaVu Sans");} body{font-family:system-ui,"Arial","DejaVu Sans",sans-serif;}' });
 
             const pdfBuffer = await page.pdf({
               format: 'A4',

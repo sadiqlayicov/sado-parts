@@ -69,7 +69,7 @@ interface Address {
 }
 
 function ProfilePageContent() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
@@ -178,38 +178,54 @@ function ProfilePageContent() {
           <p className="text-gray-300">Ваши заказы и платежи</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex space-x-1 bg-[#1e293b] rounded-lg p-1 mb-8">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
-              activeTab === 'profile'
-                ? 'bg-cyan-500 text-white'
-                : 'text-gray-300 hover:text-white'
-            }`}
-          >
-            Личные данные
-          </button>
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
-              activeTab === 'orders'
-                ? 'bg-cyan-500 text-white'
-                : 'text-gray-300 hover:text-white'
-            }`}
-          >
-            Заказы ({orders.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('addresses')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
-              activeTab === 'addresses'
-                ? 'bg-cyan-500 text-white'
-                : 'text-gray-300 hover:text-white'
-            }`}
-          >
-            Адреса ({addresses.length})
-          </button>
+        {/* Tabs + Mobile Actions */}
+        <div className="flex flex-wrap items-center gap-3 mb-8">
+          <div className="flex flex-1 sm:flex-none space-x-1 bg-[#1e293b] rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
+                activeTab === 'profile'
+                  ? 'bg-cyan-500 text-white'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              Личные данные
+            </button>
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
+                activeTab === 'orders'
+                  ? 'bg-cyan-500 text-white'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              Заказы ({orders.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('addresses')}
+              className={`flex-1 py-3 px-4 rounded-md font-medium transition ${
+                activeTab === 'addresses'
+                  ? 'bg-cyan-500 text-white'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              Адреса ({addresses.length})
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push('/catalog')}
+              className="py-2 px-4 rounded-lg bg-cyan-600 text-white font-semibold"
+            >
+              Каталог
+            </button>
+            <button
+              onClick={() => logout()}
+              className="py-2 px-4 rounded-lg bg-red-600 text-white font-semibold"
+            >
+              Выйти
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -235,7 +251,7 @@ function ProfilePageContent() {
               {profile && (
                 <div className="bg-[#0f172a] rounded-lg p-6">
                   <h3 className="text-xl font-semibold text-white mb-4">Личные данные</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-gray-400 text-sm">Имя</p>
                       <p className="text-white">{profile.firstName}</p>

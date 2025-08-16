@@ -83,17 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const savedUser = localStorage.getItem('sado-parts-user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
-        // Check if user data is old (missing discountPercentage)
+        // Gracefully handle older records without discountPercentage
         if (userData.discountPercentage === undefined) {
-          // Clear old data and force re-login
-          localStorage.removeItem('sado-parts-user');
-          return;
+          userData.discountPercentage = 0;
         }
         setUser(userData);
         setIsAuthenticated(true);
-        setIsRegistered(userData.isRegistered);
-        setIsApproved(userData.isApproved);
-        setIsAdmin(userData.isAdmin);
+        setIsRegistered(!!userData.isRegistered);
+        setIsApproved(!!userData.isApproved);
+        setIsAdmin(!!userData.isAdmin);
       }
     } catch (error) {
       // Handle error silently
