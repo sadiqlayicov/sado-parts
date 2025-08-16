@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [needVerify, setNeedVerify] = useState(false);
   const [code, setCode] = useState('');
+  const [debugCode, setDebugCode] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -41,7 +42,13 @@ export default function LoginPage() {
         const data = await resp.json();
         if (data.requiresVerification) {
           setNeedVerify(true);
-          setError('Мы отправили код подтверждения на ваш email. Введите код ниже.');
+          if (data.debugCode) {
+            setDebugCode(String(data.debugCode));
+            setCode(String(data.debugCode));
+            setError('Email не подтвержден. Введите код ниже. (Временный код показан ниже)');
+          } else {
+            setError('Мы отправили код подтверждения на ваш email. Введите код ниже.');
+          }
           return;
         }
       }
@@ -140,6 +147,9 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300"
                 placeholder="123456"
               />
+              {debugCode && (
+                <p className="mt-2 text-xs text-gray-300">Временный код: <span className="font-mono">{debugCode}</span></p>
+              )}
             </div>
             <button
               onClick={async () => {
