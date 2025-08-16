@@ -184,8 +184,13 @@ export async function POST(request: NextRequest) {
               preferCSSPageSize: true,
               margin: { top: '1.5cm', right: '1.5cm', bottom: '1.5cm', left: '1.5cm' }
             });
+            // Also create a PNG screenshot fallback that will look 1:1 like the print page
+            const pngBuffer = await page.screenshot({ type: 'png', fullPage: true });
             await browser.close();
-            attachments = [{ filename: `invoice_${o?.orderNumber || 'order'}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }];
+            attachments = [
+              { filename: `invoice_${o?.orderNumber || 'order'}.pdf`, content: pdfBuffer, contentType: 'application/pdf' },
+              { filename: `invoice_${o?.orderNumber || 'order'}.png`, content: pngBuffer, contentType: 'image/png' }
+            ];
           } catch (e) {
             console.error('Inline PDF generation error:', e);
             // Fallback to simple jsPDF to ensure attachment is present
