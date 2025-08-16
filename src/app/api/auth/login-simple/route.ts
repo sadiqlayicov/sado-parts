@@ -115,30 +115,38 @@ export async function POST(request: NextRequest) {
         [id, email, codeHash, expiresAt]
       );
 
-      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST,
-          port: Number(process.env.SMTP_PORT || '465'),
-          secure: (process.env.SMTP_PORT || '465') === '465',
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
-        });
-
-        await transporter.sendMail({
-          from: process.env.SMTP_USER,
-          to: email,
-          subject: 'Код подтверждения входа',
-          text: `Ваш код подтверждения: ${rawCode}. Срок действия 10 минут.`,
-        });
-      } else {
-        console.warn('SMTP env vars missing; skipping email send');
+      let debugCode: string | undefined = undefined;
+      try {
+        if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT || '465'),
+            secure: (process.env.SMTP_PORT || '465') === '465',
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            },
+          });
+          await transporter.sendMail({
+            from: process.env.SMTP_USER,
+            to: email,
+            subject: 'Код подтверждения входа',
+            text: `Ваш код подтверждения: ${rawCode}. Срок действия 10 минут.`,
+          });
+        } else {
+          console.warn('SMTP env vars missing; skipping email send');
+          debugCode = rawCode;
+        }
+      } catch (mailError) {
+        console.error('Login sendMail error:', mailError);
+        // Provide code in response to unblock while SMTP is being configured
+        debugCode = rawCode;
       }
 
       return NextResponse.json({
         error: 'Email не подтвержден. Мы отправили код подтверждения на вашу почту.',
-        requiresVerification: true
+        requiresVerification: true,
+        debugCode
       }, { status: 403 });
     }
 

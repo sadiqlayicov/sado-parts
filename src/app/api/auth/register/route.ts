@@ -78,8 +78,9 @@ export async function POST(request: NextRequest) {
       [codeId, email, codeHash, expiresAt]
     );
 
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-      try {
+    let debugCode: string | undefined = undefined;
+    try {
+      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
         const transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST,
           port: Number(process.env.SMTP_PORT || '465'),
@@ -92,16 +93,20 @@ export async function POST(request: NextRequest) {
           subject: 'Код подтверждения регистрации',
           text: `Ваш код подтверждения: ${rawCode}. Срок действия 10 минут.`,
         });
-      } catch (mailError) {
-        console.error('SendMail error on register:', mailError);
-        // продолжим без падения
+      } else {
+        console.warn('SMTP env vars missing; skipping email send');
+        debugCode = rawCode;
       }
+    } catch (mailError) {
+      console.error('SendMail error on register:', mailError);
+      debugCode = rawCode;
     }
 
     return NextResponse.json({
       success: true,
       message: 'Qeydiyyat uğurla tamamlandı. Email-ə gələn kodla təsdiqləyin və daxil olun.',
       requiresVerification: true,
+      debugCode,
     }, { status: 201 });
   } catch (error: any) {
     console.error('Register error:', error);
