@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import nodemailer from 'nodemailer';
-import { NextResponse as _NR } from 'next/server';
+import { generateInvoicePdf } from '@/app/api/utils/pdf';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -101,10 +101,49 @@ export async function POST(request: NextRequest) {
 
       try {
         const mailTasks = [] as Promise<any>[];
-        if (customer.email) {
-          mailTasks.push(transporter.sendMail({ from: smtpUser, to: customer.email, subject, html }));
+        // Try attach invoice PDF when status becomes confirmed or delivered
+        let attachments: any[] | undefined;
+        if (status === 'confirmed' || status === 'delivered') {
+          try {
+            const supRes = await client.query(`
+              SELECT key, value FROM settings WHERE key IN ('companyName','companyAddress','inn','kpp','bik','accountNumber','bankName','bankAccountNumber')
+            `);
+            const settings: any = {};
+            for (const r of supRes.rows) settings[r.key] = r.value;
+            const itemsRes = await client.query(`SELECT name, sku, quantity, price, "totalPrice" FROM order_items WHERE "orderId" = $1`, [orderId]);
+            const pdfBytes = await generateInvoicePdf({
+              order: {
+                orderNumber: updatedOrder.orderNumber,
+                createdAt: new Date().toISOString(),
+                totalAmount: Number((await client.query('SELECT "totalAmount" FROM orders WHERE id=$1',[orderId])).rows[0]?.totalAmount || 0),
+                items: itemsRes.rows.map((r:any)=>({ name: r.name, sku: r.sku, quantity: Number(r.quantity), price: Number(r.price), totalPrice: Number(r.totalPrice) }))
+              },
+              supplier: {
+                companyName: settings.companyName || 'ООО "Садо-Партс"',
+                companyAddress: settings.companyAddress || '',
+                inn: settings.inn || '',
+                kpp: settings.kpp || '',
+                bik: settings.bik || '',
+                accountNumber: settings.accountNumber || '',
+                bankName: settings.bankName || '',
+                bankBik: settings.bik || '',
+                bankAccountNumber: settings.bankAccountNumber || ''
+              },
+              customer: {
+                name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Клиент',
+                email: customer.email || undefined,
+              },
+            });
+            attachments = [{ filename: `invoice_${updatedOrder.orderNumber}.pdf`, content: Buffer.from(pdfBytes), contentType: 'application/pdf' }];
+          } catch (e) {
+            console.error('PDF generate error:', e);
+          }
         }
-        mailTasks.push(transporter.sendMail({ from: smtpUser, to: adminEmail, subject: `[ADMIN] ${subject}`, html: adminHtml }));
+
+        if (customer.email) {
+          mailTasks.push(transporter.sendMail({ from: smtpUser, to: customer.email, subject, html, attachments }));
+        }
+        mailTasks.push(transporter.sendMail({ from: smtpUser, to: adminEmail, subject: `[ADMIN] ${subject}`, html: adminHtml, attachments }));
         await Promise.all(mailTasks);
       } catch (mailErr) {
         console.error('Mail send error:', mailErr);
