@@ -475,27 +475,62 @@ async function uploadReceipt(client: any, body: any) {
 
 // Approve pending payment (admin)
 async function approvePayment(client: any, body: any) {
-  const { paymentId } = body;
-  if (!paymentId) {
-    return NextResponse.json(
-      { error: 'Требуется paymentId' },
-      { status: 400 }
-    );
-  }
+  const { paymentId, orderId } = body || {};
 
   try {
-    await client.query(`
-      UPDATE payments
-      SET status = 'completed', processed_at = NOW(), updated_at = NOW()
-      WHERE id = $1
-    `, [paymentId]);
+    await ensurePaymentsTable(client);
+
+    let targetPaymentId: number | null = null;
+
+    // If paymentId is provided and numeric, use it
+    if (paymentId !== undefined && paymentId !== null && !Number.isNaN(Number(paymentId))) {
+      targetPaymentId = Number(paymentId);
+    }
+
+    // If not provided or not numeric, but orderId present (or paymentId looks like an order id), resolve by order
+    if (targetPaymentId === null) {
+      const byOrderId = orderId || (typeof paymentId === 'string' ? paymentId : null);
+      if (!byOrderId) {
+        return NextResponse.json(
+          { error: 'Требуется paymentId или orderId' },
+          { status: 400 }
+        );
+      }
+      const lookup = await client.query(
+        `SELECT id FROM payments WHERE order_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [byOrderId]
+      );
+      if (lookup.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Платеж для указанного заказа не найден' },
+          { status: 404 }
+        );
+      }
+      targetPaymentId = Number(lookup.rows[0].id);
+    }
+
+    // Approve payment
+    await client.query(
+      `UPDATE payments SET status = 'completed', processed_at = NOW(), updated_at = NOW() WHERE id = $1`,
+      [targetPaymentId]
+    );
 
     // Update related order to confirmed
-    await client.query(`
-      UPDATE orders
-      SET status = 'confirmed', "updatedAt" = NOW()
-      WHERE id = (SELECT order_id FROM payments WHERE id = $1)
-    `, [paymentId]);
+    await client.query(
+      `UPDATE orders SET status = 'confirmed', "updatedAt" = NOW() WHERE id = (SELECT order_id FROM payments WHERE id = $1)`,
+      [targetPaymentId]
+    );
+
+    // Clear cart for the user related to this payment
+    try {
+      const orderUser = await client.query(`SELECT user_id FROM payments WHERE id = $1`, [targetPaymentId]);
+      const payUserId = orderUser.rows?.[0]?.user_id;
+      if (payUserId) {
+        await client.query('DELETE FROM cart_items WHERE "userId" = $1', [payUserId]);
+      }
+    } catch (clearErr) {
+      console.error('Error clearing cart after approve_payment:', clearErr);
+    }
 
     return NextResponse.json({ success: true, message: 'Платеж подтвержден' });
   } catch (error: any) {

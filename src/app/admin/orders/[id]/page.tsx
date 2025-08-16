@@ -401,7 +401,8 @@ export default function AdminOrderDetailsPage() {
                       const res = await fetch('/api/payments?action=approve_payment', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId: order.id })
+                        // order.id is an order UUID; backend now accepts orderId and resolves payment
+                        body: JSON.stringify({ orderId: order.id })
                       });
                       const data = await res.json();
                       if (res.ok && data.success) {
