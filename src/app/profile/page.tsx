@@ -175,8 +175,8 @@ function ProfilePageContent() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Профиль пользователя</h1>
-            <p className="text-gray-300">Ваши заказы и платежи</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Профиль пользователя</h1>
+            <p className="text-gray-300 text-sm md:text-base">Ваши заказы и платежи</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -302,20 +302,20 @@ function ProfilePageContent() {
                   <h3 className="text-xl font-semibold text-white mb-4">Статистика</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center sm:text-left">
                     <div className="bg-[#0f172a] rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-white mb-2">Всего заказов</h3>
-                      <p className="text-3xl font-bold text-cyan-500">{statistics?.totalOrders || 0}</p>
+                      <h3 className="text-base md:text-lg font-semibold text-white mb-2">Всего заказов</h3>
+                      <p className="text-2xl md:text-3xl font-bold text-cyan-500">{statistics?.totalOrders || 0}</p>
                     </div>
                     <div className="bg-[#0f172a] rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-white mb-2">Общие расходы</h3>
-                      <p className="text-3xl font-bold text-cyan-500">{statistics?.totalSpent?.toFixed(2) || '0.00'} ₽</p>
+                      <h3 className="text-base md:text-lg font-semibold text-white mb-2">Общие расходы</h3>
+                      <p className="text-2xl md:text-3xl font-bold text-cyan-500">{statistics?.totalSpent?.toFixed(2) || '0.00'} ₽</p>
                     </div>
                     <div className="bg-[#0f172a] rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-white mb-2">Выполненные заказы</h3>
-                      <p className="text-3xl font-bold text-green-500">{statistics?.completedOrders || 0}</p>
+                      <h3 className="text-base md:text-lg font-semibold text-white mb-2">Выполненные заказы</h3>
+                      <p className="text-2xl md:text-3xl font-bold text-green-500">{statistics?.completedOrders || 0}</p>
                     </div>
                     <div className="bg-[#0f172a] rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-white mb-2">Ожидающие заказы</h3>
-                      <p className="text-3xl font-bold text-yellow-500">{statistics?.pendingOrders || 0}</p>
+                      <h3 className="text-base md:text-lg font-semibold text-white mb-2">Ожидающие заказы</h3>
+                      <p className="text-2xl md:text-3xl font-bold text-yellow-500">{statistics?.pendingOrders || 0}</p>
                     </div>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ function ProfilePageContent() {
 
           {activeTab === 'orders' && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-white mb-4">Ваши заказы</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-4">Ваши заказы</h2>
               {orders.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-300">У вас пока нет заказов</p>
@@ -343,23 +343,23 @@ function ProfilePageContent() {
                       onDoubleClick={() => handleOrderClick(order.id)}
                       title="Sifarişin detallarını görmək üçün klik edin"
                     >
-                      <div className="flex justify-between items-start">
+                      <div className="flex justify-between items-start gap-3">
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-white mb-2">
+                          <h3 className="text-base md:text-lg font-semibold text-white mb-1">
                             Заказ #{order.orderNumber}
                           </h3>
-                          <p className="text-gray-400 text-sm">
+                          <p className="text-gray-400 text-xs md:text-sm">
                             Дата: {new Date(order.createdAt).toLocaleDateString('ru-RU')}
                           </p>
-                          <p className="text-gray-400 text-sm">
+                          <p className="text-gray-400 text-xs md:text-sm">
                             Товаров: {order.itemsCount}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xl font-bold text-white mb-2">
+                          <p className="text-lg md:text-xl font-bold text-white mb-1">
                             {order.totalAmount.toLocaleString()} ₽
                           </p>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                          <span className={`px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(order.status)}`}>
                             {getStatusText(order.status)}
                           </span>
                         </div>
