@@ -174,6 +174,10 @@ export async function POST(request: NextRequest) {
             });
             const page = await browser.newPage();
             await page.setContent(html, { waitUntil: 'load' });
+            await page.emulateMediaType('screen');
+            // Ensure a default font for Cyrillic support
+            await page.addStyleTag({ content: '@font-face{font-family:system-ui;src:local("Arial"), local("Tahoma");} body{font-family:system-ui,"Arial",sans-serif;}' });
+
             const pdfBuffer = await page.pdf({
               format: 'A4',
               printBackground: true,
@@ -186,8 +190,8 @@ export async function POST(request: NextRequest) {
             console.error('Inline PDF generation error:', e);
             // Fallback to simple jsPDF to ensure attachment is present
             try {
-              const orderRow2 = await client.query(`SELECT "orderNumber", "totalAmount", "createdAt" FROM orders WHERE id=$1`, [orderId]);
-              const rows2 = await client.query(`SELECT name, sku, quantity, price, "totalPrice" FROM order_items WHERE "orderId"=$1 LIMIT 20`, [orderId]);
+              const orderRow2 = await client.query(`SELECT o."orderNumber", o."totalAmount", o."createdAt", u.email, u."firstName", u."lastName", u.inn, u.country, u.city, u.address FROM orders o LEFT JOIN users u ON u.id=o."userId" WHERE o.id=$1`, [orderId]);
+              const rows2 = await client.query(`SELECT name, sku, quantity, price, "totalPrice" FROM order_items WHERE "orderId"=$1 ORDER BY created_at ASC`, [orderId]);
               const o2 = orderRow2.rows[0];
               const doc = new jsPDF();
               doc.setFontSize(16);
