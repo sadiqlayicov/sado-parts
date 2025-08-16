@@ -175,6 +175,29 @@ export async function POST(request: NextRequest) {
             attachments = [{ filename: `invoice_${o?.orderNumber || 'order'}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }];
           } catch (e) {
             console.error('Inline PDF generation error:', e);
+            // Fallback to simple jsPDF to ensure attachment is present
+            try {
+              const orderRow2 = await client.query(`SELECT "orderNumber", "totalAmount", "createdAt" FROM orders WHERE id=$1`, [orderId]);
+              const rows2 = await client.query(`SELECT name, sku, quantity, price, "totalPrice" FROM order_items WHERE "orderId"=$1 LIMIT 20`, [orderId]);
+              const o2 = orderRow2.rows[0];
+              const doc = new jsPDF();
+              doc.setFontSize(16);
+              doc.text('СЧЕТ-ФАКТУРА', 105, 15, { align: 'center' });
+              doc.setFontSize(10);
+              doc.text(`№ ${o2?.orderNumber || ''} от ${new Date(o2?.createdAt || Date.now()).toLocaleDateString('ru-RU')}`, 105, 22, { align: 'center' });
+              let y = 32;
+              rows2.rows.forEach((r:any, i:number) => {
+                const line = `${i+1}. ${r.name} | ${r.sku||''} | ${r.quantity} x ${Number(r.price).toFixed(2)} = ${Number(r.totalPrice).toFixed(2)} ₽`;
+                doc.text(line.substring(0, 110), 14, y);
+                y += 6; if (y > 280) { doc.addPage(); y = 20; }
+              });
+              y += 6;
+              doc.text(`Итого: ${Number(o2?.totalAmount||0).toFixed(2)} ₽`, 14, y);
+              const buf = Buffer.from(doc.output('arraybuffer'));
+              attachments = [{ filename: `invoice_${o2?.orderNumber || 'order'}.pdf`, content: buf, contentType: 'application/pdf' }];
+            } catch (fErr) {
+              console.error('jsPDF fallback generation error:', fErr);
+            }
           }
         }
 
