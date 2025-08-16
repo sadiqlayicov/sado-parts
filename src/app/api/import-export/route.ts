@@ -118,9 +118,9 @@ export async function POST(request: NextRequest) {
     ];
     
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ 
+    return NextResponse.json({ 
         error: 'Неподдерживаемый формат файла. Поддерживаются: XLSX, XLS, CSV, JSON' 
-      }, { status: 400 });
+    }, { status: 400 });
     }
 
     client = await pool.connect();

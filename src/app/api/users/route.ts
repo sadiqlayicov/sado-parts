@@ -177,10 +177,10 @@ export async function POST(request: NextRequest) {
 
     // Create user
     const user = await client.query(`
-      INSERT INTO users (email, name, phone, role, "isApproved", password)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO users (id, email, name, phone, role, "isApproved", password, "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
       RETURNING id, email, name, phone, role, "isApproved"
-    `, [email, name || 'User', phone, isAdmin ? 'ADMIN' : 'CUSTOMER', isApproved !== false, 'temp_password']);
+    `, [`user_${Date.now()}`, email, name || 'User', phone, isAdmin ? 'ADMIN' : 'CUSTOMER', isApproved !== false, 'temp_password']);
 
     return NextResponse.json({
       success: true,

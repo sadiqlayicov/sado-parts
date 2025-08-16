@@ -30,15 +30,13 @@ async function createSimpleAdmin() {
 
     // Create admin user
     const result = await client.query(
-      `INSERT INTO users (id, email, password, name, "isAdmin", "isApproved", "createdAt", "updatedAt") 
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) RETURNING email, name`,
+      `INSERT INTO users (id, email, password, name, role, "isApproved", "isActive", "firstName", "lastName", "discountPercentage", "emailVerified", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, 'ADMIN', true, true, 'Admin', 'User', 0, true, NOW(), NOW()) RETURNING email, name`,
       [
         'admin-' + Date.now(),
         'admin@sado-parts.ru',
         hashedPassword,
-        'Admin User',
-        true,
-        true
+        'Admin User'
       ]
     );
 

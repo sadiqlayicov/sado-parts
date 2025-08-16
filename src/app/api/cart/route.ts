@@ -121,6 +121,8 @@ export async function GET(request: NextRequest) {
           images TEXT[],
           stock INTEGER DEFAULT 10,
           sku VARCHAR(255),
+          artikul VARCHAR(255),
+          "catalogNumber" VARCHAR(255),
           "categoryName" VARCHAR(255),
           quantity INTEGER NOT NULL DEFAULT 1,
           "totalPrice" DECIMAL(10,2) NOT NULL,
@@ -133,6 +135,10 @@ export async function GET(request: NextRequest) {
       await client.query(`CREATE INDEX idx_cart_items_user_id ON cart_items("userId")`);
       await client.query(`CREATE INDEX idx_cart_items_product_id ON cart_items("productId")`);
       console.log('Cart items table created successfully');
+    } else {
+      // Ensure new columns exist
+      try { await client.query('ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS artikul VARCHAR(255)'); } catch (e: any) { console.error('alter artikul', e?.message || e); }
+      try { await client.query('ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS "catalogNumber" VARCHAR(255)'); } catch (e: any) { console.error('alter catalogNumber', e?.message || e); }
     }
     
     // Get user discount first
@@ -304,6 +310,8 @@ export async function POST(request: NextRequest) {
           images TEXT[],
           stock INTEGER DEFAULT 10,
           sku VARCHAR(255),
+          artikul VARCHAR(255),
+          "catalogNumber" VARCHAR(255),
           "categoryName" VARCHAR(255),
           quantity INTEGER NOT NULL DEFAULT 1,
           "totalPrice" DECIMAL(10,2) NOT NULL,
@@ -316,6 +324,10 @@ export async function POST(request: NextRequest) {
       await client.query(`CREATE INDEX idx_cart_items_user_id ON cart_items("userId")`);
       await client.query(`CREATE INDEX idx_cart_items_product_id ON cart_items("productId")`);
       console.log('Cart items table created successfully');
+    } else {
+      // Ensure new columns exist
+      try { await client.query('ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS artikul VARCHAR(255)'); } catch (e: any) { console.error('alter artikul', e?.message || e); }
+      try { await client.query('ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS "catalogNumber" VARCHAR(255)'); } catch (e: any) { console.error('alter catalogNumber', e?.message || e); }
     }
     
     // Check if product already exists in cart
@@ -353,8 +365,8 @@ export async function POST(request: NextRequest) {
       const insertResult = await client.query(
         `INSERT INTO cart_items (
           id, "userId", "productId", name, description, price, "salePrice", 
-          images, stock, sku, "categoryName", quantity, "totalPrice", "totalSalePrice"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          images, stock, sku, artikul, "catalogNumber", "categoryName", quantity, "totalPrice", "totalSalePrice"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING *`,
         [
           cartItemId,
@@ -367,6 +379,8 @@ export async function POST(request: NextRequest) {
           [], // images array
           10, // stock
           productInfo.artikul || productInfo.sku,
+          productInfo.artikul || '',
+          productInfo.catalogNumber || '',
           productInfo.categoryName,
           quantity,
           originalPrice * quantity,

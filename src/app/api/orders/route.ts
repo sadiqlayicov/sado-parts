@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
+import nodemailer from 'nodemailer';
 
 // Create a connection pool
 const pool = new Pool({
@@ -140,6 +141,36 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Order created successfully:', orderId);
+
+    // Email notifications to customer and admin
+    try {
+      const userRes = await client.query(`SELECT email, "firstName" FROM users WHERE id = $1`, [userId]);
+      const user = userRes.rows[0] || {};
+      const smtpHost = process.env.SMTP_HOST as string;
+      const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+      const smtpUser = process.env.SMTP_USER as string;
+      const smtpPass = process.env.SMTP_PASS as string;
+      const adminEmail = process.env.ADMIN_EMAIL || user.email || 'admin@example.com';
+
+      if (smtpHost && smtpUser && smtpPass) {
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: { user: smtpUser, pass: smtpPass }
+        });
+        const subject = `Новый заказ #${order.orderNumber}`;
+        const html = `<p>Здравствуйте${user.firstName ? ', ' + user.firstName : ''}!</p>
+          <p>Ваш заказ <strong>#${order.orderNumber}</strong> создан и ожидает подтверждения.</p>`;
+        const adminHtml = `<p>Создан новый заказ <strong>#${order.orderNumber}</strong> на сумму ${order.totalAmount}.</p>`;
+        const tasks = [] as Promise<any>[];
+        if (user.email) tasks.push(transporter.sendMail({ from: smtpUser, to: user.email, subject, html }));
+        tasks.push(transporter.sendMail({ from: smtpUser, to: adminEmail, subject: `[ADMIN] ${subject}`, html: adminHtml }));
+        await Promise.all(tasks);
+      }
+    } catch (mailErr) {
+      console.error('Order create email error:', mailErr);
+    }
 
     // Clear user's cart after successful order creation
     try {

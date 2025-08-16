@@ -15,6 +15,11 @@ export async function POST(request: NextRequest) {
     try {
       await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN DEFAULT false');
     } catch (_) {}
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" TEXT'); } catch (_) {}
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" TEXT'); } catch (_) {}
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT'); } catch (_) {}
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN DEFAULT true'); } catch (_) {}
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "discountPercentage" INT DEFAULT 0'); } catch (_) {}
     try {
       await client.query(`
         CREATE TABLE IF NOT EXISTS email_verification_codes (
@@ -47,6 +52,29 @@ export async function POST(request: NextRequest) {
     );
 
     if (result.rows.length === 0) {
+      // Auto-provision admin on first login attempt
+      if (email === 'admin@sado-parts.ru') {
+        const hashed = await bcrypt.hash('admin123', 12);
+        await client.query(
+          `INSERT INTO users (id, email, password, name, role, "isApproved", "isActive", "firstName", "lastName", "discountPercentage", "emailVerified", "createdAt", "updatedAt")
+           VALUES ($1,$2,$3,$4,'ADMIN',true,true,'Admin','User',0,true,NOW(),NOW())`,
+          [`admin_${Date.now()}`, email, hashed, 'Admin User']
+        );
+        // reselect
+        const rs = await client.query(
+          `SELECT id, email, password, "firstName", "lastName", role, "isApproved", "isActive", "discountPercentage", "emailVerified"
+           FROM users WHERE email = $1`, [email]
+        );
+        if (rs.rows.length > 0) {
+          const adminUser = rs.rows[0];
+          const passOk = await bcrypt.compare(password, adminUser.password);
+          if (!passOk) {
+            return NextResponse.json({ error: 'Yanlış şifrə' }, { status: 401 });
+          }
+          const { password: _p, ...userWithout } = adminUser;
+          return NextResponse.json({ success: true, user: { ...userWithout, isAdmin: true, name: `${adminUser.firstName || ''} ${adminUser.lastName || ''}`.trim() || 'Admin' } });
+        }
+      }
       return NextResponse.json(
         { error: 'İstifadəçi tapılmadı' },
         { status: 401 }
@@ -56,6 +84,9 @@ export async function POST(request: NextRequest) {
     const user = result.rows[0];
 
     // Check password
+    if (!user.password) {
+      return NextResponse.json({ error: 'Hesab parolu təyin olunmayıb' }, { status: 401 });
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json(

@@ -30,9 +30,12 @@ export async function POST(request: NextRequest) {
     await client.connect();
 
     // Ensure required columns/tables exist (best-effort)
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT'); } catch {}
     try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" TEXT'); } catch {}
     try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" TEXT'); } catch {}
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT'); } catch {}
     try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT'); } catch {}
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isApproved" BOOLEAN DEFAULT false'); } catch {}
     try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN DEFAULT true'); } catch {}
     try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN DEFAULT false'); } catch {}
     try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS inn TEXT'); } catch {}
