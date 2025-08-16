@@ -548,6 +548,15 @@ export default function Header() {
               </svg>
             </button>
 
+            {/* Быстрый доступ к профилю на мобиле */}
+            <Link
+              href={isAuthenticated ? '/profile' : '/login'}
+              className="lg:hidden w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
+              title={isAuthenticated ? 'Профиль' : 'Войти'}
+            >
+              <span className="text-sm">👤</span>
+            </Link>
+
             {/* Мобильный поиск */}
             <button
               onClick={() => {

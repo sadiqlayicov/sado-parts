@@ -144,7 +144,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = async (productId: string, quantity: number = 1) => {
     if (!user?.id) {
-      alert('Пожалуйста, войдите в систему для добавления товаров в корзину');
+      const shouldGo = typeof window !== 'undefined' ? confirm('Пожалуйста, войдите в систему для добавления товаров в корзину. Перейти к входу?') : false;
+      if (shouldGo && typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
       return;
     }
 
