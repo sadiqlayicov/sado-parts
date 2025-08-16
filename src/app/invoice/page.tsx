@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useCart } from '@/components/CartProvider';
 import { useRouter } from 'next/navigation';
@@ -45,6 +45,7 @@ function InvoiceContent({ order, companySettings }: {
     accountantName: string;
   };
 }) {
+  const invoiceRef = useRef<HTMLDivElement | null>(null);
   const { user, isAuthenticated, isApproved, calculateDiscountedPrice } = useAuth();
   const { cartItems, totalPrice, totalSalePrice, savings, clearCart, refreshCart } = useCart();
   const router = useRouter();
@@ -546,6 +547,39 @@ function InvoiceContent({ order, companySettings }: {
     };
   };
 
+  const downloadPdf = async () => {
+    try {
+      const element = invoiceRef.current;
+      if (!element) return;
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf') as any
+      ]);
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let position = 0;
+      let heightLeft = imgHeight;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save(`invoice_${order?.orderNumber || 'order'}.pdf`);
+    } catch (e) {
+      alert('Не удалось сохранить PDF');
+    }
+  };
+
   const continueShopping = () => {
     router.push('/catalog');
   };
@@ -744,7 +778,7 @@ function InvoiceContent({ order, companySettings }: {
       </div>
 
       {/* Invoice Content */}
-      <div className="invoice-content max-w-4xl mx-auto p-8">
+      <div ref={invoiceRef} className="invoice-content max-w-4xl mx-auto p-8 bg-white">
         {/* Invoice Title */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-blue-600 mb-4">СЧЕТ-ФАКТУРА</h2>
@@ -896,6 +930,10 @@ function InvoiceContent({ order, companySettings }: {
         <div className="text-right mt-8">
           <p className="text-sm">Лаиджов Садиг</p>
         </div>
+      </div>
+      {/* Actions: download PDF */}
+      <div className="print:hidden max-w-4xl mx-auto p-4 flex justify-end">
+        <button onClick={downloadPdf} className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">Скачать PDF</button>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import nodemailer from 'nodemailer';
+import { NextResponse as _NR } from 'next/server';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -111,6 +112,8 @@ export async function POST(request: NextRequest) {
     } else {
       console.warn('SMTP envs not configured; skipping email notifications');
     }
+
+    // Optional: generate and email invoice PDF here in future
 
     return NextResponse.json({
       success: true,
