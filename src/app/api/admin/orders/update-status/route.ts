@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import nodemailer from 'nodemailer';
-import { NextResponse as _NR } from 'next/server';
+import { jsPDF } from 'jspdf';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -100,11 +100,41 @@ export async function POST(request: NextRequest) {
       `;
 
       try {
+        // Build a very small PDF invoice for confirmed/delivered statuses
+        let attachments: any[] | undefined = undefined;
+        if (status === 'confirmed' || status === 'delivered') {
+          try {
+            const orderRow = await client.query(`SELECT "orderNumber", "totalAmount", "createdAt" FROM orders WHERE id=$1`, [orderId]);
+            const rows = await client.query(`SELECT name, sku, quantity, price, "totalPrice" FROM order_items WHERE "orderId"=$1 LIMIT 10`, [orderId]);
+            const o = orderRow.rows[0];
+            const doc = new jsPDF();
+            doc.setFontSize(16);
+            doc.text('СЧЕТ-ФАКТУРА', 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`№ ${o?.orderNumber || ''} от ${new Date(o?.createdAt || Date.now()).toLocaleDateString('ru-RU')}`, 105, 22, { align: 'center' });
+            doc.text(`Статус: ${statusMap[updatedOrder.status] || updatedOrder.status}`, 105, 28, { align: 'center' });
+            let y = 36;
+            doc.text('Товары:', 14, y); y += 6;
+            rows.rows.forEach((r: any, idx: number) => {
+              const line = `${idx + 1}. ${r.name} | ${r.sku || ''} | ${r.quantity} шт x ${Number(r.price).toFixed(2)} = ${Number(r.totalPrice).toFixed(2)} ₽`;
+              doc.text(line.substring(0, 105), 14, y);
+              y += 6;
+              if (y > 270) { doc.addPage(); y = 20; }
+            });
+            y += 4;
+            doc.text(`Итого: ${Number(o?.totalAmount || 0).toFixed(2)} ₽`, 14, y);
+            const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+            attachments = [{ filename: `invoice_${o?.orderNumber || 'order'}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }];
+          } catch (e) {
+            console.error('Inline PDF generation error:', e);
+          }
+        }
+
         const mailTasks = [] as Promise<any>[];
         if (customer.email) {
-          mailTasks.push(transporter.sendMail({ from: smtpUser, to: customer.email, subject, html }));
+          mailTasks.push(transporter.sendMail({ from: smtpUser, to: customer.email, subject, html, attachments }));
         }
-        mailTasks.push(transporter.sendMail({ from: smtpUser, to: adminEmail, subject: `[ADMIN] ${subject}`, html: adminHtml }));
+        mailTasks.push(transporter.sendMail({ from: smtpUser, to: adminEmail, subject: `[ADMIN] ${subject}`, html: adminHtml, attachments }));
         await Promise.all(mailTasks);
       } catch (mailErr) {
         console.error('Mail send error:', mailErr);
