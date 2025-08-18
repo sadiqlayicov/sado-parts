@@ -271,280 +271,124 @@ function InvoiceContent({ order, companySettings }: {
       return;
     }
 
-    // Create print-friendly HTML with proper styling
-    const printHTML = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Счет-фактура ${order?.orderNumber || ''}</title>
-          <style>
-            @media print {
-              body { margin: 0; padding: 0; }
-              .no-print { display: none !important; }
-              .print-only { display: block !important; }
-              @page { 
-                margin: 1.5cm; 
-                size: A4;
-              }
-            }
-            
-            body { 
-              font-family: 'Times New Roman', serif; 
-              font-size: 12px;
-              line-height: 1.4;
-              color: #000;
-              background: white;
-            }
-            
-            .invoice-container { 
-              max-width: 100%; 
-              margin: 0 auto; 
-              padding: 20px;
-            }
-            
-                         .header { 
-               text-align: center; 
-               margin-bottom: 30px; 
-               padding-bottom: 20px;
-             }
-             
-             /* Hide any company info at the top in print */
-             .company-info,
-             .company-details {
-               display: none !important;
-             }
-            
+    // Classic invoice layout (as in provided sample). We generate this first and return.
+    const vatRate = 20; // 20% VAT included in price
+    const totalAmountAll = Number(order?.totalAmount || 0);
+    const vatIncludedTotalAll = Number(((totalAmountAll * vatRate) / (100 + vatRate)).toFixed(2));
+    const totalWithoutVatAll = Number((totalAmountAll - vatIncludedTotalAll).toFixed(2));
+    const validUntil = (() => {
+      const d = order?.createdAt ? new Date(order.createdAt) : new Date();
+      d.setDate(d.getDate() + 5);
+      return d.toLocaleDateString('ru-RU');
+    })();
 
-            
-            .order-info { 
-              margin-bottom: 20px; 
-            }
-            
-            
-            
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin: 20px 0; 
-              font-size: 11px;
-            }
-            
-            th, td { 
-              border: 1px solid #000; 
-              padding: 6px; 
-              text-align: left; 
-              vertical-align: top;
-            }
-            
-            th { 
-              background-color: #f0f0f0; 
-              font-weight: bold;
-              text-align: center;
-            }
-            
-            .total-section {
-              margin-top: 20px;
-              text-align: right;
-            }
-            
-            .total-row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 5px;
-              padding: 5px 0;
-            }
-            
-            .total-row.final {
-              font-weight: bold;
-              border-top: 2px solid #000;
-              padding-top: 10px;
-              margin-top: 10px;
-            }
-            
-            .amount-in-words {
-              text-align: center;
-              margin: 20px 0;
-              font-style: italic;
-            }
-            
-            .terms {
-              margin-top: 30px;
-              font-size: 10px;
-              line-height: 1.3;
-            }
-            
-            .signatures {
-              display: flex;
-              justify-content: space-between;
-              margin-top: 50px;
-            }
-            
-            .signature-box {
-              text-align: center;
-              width: 45%;
-            }
-            
-            .signature-line {
-              border-bottom: 1px solid #000;
-              width: 200px;
-              margin: 20px auto 5px;
-            }
-            
-            .footer { 
-              margin-top: 30px; 
-              text-align: center; 
-              font-size: 10px;
-            }
-            
-            .invoice-title {
-              font-size: 24px;
-              font-weight: bold;
-              margin-bottom: 10px;
-            }
-            
-            .invoice-number {
-              font-size: 14px;
-              margin-bottom: 5px;
-            }
-            
-            .invoice-date {
-              font-size: 14px;
-            }
-          </style>
-        </head>
-        <body>
-                     <div class="invoice-container">
-             <!-- Header -->
-             <div class="header">
-               <div class="invoice-title">СЧЕТ-ФАКТУРА</div>
-               <div class="invoice-number">№ ${order?.orderNumber || ''}</div>
-               <div class="invoice-date">от ${order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
-             </div>
+    const classicHTML = `<!DOCTYPE html><html><head><meta charset="utf-8" />
+      <title>Счет на оплату ${order?.orderNumber || ''}</title>
+      <style>
+        @page { size: A4; margin: 1.5cm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Times New Roman', serif; font-size: 12px; color: #000; }
+        .note { font-size: 10px; text-align: center; margin-bottom: 6px; }
+        .sample { font-size: 10px; text-align: center; margin-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; }
+        .bank td { border: 1px solid #000; padding: 4px 6px; }
+        .bank .left { width: 60%; }
+        .bank .right { width: 40%; }
+        .title { font-weight: bold; font-size: 16px; margin: 12px 0 8px 0; }
+        .bold { font-weight: bold; }
+        .items th, .items td { border: 1px solid #000; padding: 6px; }
+        .items th { background: #f0f0f0; text-align: center; }
+        .flex { display: flex; justify-content: space-between; }
+        .sign { display: flex; justify-content: space-between; margin-top: 24px; }
+        .line { display: inline-block; width: 220px; height: 14px; border-bottom: 1px solid #000; }
+        .footer { font-size: 10px; text-align: center; margin-top: 10px; }
+      </style></head><body>
+        <div class="note">Внимание! Оплата данного счета означает согласие с условиями поставки товара. Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе. Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.</div>
+        <div class="sample">Образец заполнения платежного поручения</div>
+        <table class="bank">
+          <tr>
+            <td class="left">
+              <div class="bold" style="font-size:10px">Банк получателя</div>
+              <div>${companySettings.bankName}</div>
+              <div style="font-size:10px">ИНН ${companySettings.inn} КПП ${companySettings.kpp}</div>
+              <div style="font-size:10px">Получатель</div>
+              <div>${companySettings.companyName}</div>
+            </td>
+            <td class="right">
+              <div class="flex"><span style="font-size:10px">БИК</span><span>${companySettings.bankBik}</span></div>
+              <div class="flex"><span style="font-size:10px">Сч. №</span><span>${companySettings.bankAccountNumber}</span></div>
+              <div class="flex"><span style="font-size:10px">КПП</span><span>${companySettings.kpp}</span></div>
+              <div class="flex"><span style="font-size:10px">Сч. №</span><span>${companySettings.accountNumber}</span></div>
+            </td>
+          </tr>
+        </table>
 
-                         <!-- Parties Information -->
-             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 11px;">
-               <thead>
-                 <tr style="background-color: #f0f0f0;">
-                   <th style="border: 1px solid #000; padding: 8px; text-align: left; width: 50%;">Поставщик:</th>
-                   <th style="border: 1px solid #000; padding: 8px; text-align: left; width: 50%;">Покупатель:</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 <tr>
-                   <td style="border: 1px solid #000; padding: 8px; vertical-align: top;">
-                     <div style="line-height: 1.4;">
-                       <p style="font-weight: bold; margin: 0 0 4px 0;">${companySettings.companyName}</p>
-                       <p style="margin: 0 0 2px 0;">${companySettings.companyAddress}</p>
-                       <p style="margin: 0 0 2px 0;">ИНН: ${companySettings.inn}</p>
-                       <p style="margin: 0 0 2px 0;">КПП: ${companySettings.kpp}</p>
-                       <p style="margin: 0 0 2px 0;">БИК: ${companySettings.bik}</p>
-                       <p style="margin: 0 0 2px 0;">Счет №: ${companySettings.accountNumber}</p>
-                       <p style="margin: 0 0 2px 0;">Банк: ${companySettings.bankName}</p>
-                       <p style="margin: 0 0 2px 0;">БИК банка: ${companySettings.bankBik}</p>
-                       <p style="margin: 0 0 2px 0;">Корр. счет: ${companySettings.bankAccountNumber}</p>
-                     </div>
-                   </td>
-                   <td style="border: 1px solid #000; padding: 8px; vertical-align: top;">
-                     <div style="line-height: 1.4;">
-                       <p style="font-weight: bold; margin: 0 0 4px 0;">${(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}</p>
-                       <p style="margin: 0 0 2px 0;">ИНН: ${(user as any)?.inn || 'Не указан'}</p>
-                       <p style="margin: 0 0 2px 0;">Страна: ${(user as any)?.country || 'Не указана'}</p>
-                       <p style="margin: 0 0 2px 0;">Город: ${(user as any)?.city || 'Не указан'}</p>
-                       <p style="margin: 0 0 2px 0;">Адрес: ${(user as any)?.address || 'Не указан'}</p>
-                     </div>
-                   </td>
-                 </tr>
-               </tbody>
-             </table>
+        <div class="title">Счет на оплату № ${order?.orderNumber || ''} от ${order?.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
 
-            <!-- Products Table -->
-            <table>
-              <thead>
-                <tr>
-                  <th>№</th>
-                  <th>Товар (Услуга)</th>
-                  <th>Код</th>
-                  <th>Кол-во</th>
-                  <th>Ед.</th>
-                  <th>Цена</th>
-                  <th>Сумма</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${order?.items.map((item, index) => `
-                  <tr>
-                    <td>${index + 1}</td>
-                    <td>${item.name}</td>
-                    <td>${item.sku}</td>
-                    <td>${item.quantity}</td>
-                    <td>шт.</td>
-                    <td>${item.price.toLocaleString('ru-RU')} ₽</td>
-                    <td>${item.totalPrice.toLocaleString('ru-RU')} ₽</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
+        <table style="margin-bottom:8px;">
+          <tr>
+            <td style="width:110px" class="bold">Поставщик:</td>
+            <td>ИНН ${companySettings.inn}, КПП ${companySettings.kpp}, ${companySettings.companyName}, ${companySettings.companyAddress}</td>
+          </tr>
+          <tr>
+            <td class="bold">Покупатель:</td>
+            <td>${(user as any)?.inn ? `ИНН ${(user as any).inn}, ` : ''}${(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}, ${(user as any)?.country || ''} ${(user as any)?.city || ''}, ${(user as any)?.address || ''}</td>
+          </tr>
+        </table>
 
-            <!-- Summary -->
-            <div class="total-section">
-              <div class="total-row">
-                <span><strong>Итого:</strong></span>
-                <span>${order?.totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</span>
-              </div>
-              <div class="total-row">
-                <span>Без налога (НДС):</span>
-                <span>${order?.totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</span>
-              </div>
-              <div class="total-row final">
-                <span><strong>Всего к оплате:</strong></span>
-                <span><strong>${order?.totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</strong></span>
-              </div>
-            </div>
+        <div style="font-size:10px">Действителен до ${validUntil}</div>
 
-            <!-- Amount in Words -->
-            <div class="amount-in-words">
-              <p>Всего наименований ${order?.items.length}, на сумму ${order?.totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</p>
-              <p><strong>${numberToRussianText(order?.totalAmount || 0)}</strong></p>
-            </div>
+        <table class="items" style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th style="width:30px;">№</th>
+              <th>Товар</th>
+              <th style="width:90px;">Код</th>
+              <th style="width:60px;">Кол-во</th>
+              <th style="width:50px;">Ед.</th>
+              <th style="width:80px;">Цена</th>
+              <th style="width:90px;">в т.ч. НДС</th>
+              <th style="width:90px;">Всего</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(order?.items || []).map((item, idx) => {
+              const itemTotal = Number(item.totalPrice || (item.price * item.quantity));
+              const itemVat = Number(((itemTotal * vatRate) / (100 + vatRate)).toFixed(2));
+              return `<tr>
+                <td style="text-align:center;">${idx + 1}</td>
+                <td>${item.name}</td>
+                <td>${(item as any).artikul || item.sku || ''}</td>
+                <td style="text-align:center;">${item.quantity}</td>
+                <td style="text-align:center;">шт</td>
+                <td style="text-align:right;">${Number(item.price).toFixed(2)}</td>
+                <td style="text-align:right;">${itemVat.toFixed(2)}</td>
+                <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
 
-            <!-- Terms and Conditions -->
-            <div class="terms">
-              <p>Оплата данного счета означает согласие с условиями поставки товара.</p>
-              <p>Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе.</p>
-              <p>Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.</p>
-            </div>
+        <div style="margin-top:8px; text-align:right;">
+          <div>Итого НДС: <strong>${vatIncludedTotalAll.toFixed(2)}</strong></div>
+          <div>Итого без НДС: <strong>${totalWithoutVatAll.toFixed(2)}</strong></div>
+          <div style="font-size:14px; margin-top:6px;">Итого к оплате: <strong>${totalAmountAll.toFixed(2)} RUB</strong></div>
+        </div>
 
-            <!-- Signatures -->
-            <div class="signatures">
-              <div class="signature-box">
-                <p><strong>Руководитель</strong></p>
-                <div class="signature-line"></div>
-                <p>${companySettings.directorName}</p>
-              </div>
-              <div class="signature-box">
-                <p><strong>Бухгалтер</strong></p>
-                <div class="signature-line"></div>
-                <p>${companySettings.accountantName}</p>
-              </div>
-            </div>
+        <div class="sign">
+          <div>Руководитель <span class="line"></span></div>
+          <div>Бухгалтер <span class="line"></span></div>
+        </div>
 
-            <!-- Footer -->
-            <div class="footer">
-              <p>Лаиджов Садиг</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+        <div class="footer">Внимание! Товар в поврежденной, грязной упаковке или без упаковки возврату не подлежит!</div>
+      </body></html>`;
 
-    printWindow.document.write(printHTML);
+    printWindow.document.write(classicHTML);
     printWindow.document.close();
-    
-    // Wait for content to load then print
-    printWindow.onload = () => {
-      printWindow.print();
-      printWindow.close();
-    };
+    printWindow.onload = () => { printWindow.print(); printWindow.close(); };
+    return;
+
+    // (Legacy template removed; the classic layout above is now the only output)
   };
 
   const downloadPdf = async () => {

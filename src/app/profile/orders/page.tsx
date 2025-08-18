@@ -204,7 +204,7 @@ export default function OrdersPage() {
                       
                       <div className="flex items-center space-x-4">
                         <span 
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} cursor-pointer hover:opacity-80 transition-opacity`}
+                          className={`px-2 md:px-3 py-1 rounded-full text-[10px] md:text-sm font-medium ${statusInfo.color} cursor-pointer hover:opacity-80 transition-opacity`}
                           onClick={(e) => {
                             e.stopPropagation();
                             router.push(`/invoice?orderId=${order.id}`);
@@ -221,10 +221,10 @@ export default function OrdersPage() {
                           }}
                           title="Sifarişin detallarını görmək üçün klik edin"
                         >
-                          <p className="text-lg font-bold text-gray-900 hover:text-blue-600">
-                            {order.totalAmount.toLocaleString('ru-RU')} ₽
+                          <p className="text-base md:text-lg font-bold text-gray-900 hover:text-blue-600 whitespace-nowrap">
+                            {order.totalAmount.toLocaleString('ru-RU')} ₽
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-xs md:text-sm text-gray-500">
                             {totalItems} məhsul
                           </p>
                         </div>
@@ -253,11 +253,11 @@ export default function OrdersPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium text-gray-900">
-                              {item.quantity} x {item.price.toLocaleString('ru-RU')} ₽
+                            <p className="font-medium text-gray-900 whitespace-nowrap">
+                              {item.quantity} x {item.price.toLocaleString('ru-RU')} ₽
                             </p>
-                            <p className="text-sm text-gray-500">
-                              Cəmi: {item.totalPrice.toLocaleString('ru-RU')} ₽
+                            <p className="text-sm text-gray-500 whitespace-nowrap">
+                              Cəmi: {item.totalPrice.toLocaleString('ru-RU')} ₽
                             </p>
                           </div>
                         </div>

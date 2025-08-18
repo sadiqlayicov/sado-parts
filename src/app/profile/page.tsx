@@ -178,7 +178,7 @@ function ProfilePageContent() {
             <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Профиль пользователя</h1>
             <p className="text-gray-300 text-sm md:text-base">Ваши заказы и платежи</p>
           </div>
-          <div className="flex gap-2">
+          <div className="hidden sm:flex gap-2">
             <button
               onClick={() => router.push('/catalog')}
               className="py-2 px-4 rounded-lg bg-cyan-600 text-white font-semibold"
@@ -228,7 +228,7 @@ function ProfilePageContent() {
               Адреса ({addresses.length})
             </button>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 sm:hidden">
             <button
               onClick={() => router.push('/catalog')}
               className="py-2 px-4 rounded-lg bg-cyan-600 text-white font-semibold"

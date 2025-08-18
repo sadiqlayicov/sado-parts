@@ -87,12 +87,34 @@ export async function POST(request: NextRequest) {
           secure: (process.env.SMTP_PORT || '465') === '465',
           auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
         });
+        // Send verification code to the user
         await transporter.sendMail({
           from: process.env.SMTP_USER,
           to: email,
           subject: 'Код подтверждения регистрации',
           text: `Ваш код подтверждения: ${rawCode}. Срок действия 10 минут.`,
         });
+
+        // Notify admin about new registration
+        const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER;
+        if (adminEmail) {
+          const adminSubject = '[ADMIN] Yeni müştəri qeydiyyatı';
+          const adminText = [
+            'Sistemdə yeni müştəri qeydiyyatı baş verdi:',
+            `Ad: ${[firstName, lastName].filter(Boolean).join(' ') || '—'}`,
+            `Email: ${email}`,
+            `Telefon: ${phone || '—'}`,
+            `VÖEN: ${inn || '—'}`,
+            `Ölkə/Şəhər: ${[country, city].filter(Boolean).join(', ') || '—'}`,
+            `Ünvan: ${address || '—'}`,
+          ].join('\n');
+          await transporter.sendMail({
+            from: process.env.SMTP_USER,
+            to: adminEmail,
+            subject: adminSubject,
+            text: adminText,
+          });
+        }
       } else {
         console.warn('SMTP env vars missing; skipping email send');
         // keep debugCode
