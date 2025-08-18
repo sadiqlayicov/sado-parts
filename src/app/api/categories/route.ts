@@ -143,11 +143,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new category (with optional parent)
+    // Ensure we provide an explicit id because this table may not have a default
+    const newId = `cat_${Date.now()}`;
     const newCategoryResult = await client.query(`
-      INSERT INTO categories (name, description, "isActive", "parentId", "sortOrder", "createdAt", "updatedAt")
-      VALUES ($1, $2, $3, $4, COALESCE($5,0), NOW(), NOW())
+      INSERT INTO categories (id, name, description, "isActive", "parentId", "sortOrder", "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, $4, $5, COALESCE($6,0), NOW(), NOW())
       RETURNING *
     `, [
+      newId,
       name,
       description || '',
       isActive !== false,

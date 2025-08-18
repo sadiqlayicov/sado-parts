@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const updateResult = await client.query(`
       UPDATE categories 
       SET name = $1, description = $2, "isActive" = $3, "parentId" = $4, "sortOrder" = COALESCE($5,0), "updatedAt" = NOW()
-      WHERE id = $6 AND "isActive" = true
+      WHERE id = $6
       RETURNING *
     `, [name, description || '', isActive !== false, parentId || null, sortOrder ?? 0, id]);
 
