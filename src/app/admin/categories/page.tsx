@@ -115,10 +115,9 @@ export default function AdminCategoriesPage() {
       headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           name: newName, 
-          description: newDesc
-          // Temporarily disable parentId and sortOrder
-          // parentId: newParentId || null,
-          // sortOrder: newSortOrder
+          description: newDesc,
+          parentId: newParentId || null,
+          sortOrder: newSortOrder
         })
       });
       
@@ -133,6 +132,8 @@ export default function AdminCategoriesPage() {
       if (data.success) {
       setNewName("");
       setNewDesc("");
+      setNewParentId("");
+      setNewSortOrder(0);
       fetchCategories();
         setSuccessMessage('Kateqoriya uğurla əlavə edildi');
       } else {
@@ -203,9 +204,8 @@ export default function AdminCategoriesPage() {
     setEditing(cat);
     setEditName(cat.name);
     setEditDesc(cat.description || "");
-    // Temporarily disable parentId and sortOrder
-    // setEditParentId(cat.parentId || "");
-    // setEditSortOrder(cat.sortOrder || 0);
+    setEditParentId(cat.parentId || "");
+    setEditSortOrder(cat.sortOrder || 0);
   }
 
   async function saveEdit() {
@@ -225,10 +225,9 @@ export default function AdminCategoriesPage() {
       headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           name: editName, 
-          description: editDesc
-          // Temporarily disable parentId and sortOrder
-          // parentId: editParentId || null,
-          // sortOrder: editSortOrder
+          description: editDesc,
+          parentId: editParentId || null,
+          sortOrder: editSortOrder
         })
       });
       
@@ -275,7 +274,6 @@ export default function AdminCategoriesPage() {
           <td style={{ border: "1px solid #333", padding: 8 }}>{editing?.id === cat.id ? (
             <input value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
           ) : cat.description || "-"}</td>
-          {/* Temporarily disabled parent category column
           <td style={{ border: "1px solid #333", padding: 8 }}>
             {editing?.id === cat.id ? (
               <select 
@@ -299,7 +297,6 @@ export default function AdminCategoriesPage() {
               </span>
             )}
           </td>
-          */}
           <td style={{ border: "1px solid #333", padding: 8, textAlign: 'center', minWidth: 180 }}>
             {editing?.id === cat.id ? (
               <>
