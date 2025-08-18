@@ -38,6 +38,8 @@ export default function AdminOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.isAdmin) {
@@ -122,6 +124,50 @@ export default function AdminOrdersPage() {
     } catch (error) {
       console.error('Error updating order status:', error);
       alert(`Произошла ошибка при обновлении статуса: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
+    }
+  };
+
+  const toggleSelect = (id: string, checked: boolean) => {
+    setSelected((s) => ({ ...s, [id]: checked }));
+  };
+
+  const selectAllOnPage = (checked: boolean) => {
+    const ids = orders.map((o) => o.id);
+    setSelected((s) => {
+      const next = { ...s };
+      ids.forEach((id) => (next[id] = checked));
+      return next;
+    });
+  };
+
+  const getSelectedIds = () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
+
+  const bulkDelete = async (all: boolean) => {
+    const ids = getSelectedIds();
+    if (!all && ids.length === 0) {
+      alert('Silinəcək sifariş seçilməyib');
+      return;
+    }
+    if (!confirm(all ? 'Bütün sifarişləri silmək istəyirsiniz?' : `${ids.length} sifarişi silmək istəyirsiniz?`)) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch('/api/admin/orders/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(all ? { deleteAll: true } : { orderIds: ids })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await fetchAllOrders();
+        setSelected({});
+        alert(`Silindi: ${data.deleted}`);
+      } else {
+        alert(data.error || 'Silinmə zamanı xəta');
+      }
+    } catch (e) {
+      alert('Xəta baş verdi');
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -231,6 +277,7 @@ export default function AdminOrdersPage() {
               <table className="w-full text-left whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-gray-600">
+                    <th className="py-3 px-3"><input type="checkbox" onChange={(e) => selectAllOnPage(e.target.checked)} /></th>
                     <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[140px]">Заказ №</th>
                     <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[180px]">Клиент</th>
                     <th className="py-3 px-3 text-gray-300 font-semibold text-xs w-[220px]">ИНН</th>
@@ -243,6 +290,7 @@ export default function AdminOrdersPage() {
                 <tbody>
                   {orders.map((order) => (
                     <tr key={order.id} className="border-b border-gray-700 hover:bg-[#0f172a] transition-colors">
+                      <td className="py-3 px-3"><input type="checkbox" checked={!!selected[order.id]} onChange={(e) => toggleSelect(order.id, e.target.checked)} /></td>
                       <td className="py-3 px-3 text-white font-semibold text-xs">
                         <div className="font-mono text-xs">{order.orderNumber}</div>
                       </td>
@@ -301,6 +349,10 @@ export default function AdminOrdersPage() {
               </table>
             </div>
           )}
+        </div>
+        <div className="mt-4 flex gap-2">
+          <button disabled={bulkLoading} onClick={() => bulkDelete(false)} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded">Seçilənləri sil</button>
+          <button disabled={bulkLoading} onClick={() => bulkDelete(true)} className="px-3 py-2 bg-red-800 hover:bg-red-900 text-white text-xs rounded">Bütün sifarişləri sil</button>
         </div>
       </div>
     </div>
