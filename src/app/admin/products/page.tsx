@@ -19,7 +19,7 @@ interface Product {
 
 interface ProductFormProps {
   initial?: Partial<Product>;
-  categories: string[];
+  categories: any[]; // hierarchical categories tree
   onSave: (data: any) => void;
   onClose: () => void;
 }
@@ -42,11 +42,17 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
     setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
   };
   const [newCategory, setNewCategory] = useState('');
-  const [categoryList, setCategoryList] = useState<string[]>(categories);
-  React.useEffect(() => { setCategoryList(categories); }, [categories]);
+  React.useEffect(() => {}, [categories]);
+
+  const renderCategoryOptions = (cats: any[], level: number = 0): React.ReactElement[] => {
+    return cats.flatMap((cat: any) => [
+      <option key={cat.id} value={cat.name}>{`${'—'.repeat(level)}${cat.name}`}</option>,
+      ...(cat.children && cat.children.length > 0 ? renderCategoryOptions(cat.children, level + 1) : [])
+    ]);
+  };
   // Backend kateqoriya əlavə et
   const handleAddCategory = async () => {
-    if(newCategory && !categoryList.includes(newCategory)){
+    if(newCategory){
       try {
         // Backend-ə göndər
         const res = await fetch('/api/categories', {
@@ -67,15 +73,6 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
           // YENİ: Kateqoriyaları yenidən fetch et
           const updated = await fetch('/api/categories');
           const updatedData = await updated.json();
-          
-          let updatedList = [];
-          if (updatedData.success && Array.isArray(updatedData.data)) {
-            updatedList = updatedData.data.map((c:any)=>c.name);
-          } else if (Array.isArray(updatedData)) {
-            updatedList = updatedData.map((c:any)=>c.name);
-          }
-          
-          setCategoryList(updatedList);
           setForm(f=>({...f,category:newCategory}));
           setNewCategory('');
           alert('Kateqoriya uğurla əlavə edildi');
@@ -139,7 +136,7 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
           <label>{t('category', 'Kateqoriya')}:</label><br/>
           <select name="category" value={typeof form.category === 'object' ? form.category?.name : form.category} onChange={handleChange} required style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}}>
             <option value="">{t('select', 'Seçin')}</option>
-            {Array.from(new Set(categoryList)).map((cat, idx) => <option key={cat.trim() + '-' + idx} value={cat}>{cat}</option>)}
+            {renderCategoryOptions(categories, 0)}
           </select>
         </div>
         <div style={{margin:'12px 0'}}>
@@ -245,7 +242,7 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState<Product|null>(null);
   const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
     useEffect(() => {
     resetIdCounter(); // Reset ID counter when component mounts
@@ -291,12 +288,12 @@ export default function ProductsPage() {
         }
         setProducts(productsArray);
         
-        // Handle categories data
-        let categoriesArray = [];
+        // Handle categories data (hierarchical)
+        let categoriesArray: any[] = [];
         if (categoriesData.success && Array.isArray(categoriesData.data)) {
-          categoriesArray = categoriesData.data.map((c:any)=>c.name);
+          categoriesArray = categoriesData.data;
         } else if (Array.isArray(categoriesData)) {
-          categoriesArray = categoriesData.map((c:any)=>c.name);
+          categoriesArray = categoriesData;
         }
         setCategories(categoriesArray);
         
@@ -318,11 +315,11 @@ export default function ProductsPage() {
       fetch('/api/categories')
         .then(res => res.json())
         .then(data => {
-          let categoriesArray = [];
+          let categoriesArray: any[] = [];
           if (data.success && Array.isArray(data.data)) {
-            categoriesArray = data.data.map((c:any)=>c.name);
+            categoriesArray = data.data;
           } else if (Array.isArray(data)) {
-            categoriesArray = data.map((c:any)=>c.name);
+            categoriesArray = data;
           }
           setCategories(categoriesArray);
         })
@@ -372,14 +369,16 @@ export default function ProductsPage() {
     const categoriesRes = await fetch('/api/categories');
     const categoriesData = await categoriesRes.json();
     
-    let categoriesArray = [];
+    let categoriesArray: any[] = [];
     if (categoriesData.success && Array.isArray(categoriesData.data)) {
       categoriesArray = categoriesData.data;
     } else if (Array.isArray(categoriesData)) {
       categoriesArray = categoriesData;
     }
     
-    const found = categoriesArray.find((c:any)=>c.name===data.category);
+    // Find by name in the tree
+    const flatten = (cats:any[]): any[] => cats.flatMap(c => [c, ...(c.children ? flatten(c.children) : [])]);
+    const found = flatten(categoriesArray).find((c:any)=>c.name===data.category);
     if(found) categoryId = found.id;
     else if(data.category) {
       // Yeni kateqoriyanı backend-ə əlavə et
