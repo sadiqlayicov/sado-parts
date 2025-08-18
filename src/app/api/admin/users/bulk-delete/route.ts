@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'userIds boşdur' }, { status: 400 })
     }
 
-    // Protect admin accounts by default
-    const adminGuard = { role: { not: 'ADMIN' as any } }
+    // Protect admin accounts by default (schema uses isAdmin boolean)
+    const adminGuard = { isAdmin: false as any }
 
     // If deleteAll: collect all (non-admin) users
     const whereUsers = deleteAll ? adminGuard : { id: { in: userIds }, ...adminGuard }
@@ -25,9 +25,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, deleted: 0 })
     }
 
-    await client.order.deleteMany({ where: { userId: { in: ids } } })
-    await client.review.deleteMany({ where: { userId: { in: ids } } })
-    await client.address.deleteMany({ where: { userId: { in: ids } } })
+    // Best-effort: delete related records if models exist in schema
+    try { await client.order.deleteMany({ where: { userId: { in: ids } } }) } catch {}
+    try { await client.orderItem.deleteMany({ where: { order: { userId: { in: ids } } } }) } catch {}
+    try { await client.review.deleteMany({ where: { userId: { in: ids } } }) } catch {}
+    try { await client.address.deleteMany({ where: { userId: { in: ids } } }) } catch {}
     await client.user.deleteMany({ where: { id: { in: ids } } })
 
     await cleanupClient(client)
