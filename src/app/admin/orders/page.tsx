@@ -262,9 +262,15 @@ export default function AdminOrdersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
       <div className="max-w-[1600px] mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Заказы</h1>
-          <p className="text-gray-300">Управление всеми заказами</p>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-1">Заказы</h1>
+            <p className="text-gray-300">Управление всеми заказами</p>
+          </div>
+          <div className="flex gap-2">
+            <button disabled={bulkLoading} onClick={() => bulkDelete(false)} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded">Seçilənləri sil</button>
+            <button disabled={bulkLoading} onClick={() => bulkDelete(true)} className="px-3 py-2 bg-red-800 hover:bg-red-900 text-white text-xs rounded">Bütün sifarişləri sil</button>
+          </div>
         </div>
 
         <div className="bg-[#1e293b] rounded-xl p-4 shadow-2xl">
@@ -350,10 +356,7 @@ export default function AdminOrdersPage() {
             </div>
           )}
         </div>
-        <div className="mt-4 flex gap-2">
-          <button disabled={bulkLoading} onClick={() => bulkDelete(false)} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded">Seçilənləri sil</button>
-          <button disabled={bulkLoading} onClick={() => bulkDelete(true)} className="px-3 py-2 bg-red-800 hover:bg-red-900 text-white text-xs rounded">Bütün sifarişləri sil</button>
-        </div>
+        {/* bulk buttons moved to header */}
       </div>
     </div>
   );

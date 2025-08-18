@@ -33,6 +33,11 @@ export default function UsersManagement() {
   const [cityFilter, setCityFilter] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   // Countries and cities data
   const countries = [
@@ -52,9 +57,6 @@ export default function UsersManagement() {
     const country = countries.find(c => c.name === countryName);
     return country ? country.cities : [];
   };
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch users function
   const fetchUsers = async () => {
@@ -365,6 +367,33 @@ export default function UsersManagement() {
     return null;
   }
 
+  const toggleSelect = (id: string, checked: boolean) => setSelected(s => ({ ...s, [id]: checked }));
+  const selectAll = (checked: boolean) => {
+    const ids = (Array.isArray(filteredUsers) ? filteredUsers : []).map(u => u.id);
+    setSelected(s => { const next = { ...s }; ids.forEach(id => next[id] = checked); return next; });
+  };
+  const getSelectedIds = () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
+  const bulkDelete = async (all: boolean) => {
+    const ids = getSelectedIds();
+    if (!all && ids.length === 0) { alert('Silinəcək istifadəçi seçilməyib'); return; }
+    if (!confirm(all ? 'Bütün istifadəçiləri silmək istəyirsiniz?' : `${ids.length} istifadəçini silmək istəyirsiniz?`)) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch('/api/admin/users/bulk-delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(all ? { deleteAll: true } : { userIds: ids })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await fetchUsers();
+        setSelected({});
+        alert(`Silindi: ${data.deleted}`);
+      } else {
+        alert(data.error || 'Silinmə zamanı xəta');
+      }
+    } finally { setBulkLoading(false); }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -374,6 +403,12 @@ export default function UsersManagement() {
           <p className="text-gray-600 dark:text-gray-400">Управление пользователями и их правами</p>
         </div>
         <div className="flex space-x-3">
+          <button onClick={() => bulkDelete(false)} disabled={bulkLoading} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+            Seçilənləri sil
+          </button>
+          <button onClick={() => bulkDelete(true)} disabled={bulkLoading} className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition">
+            Bütün istifadəçiləri sil
+          </button>
           <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center">
             <FaUserPlus className="mr-2" />
             Добавить пользователя
@@ -503,6 +538,7 @@ export default function UsersManagement() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
+                <th className="px-6 py-3"><input type="checkbox" onChange={(e) => selectAll(e.target.checked)} /></th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Пользователь
                 </th>
@@ -546,6 +582,7 @@ export default function UsersManagement() {
                 const displayName = getDisplayName(user);
                 return (
                   <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4"><input type="checkbox" checked={!!selected[user.id]} onChange={(e) => toggleSelect(user.id, e.target.checked)} /></td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
