@@ -47,8 +47,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     client = await pool.connect();
 
+    // Ensure columns
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
+
     const categoryResult = await client.query(`
-      SELECT id, name, description, "isActive", "createdAt", "updatedAt"
+      SELECT id, name, description, "isActive", "parentId", COALESCE("sortOrder",0) as "sortOrder", "createdAt", "updatedAt"
       FROM categories 
       WHERE id = $1 AND "isActive" = true
     `, [id]);
@@ -85,7 +89,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json()
-    const { name, description, isActive } = body
+    const { name, description, isActive, parentId, sortOrder } = body
     
     console.log('Updating category:', { id, name, description, isActive });
 
@@ -119,12 +123,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Update category
+    // Ensure columns
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
+
     const updateResult = await client.query(`
       UPDATE categories 
-      SET name = $1, description = $2, "isActive" = $3, "updatedAt" = NOW()
-      WHERE id = $4 AND "isActive" = true
+      SET name = $1, description = $2, "isActive" = $3, "parentId" = $4, "sortOrder" = COALESCE($5,0), "updatedAt" = NOW()
+      WHERE id = $6 AND "isActive" = true
       RETURNING *
-    `, [name, description || '', isActive !== false, id]);
+    `, [name, description || '', isActive !== false, parentId || null, sortOrder ?? 0, id]);
 
     if (updateResult.rows.length === 0) {
       return NextResponse.json(

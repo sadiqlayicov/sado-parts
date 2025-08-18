@@ -38,27 +38,53 @@ export async function GET(request: NextRequest) {
     client = await pool.connect();
     console.log('Database connected successfully');
 
-    // Get all active categories
+    // Ensure hierarchy columns exist
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
+
+    // Get all active categories flat
     const categoriesResult = await client.query(`
       SELECT 
         id,
         name,
         description,
         "isActive",
+        "parentId",
+        COALESCE("sortOrder", 0) as "sortOrder",
         "createdAt",
         "updatedAt"
       FROM categories 
       WHERE "isActive" = true 
-      ORDER BY "createdAt" DESC
+      ORDER BY COALESCE("sortOrder",0) ASC, name ASC
     `);
 
-    const categories = categoriesResult.rows;
-    console.log(`Found ${categories.length} categories`);
+    const rows = categoriesResult.rows as any[];
+
+    // Build nested tree
+    const map = new Map<string, any>();
+    rows.forEach(r => map.set(r.id, { ...r, children: [] }));
+    const roots: any[] = [];
+    rows.forEach(r => {
+      const node = map.get(r.id);
+      if (r.parentId && map.has(r.parentId)) {
+        map.get(r.parentId).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    const sortChildren = (list: any[]) => {
+      list.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+      list.forEach(n => { if (n.children && n.children.length) sortChildren(n.children); });
+    };
+    sortChildren(roots);
+
+    console.log(`Found ${rows.length} categories, roots: ${roots.length}`);
 
     return NextResponse.json({
       success: true,
-      data: categories,
-      message: `${categories.length} kateqoriya tapıldı`
+      data: roots,
+      message: `${rows.length} kateqoriya tapıldı`
     });
     
   } catch (error: any) {
@@ -99,6 +125,10 @@ export async function POST(request: NextRequest) {
 
     client = await pool.connect();
 
+    // Ensure columns
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
+
     // Check if category with same name already exists
     const existingResult = await client.query(`
       SELECT id FROM categories 
@@ -112,15 +142,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new category
+    // Create new category (with optional parent)
     const newCategoryResult = await client.query(`
-      INSERT INTO categories (name, description, "isActive", "createdAt", "updatedAt")
-      VALUES ($1, $2, $3, NOW(), NOW())
+      INSERT INTO categories (name, description, "isActive", "parentId", "sortOrder", "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, $4, COALESCE($5,0), NOW(), NOW())
       RETURNING *
     `, [
       name,
       description || '',
-      isActive !== false
+      isActive !== false,
+      parentId || null,
+      sortOrder ?? 0
     ]);
 
     const newCategory = newCategoryResult.rows[0];

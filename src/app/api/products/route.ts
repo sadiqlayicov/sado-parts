@@ -67,7 +67,37 @@ export async function GET(request: NextRequest) {
     let paramCount = 1;
     
     if (categoryId) {
-      query += ` AND p."categoryId" = $${paramCount}`;
+      // Include products in the requested category and all its subcategories
+      // Build a recursive CTE to collect descendant category IDs
+      query = `
+        WITH RECURSIVE cat_tree AS (
+          SELECT id FROM categories WHERE id = $${paramCount}
+          UNION ALL
+          SELECT c.id FROM categories c
+          INNER JOIN cat_tree ct ON c."parentId" = ct.id
+        )
+        SELECT 
+          p.id,
+          p.name,
+          p.description,
+          p.price,
+          p."salePrice",
+          p.sku,
+          p.stock,
+          p.images,
+          p."isActive",
+          p."isFeatured",
+          p.artikul,
+          p."catalogNumber",
+          p."createdAt",
+          p."updatedAt",
+          p."categoryId",
+          c.name as category_name,
+          c.description as category_description
+        FROM products p
+        LEFT JOIN categories c ON p."categoryId" = c.id
+        WHERE p."isActive" = true AND p."categoryId" IN (SELECT id FROM cat_tree)
+      `;
       queryParams.push(categoryId);
       paramCount++;
     }

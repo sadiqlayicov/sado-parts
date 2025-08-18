@@ -70,11 +70,11 @@ export default function AdminCategoriesPage() {
       console.log('Categories response data:', data);
       
       // API utils istifadə edir və successResponse qaytarır
-      let categoriesArray = [];
+      let categoriesArray: any[] = [];
       if (data.success && Array.isArray(data.data)) {
-        categoriesArray = data.data;
+        categoriesArray = data.data; // already hierarchical
       } else if (Array.isArray(data)) {
-        categoriesArray = data;
+        categoriesArray = data; // fallback
       }
       setCategories(categoriesArray);
       

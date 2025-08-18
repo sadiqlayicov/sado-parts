@@ -70,14 +70,12 @@ function CatalogPage() {
 
   // Recursive function to render categories with hierarchy for select
   const renderCategoriesForSelect = (cats: any[], level: number): React.ReactElement[] => {
-    return cats.map((cat) => (
-      <>
-        <option key={cat.id} value={cat.id}>
-          {'—'.repeat(level)}{cat.name}
-        </option>
-        {cat.children && cat.children.length > 0 && renderCategoriesForSelect(cat.children, level + 1)}
-      </>
-    ));
+    return cats.flatMap((cat) => [
+      <option key={cat.id} value={cat.id}>
+        {`${'—'.repeat(level)}${cat.name}`}
+      </option>,
+      ...(cat.children && cat.children.length > 0 ? renderCategoriesForSelect(cat.children, level + 1) : [])
+    ]);
   };
 
   useEffect(() => {
@@ -99,7 +97,7 @@ function CatalogPage() {
         const categoriesData = await categoriesRes.json();
         // Check if response has success and data properties (new API format)
         if (categoriesData.success && Array.isArray(categoriesData.data)) {
-          setCategories(categoriesData.data);
+          setCategories(categoriesData.data); // hierarchical tree
         } else if (Array.isArray(categoriesData)) {
           // Fallback for old API format
           setCategories(categoriesData);
