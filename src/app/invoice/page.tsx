@@ -550,6 +550,17 @@ function InvoiceContent({ order, companySettings }: {
     maximumFractionDigits: 2 
   });
 
+  // Classic template totals (20% VAT included in price)
+  const vatRate = 20;
+  const totalAmountNum = Number(totalAmount || 0);
+  const vatIncludedTotal = Number(((totalAmountNum * vatRate) / (100 + vatRate)).toFixed(2));
+  const totalWithoutVat = Number((totalAmountNum - vatIncludedTotal).toFixed(2));
+  const validUntil = (() => {
+    const d = order.createdAt ? new Date(order.createdAt) : new Date();
+    d.setDate(d.getDate() + 5);
+    return d.toLocaleDateString('ru-RU');
+  })();
+
   if (isConfirmed) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -621,159 +632,95 @@ function InvoiceContent({ order, companySettings }: {
         </div>
       </div>
 
-      {/* Invoice Content */}
+      {/* Invoice Content (classic bank form) */}
       <div ref={invoiceRef} className="invoice-content max-w-4xl mx-auto p-4 md:p-8 bg-white">
-        {/* Invoice Title */}
-        <div className="text-center mb-6 md:mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-blue-600 mb-3 md:mb-4">СЧЕТ-ФАКТУРА</h2>
-          <div className="text-base md:text-lg text-gray-600 mb-2">№ {order.orderNumber}</div>
-          <div className="text-base md:text-lg text-gray-600">от {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
+        <div style={{ fontSize: 10, textAlign: 'center', marginBottom: 6 }}>
+          Внимание! Оплата данного счета означает согласие с условиями поставки товара. Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе. Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.
         </div>
+        <div style={{ fontSize: 10, textAlign: 'center', marginBottom: 6 }}>Образец заполнения платежного поручения</div>
 
-        {/* Supplier and Buyer Info */}
-        <div className="mb-8">
-          <table className="w-full border-collapse border border-gray-300 mb-4 text-xs md:text-sm">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 p-3 text-left w-1/2">Поставщик:</th>
-                <th className="border border-gray-300 p-3 text-left w-1/2">Покупатель:</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-gray-300 p-3 align-top">
-                  <div className="space-y-1">
-                    <p className="font-semibold">{companySettings.companyName}</p>
-                    <p>{companySettings.companyAddress}</p>
-                    <p>ИНН: {companySettings.inn}</p>
-                    <p>КПП: {companySettings.kpp}</p>
-                    <p>БИК: {companySettings.bik}</p>
-                    <p>Счет №: {companySettings.accountNumber}</p>
-                    <p>Банк: {companySettings.bankName}</p>
-                    <p>БИК банка: {companySettings.bankBik}</p>
-                    <p>Корр. счет: {companySettings.bankAccountNumber}</p>
-                  </div>
-                </td>
-                <td className="border border-gray-300 p-3 align-top">
-                  <div className="space-y-1">
-                    <p className="font-semibold">{(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}</p>
-                    <p>ИНН: {(user as any)?.inn || 'Не указан'}</p>
-                    <p>Страна: {(user as any)?.country || 'Не указана'}</p>
-                    <p>Город: {(user as any)?.city || 'Не указан'}</p>
-                    <p>Адрес: {(user as any)?.address || 'Не указан'}</p>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', marginBottom: 10 }}>
+          <tbody>
+            <tr>
+              <td style={{ border: '1px solid #000', padding: '4px 6px', width: '60%' }}>
+                <div style={{ fontSize: 10 }}>Банк получателя</div>
+                <div>{companySettings.bankName}</div>
+                <div style={{ fontSize: 10 }}>ИНН {companySettings.inn} КПП {companySettings.kpp}</div>
+                <div style={{ fontSize: 10 }}>Получатель</div>
+                <div>{companySettings.companyName}</div>
+              </td>
+              <td style={{ border: '1px solid #000', padding: '4px 6px', width: '40%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 10 }}>БИК</span><span>{companySettings.bankBik}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 10 }}>Сч. №</span><span>{companySettings.bankAccountNumber}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 10 }}>КПП</span><span>{companySettings.kpp}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 10 }}>Сч. №</span><span>{companySettings.accountNumber}</span></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        {/* Products Table */}
-        <div className="mb-8">
-          <table className="w-full border-collapse border border-gray-300 text-xs md:text-sm">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 p-2 text-left">№</th>
-                <th className="border border-gray-300 p-2 text-left">Товар (Услуга)</th>
-                <th className="border border-gray-300 p-2 text-left">Код</th>
-                <th className="border border-gray-300 p-2 text-left">Кол-во</th>
-                <th className="border border-gray-300 p-2 text-left">Ед.</th>
-                <th className="border border-gray-300 p-2 text-left">Цена</th>
-                <th className="border border-gray-300 p-2 text-left">Сумма</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.items.map((item, index) => (
+        <div style={{ fontWeight: 700, fontSize: 16, margin: '12px 0 8px 0' }}>Счет на оплату № {order.orderNumber} от {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8 }}>
+          <tbody>
+            <tr>
+              <td style={{ width: 110, fontWeight: 700, padding: '2px 0' }}>Поставщик:</td>
+              <td>ИНН {companySettings.inn}, КПП {companySettings.kpp}, {companySettings.companyName}, {companySettings.companyAddress}</td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 700, padding: '2px 0' }}>Покупатель:</td>
+              <td>{(user as any)?.inn ? `ИНН ${(user as any).inn}, ` : ''}{(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}, {(user as any)?.country || ''} {(user as any)?.city || ''}, {(user as any)?.address || ''}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style={{ fontSize: 10 }}>Действителен до {validUntil}</div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+          <thead>
+            <tr>
+              <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 30 }}>№</th>
+              <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6 }}>Товар</th>
+              <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 90 }}>Код</th>
+              <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 60 }}>Кол-во</th>
+              <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 50 }}>Ед.</th>
+              <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 80 }}>Цена</th>
+              <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 90 }}>в т.ч. НДС</th>
+              <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 90 }}>Всего</th>
+            </tr>
+          </thead>
+          <tbody>
+            {order.items.map((item, index) => {
+              const itemTotal = Number(item.totalPrice || (item.price * item.quantity));
+              const itemVat = Number(((itemTotal * vatRate) / (100 + vatRate)).toFixed(2));
+              return (
                 <tr key={item.id}>
-                  <td className="border border-gray-300 p-2">{index + 1}</td>
-                  <td className="border border-gray-300 p-2">{item.name}</td>
-                  <td className="border border-gray-300 p-2">{(item as any).artikul || item.sku || ''}</td>
-                  <td className="border border-gray-300 p-2">{item.quantity}</td>
-                  <td className="border border-gray-300 p-2">шт.</td>
-                  <td className="border border-gray-300 p-2">{item.price.toLocaleString('ru-RU')} ₽</td>
-                  <td className="border border-gray-300 p-2">{item.totalPrice.toLocaleString('ru-RU')} ₽</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{index + 1}</td>
+                  <td style={{ border: '1px solid #000', padding: 6 }}>{item.name}</td>
+                  <td style={{ border: '1px solid #000', padding: 6 }}>{(item as any).artikul || item.sku || ''}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>{item.quantity}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'center' }}>шт</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{Number(item.price).toFixed(2)}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{itemVat.toFixed(2)}</td>
+                  <td style={{ border: '1px solid #000', padding: 6, textAlign: 'right' }}>{itemTotal.toFixed(2)}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              );
+            })}
+          </tbody>
+        </table>
+
+        <div style={{ marginTop: 8, textAlign: 'right' }}>
+          <div>Итого НДС: <strong>{vatIncludedTotal.toFixed(2)}</strong></div>
+          <div>Итого без НДС: <strong>{totalWithoutVat.toFixed(2)}</strong></div>
+          <div style={{ fontSize: 14, marginTop: 6 }}>Итого к оплате: <strong>{totalAmountNum.toFixed(2)} RUB</strong></div>
         </div>
 
-        {/* Payment Methods */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-3">Способ оплаты</h3>
-          <div className="space-y-3">
-            {Object.entries(paymentSystems).map(([key, ps]: any) => (
-              <div
-                key={key}
-                className={`flex items-center justify-between p-3 border rounded cursor-pointer ${selectedPaymentSystem === key ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
-                onClick={() => setSelectedPaymentSystem(key)}
-              >
-                <div>
-                  <div className="font-medium">{ps.name}</div>
-                  <div className="text-sm text-gray-600">{ps.description}</div>
-                </div>
-                <div className="text-sm text-gray-600">Комиссия: {ps.commission}%</div>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={handleCreatePayment}
-            disabled={!selectedPaymentSystem}
-            className="mt-4 bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50"
-          >
-            Оплатить
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
+          <div>Руководитель <span style={{ display: 'inline-block', width: 220, height: 14, borderBottom: '1px solid #000' }}></span></div>
+          <div>Бухгалтер <span style={{ display: 'inline-block', width: 220, height: 14, borderBottom: '1px solid #000' }}></span></div>
         </div>
 
-        {/* Summary */}
-        <div className="mb-8">
-          <div className="flex justify-end">
-            <div className="w-64">
-              <div className="flex justify-between border-b border-gray-300 py-2">
-                <span><strong>Итого:</strong></span>
-                <span>{totalAmountText} ₽</span>
-              </div>
-              <div className="flex justify-between border-b border-gray-300 py-2">
-                <span>Без налога (НДС):</span>
-                <span>{totalAmountText} ₽</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span><strong>Всего к оплате:</strong></span>
-                <span><strong>{totalAmountText} ₽</strong></span>
-              </div>
-            </div>
-          </div>
-          <div className="text-center mt-4">
-            <p>Всего наименований {order.items.length}, на сумму {totalAmountText} ₽</p>
-            <p className="font-semibold">{numberToRussianText(totalAmount)}</p>
-          </div>
-        </div>
-
-        {/* Terms and Conditions */}
-        <div className="mb-8 text-sm">
-          <p>Оплата данного счета означает согласие с условиями поставки товара.</p>
-          <p>Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе.</p>
-          <p>Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.</p>
-        </div>
-
-        {/* Signatures */}
-        <div className="flex justify-between mt-12">
-          <div className="text-center">
-            <p className="font-bold mb-8">Руководитель</p>
-            <div className="border-b border-gray-300 w-32 mb-2"></div>
-            <p className="text-sm text-gray-600">{companySettings.directorName}</p>
-          </div>
-          <div className="text-center">
-            <p className="font-bold mb-8">Бухгалтер</p>
-            <div className="border-b border-gray-300 w-32 mb-2"></div>
-            <p className="text-sm text-gray-600">{companySettings.accountantName}</p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-right mt-8">
-          <p className="text-sm">Лаиджов Садиг</p>
-        </div>
+        <div style={{ fontSize: 10, textAlign: 'center', marginTop: 10 }}>Внимание! Товар в поврежденной, грязной упаковке или без упаковки возврату не подлежит!</div>
       </div>
       {/* Actions: download PDF */}
       <div className="print:hidden max-w-4xl mx-auto p-4 flex justify-end">
