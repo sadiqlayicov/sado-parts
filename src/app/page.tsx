@@ -265,6 +265,9 @@ export default function HomePage() {
   const handleAddToCart = async (product: any) => {
     if (!isAuthenticated) {
       alert('Пожалуйста, войдите в систему для добавления товаров в корзину');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
       return;
     }
     
