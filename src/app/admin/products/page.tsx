@@ -243,6 +243,17 @@ export default function ProductsPage() {
   const [editProduct, setEditProduct] = useState<Product|null>(null);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const flattenCategoryNames = (cats: any[]): string[] => {
+    const names: string[] = [];
+    const walk = (list: any[]) => {
+      for (const c of list || []) {
+        if (c && c.name) names.push(c.name);
+        if (c && c.children && c.children.length) walk(c.children);
+      }
+    };
+    walk(cats);
+    return names;
+  };
 
     useEffect(() => {
     resetIdCounter(); // Reset ID counter when component mounts
@@ -519,7 +530,7 @@ export default function ProductsPage() {
           style={{padding:'8px',borderRadius:'4px',border:'1px solid #333',background:'#232b3b',color:'#fff'}}
         >
                           <option value="">{t('all_categories', 'Все категории')}</option>
-          {Array.from(new Set(categories)).map((cat, idx) => (
+          {Array.from(new Set(flattenCategoryNames(categories))).map((cat, idx) => (
             <option key={cat + '-' + idx} value={cat}>{cat}</option>
           ))}
         </select>
