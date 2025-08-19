@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPrismaClient, cleanupClient } from '@/lib/prisma'
+import { Pool } from 'pg'
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 2,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 3000
+})
 
 export async function POST(request: NextRequest) {
-  let client: any = null
+  let client: any
   try {
-    client = await getPrismaClient()
     const body = await request.json().catch(() => ({}))
     const { userIds, deleteAll } = body || {}
 
@@ -12,32 +19,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'userIds boşdur' }, { status: 400 })
     }
 
-    // Protect admin accounts by default (schema uses isAdmin boolean)
-    const adminGuard = { isAdmin: false as any }
+    client = await pool.connect()
+    await client.query('BEGIN')
 
-    // If deleteAll: collect all (non-admin) users
-    const whereUsers = deleteAll ? adminGuard : { id: { in: userIds }, ...adminGuard }
-
-    // Cascade delete: orders, order_items done via relation; explicitly clear carts/reviews/addresses
-    const users = await client.user.findMany({ where: whereUsers, select: { id: true } })
-    const ids = users.map((u: any) => u.id)
+    // Resolve target user IDs (protect admins)
+    let ids: string[] = []
+    if (deleteAll) {
+      const rs = await client.query('SELECT id FROM users WHERE "isAdmin" = false')
+      ids = rs.rows.map((r: any) => r.id)
+    } else {
+      const rs = await client.query('SELECT id FROM users WHERE id = ANY($1) AND "isAdmin" = false', [userIds])
+      ids = rs.rows.map((r: any) => r.id)
+    }
     if (ids.length === 0) {
+      await client.query('ROLLBACK')
       return NextResponse.json({ success: true, deleted: 0 })
     }
 
-    // Best-effort: delete related records if models exist in schema
-    try { await client.order.deleteMany({ where: { userId: { in: ids } } }) } catch {}
-    try { await client.orderItem.deleteMany({ where: { order: { userId: { in: ids } } } }) } catch {}
-    try { await client.review.deleteMany({ where: { userId: { in: ids } } }) } catch {}
-    try { await client.address.deleteMany({ where: { userId: { in: ids } } }) } catch {}
-    await client.user.deleteMany({ where: { id: { in: ids } } })
+    // Delete related rows (best-effort)
+    await client.query('DELETE FROM order_items WHERE "orderId" IN (SELECT id FROM orders WHERE "userId" = ANY($1))', [ids])
+    await client.query('DELETE FROM orders WHERE "userId" = ANY($1)', [ids])
+    try { await client.query('DELETE FROM reviews WHERE "userId" = ANY($1)', [ids]) } catch {}
+    try { await client.query('DELETE FROM addresses WHERE "userId" = ANY($1)', [ids]) } catch {}
 
-    await cleanupClient(client)
+    await client.query('DELETE FROM users WHERE id = ANY($1) AND "isAdmin" = false', [ids])
+    await client.query('COMMIT')
     return NextResponse.json({ success: true, deleted: ids.length })
   } catch (error: any) {
-    console.error('Bulk delete users error:', error)
-    if (client) await cleanupClient(client)
+    console.error('Bulk delete users error:', error?.message || error)
+    if (client) try { await client.query('ROLLBACK') } catch {}
     return NextResponse.json({ success: false, error: 'Silinmə zamanı xəta' }, { status: 500 })
+  } finally {
+    if (client) client.release()
   }
 }
 
