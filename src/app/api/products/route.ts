@@ -1,153 +1,40 @@
 import { NextRequest } from 'next/server'
-import { Pool } from 'pg'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
-
-// Create a connection pool optimized for Supabase
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 3, // Increase connection limit for Supabase
-  idleTimeoutMillis: 60000, // Increase idle timeout
-  connectionTimeoutMillis: 5000, // Increase connection timeout
-})
-
-// Helper function to handle database errors
-function handleDatabaseError(error: any, operation: string) {
-  logError(operation, error)
-  
-  if (error.message?.includes('Max client connections reached')) {
-    return errorResponse('Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.', 503)
-  }
-  
-  return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
-}
+import { getProductsWithPagination, query, clearCache } from '@/lib/database'
 
 /**
- * GET - Get all products
- * Fetches all active products with their category information
+ * GET - Get products with pagination and caching
+ * Fetches products with optimized database queries and caching
  */
 export async function GET(request: NextRequest) {
-  let client;
-  
   try {
-    client = await pool.connect();
-
     // Get query parameters
     const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
     const categoryId = searchParams.get('categoryId');
+    const search = searchParams.get('search');
 
-    // Build query based on filters
-    let query = `
-      SELECT 
-        p.id,
-        p.name,
-        p.description,
-        p.price,
-        p."salePrice",
-        p.sku,
-        p.stock,
-        p.images,
-        p."isActive",
-        p."isFeatured",
-        p.artikul,
-        p."catalogNumber",
-        p."createdAt",
-        p."updatedAt",
-        p."categoryId",
-        c.name as category_name,
-        c.description as category_description
-      FROM products p
-      LEFT JOIN categories c ON p."categoryId" = c.id
-      WHERE p."isActive" = true
-    `;
-    
-    const queryParams = [];
-    let paramCount = 1;
-    
-    if (categoryId) {
-      // Include products in the requested category and all its subcategories
-      // Build a recursive CTE to collect descendant category IDs
-      query = `
-        WITH RECURSIVE cat_tree AS (
-          SELECT id FROM categories WHERE id = $${paramCount}
-          UNION ALL
-          SELECT c.id FROM categories c
-          INNER JOIN cat_tree ct ON c."parentId" = ct.id
-        )
-        SELECT 
-          p.id,
-          p.name,
-          p.description,
-          p.price,
-          p."salePrice",
-          p.sku,
-          p.stock,
-          p.images,
-          p."isActive",
-          p."isFeatured",
-          p.artikul,
-          p."catalogNumber",
-          p."createdAt",
-          p."updatedAt",
-          p."categoryId",
-          c.name as category_name,
-          c.description as category_description
-        FROM products p
-        LEFT JOIN categories c ON p."categoryId" = c.id
-        WHERE p."isActive" = true AND p."categoryId" IN (SELECT id FROM cat_tree)
-      `;
-      queryParams.push(categoryId);
-      paramCount++;
+    // Validate parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return errorResponse('Invalid pagination parameters', 400);
     }
-    
-    query += ` ORDER BY p."createdAt" DESC`;
 
-    // Get products with categories
-    const productsResult = await client.query(query, queryParams)
+    // Get products with pagination and caching
+    const result = await getProductsWithPagination(page, limit, categoryId || undefined, search || undefined);
 
-    // Transform the data to match the expected format
-    const products = productsResult.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      price: parseFloat(row.price),
-      salePrice: row.salePrice ? parseFloat(row.salePrice) : null,
-      sku: row.sku,
-      stock: parseInt(row.stock),
-      images: row.images || [],
-      isActive: row.isActive,
-      isFeatured: row.isFeatured,
-      artikul: row.artikul,
-      catalogNumber: row.catalogNumber,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      categoryId: row.categoryId,
-      category: row.category_name ? {
-        id: row.categoryId,
-        name: row.category_name,
-        description: row.category_description
-      } : null
-    }))
-
-    return successResponse(products, `${products.length} товаров найдено`)
+    return successResponse(result, `${result.products.length} товаров найдено`);
   } catch (error: any) {
-    return handleDatabaseError(error, 'GET /api/products')
-  } finally {
-    if (client) {
-      client.release()
-    }
+    logError('GET /api/products', error);
+    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500);
   }
 }
 
 /**
  * POST - Create new product
- * Creates a new product with validation
+ * Creates a new product with validation and cache invalidation
  */
 export async function POST(request: NextRequest) {
-  let client;
-  
   try {
     const body = await request.json()
     const { name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured, artikul, catalogNumber } = body
@@ -161,10 +48,8 @@ export async function POST(request: NextRequest) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Qiymət'), 400)
     }
 
-    client = await pool.connect();
-
     // Create product
-    const result = await client.query(`
+    const result = await query(`
       INSERT INTO products (
         name, description, price, "salePrice", sku, stock, images, 
         "categoryId", "isActive", "isFeatured", artikul, "catalogNumber"
@@ -174,14 +59,14 @@ export async function POST(request: NextRequest) {
       name, description, parseFloat(price), salePrice ? parseFloat(salePrice) : null,
       sku, stock || 0, images || [], categoryId, isActive !== false, isFeatured || false,
       artikul, catalogNumber
-    ])
+    ]);
+
+    // Clear product cache after creation
+    clearCache('products');
 
     return successResponse(result.rows[0], 'Məhsul uğurla yaradıldı')
   } catch (error: any) {
-    return handleDatabaseError(error, 'POST /api/products')
-  } finally {
-    if (client) {
-      client.release()
-    }
+    logError('POST /api/products', error);
+    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500);
   }
 } 
