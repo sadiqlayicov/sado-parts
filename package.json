@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "build:analyze": "node scripts/analyze-bundle.js",
+    "build:production": "NODE_ENV=production prisma generate && next build",
     "start": "next start",
     "export": "next export",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "seed": "tsx prisma/seed.ts",
     "migrate": "DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate dev --schema prisma/schema.prisma --skip-seed",
     "generate": "DATABASE_URL=\"file:./prisma/dev.db\" npx prisma generate --schema prisma/schema.prisma",
@@ -18,7 +21,11 @@
     "migrate-deploy": "npx prisma migrate deploy",
     "vercel-build": "prisma generate && next build --no-lint",
     "db-push": "npx prisma db push",
-    "db-seed": "npx prisma db seed"
+    "db-seed": "npx prisma db seed",
+    "performance:analyze": "node scripts/analyze-bundle.js",
+    "performance:monitor": "NODE_ENV=development npm run dev",
+    "clean": "rm -rf .next out node_modules/.cache",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
@@ -50,6 +57,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@next/bundle-analyzer": "^15.5.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
@@ -64,5 +72,9 @@
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.3",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

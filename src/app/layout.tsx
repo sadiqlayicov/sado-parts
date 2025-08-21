@@ -6,6 +6,7 @@ import { CartProvider } from "../components/CartProvider";
 import { AuthProvider } from "../components/AuthProvider";
 import Header from "../components/Header";
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import PerformanceMonitor from '../components/PerformanceMonitor';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <div className="pt-24">{children}</div>
           </CartProvider>
         </AuthProvider>
+        <PerformanceMonitor />
       </body>
     </html>
   );
