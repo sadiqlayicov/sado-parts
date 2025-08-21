@@ -284,7 +284,7 @@ function InvoiceContent({ order, companySettings }: {
 
     const classicHTML = `<!DOCTYPE html><html><head><meta charset="utf-8" />
       <title>Счет на оплату ${order?.orderNumber || ''}</title>
-      <style>
+          <style>
         @page { size: A4; margin: 1.5cm; }
         * { box-sizing: border-box; }
         body { font-family: 'Times New Roman', serif; font-size: 12px; color: #000; }
@@ -329,18 +329,18 @@ function InvoiceContent({ order, companySettings }: {
           <tr>
             <td style="width:110px" class="bold">Поставщик:</td>
             <td>ИНН ${companySettings.inn}, КПП ${companySettings.kpp}, ${companySettings.companyName}, ${companySettings.companyAddress}</td>
-          </tr>
+                 </tr>
           <tr>
             <td class="bold">Покупатель:</td>
             <td>${(user as any)?.inn ? `ИНН ${(user as any).inn}, ` : ''}${(user as any)?.name || `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`}, ${(user as any)?.country || ''} ${(user as any)?.city || ''}, ${(user as any)?.address || ''}</td>
-          </tr>
-        </table>
+                 </tr>
+             </table>
 
         <div style="font-size:10px">Действителен до ${validUntil}</div>
 
         <table class="items" style="margin-top:8px;">
-          <thead>
-            <tr>
+              <thead>
+                <tr>
               <th style="width:30px;">№</th>
               <th>Товар</th>
               <th style="width:90px;">Код</th>
@@ -349,15 +349,15 @@ function InvoiceContent({ order, companySettings }: {
               <th style="width:80px;">Цена</th>
               <th style="width:90px;">в т.ч. НДС</th>
               <th style="width:90px;">Всего</th>
-            </tr>
-          </thead>
-          <tbody>
+                </tr>
+              </thead>
+              <tbody>
             ${(order?.items || []).map((item, idx) => {
               const itemTotal = Number(item.totalPrice || (item.price * item.quantity));
               const itemVat = Number(((itemTotal * vatRate) / (100 + vatRate)).toFixed(2));
               return `<tr>
                 <td style="text-align:center;">${idx + 1}</td>
-                <td>${item.name}</td>
+                    <td>${item.name}</td>
                 <td>${(item as any).artikul || item.sku || ''}</td>
                 <td style="text-align:center;">${item.quantity}</td>
                 <td style="text-align:center;">шт</td>
@@ -366,19 +366,19 @@ function InvoiceContent({ order, companySettings }: {
                 <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
               </tr>`;
             }).join('')}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
 
         <div style="margin-top:8px; text-align:right;">
           <div>Итого НДС: <strong>${vatIncludedTotalAll.toFixed(2)}</strong></div>
           <div>Итого без НДС: <strong>${totalWithoutVatAll.toFixed(2)}</strong></div>
           <div style="font-size:14px; margin-top:6px;">Итого к оплате: <strong>${totalAmountAll.toFixed(2)} RUB</strong></div>
-        </div>
+            </div>
 
         <div class="sign">
           <div>Руководитель <span class="line"></span></div>
           <div>Бухгалтер <span class="line"></span></div>
-        </div>
+            </div>
 
         <div class="footer">Внимание! Товар в поврежденной, грязной упаковке или без упаковки возврату не подлежит!</div>
       </body></html>`;
@@ -640,24 +640,24 @@ function InvoiceContent({ order, companySettings }: {
         <div style={{ fontSize: 10, textAlign: 'center', marginBottom: 6 }}>Образец заполнения платежного поручения</div>
 
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', marginBottom: 10 }}>
-          <tbody>
-            <tr>
+            <tbody>
+              <tr>
               <td style={{ border: '1px solid #000', padding: '4px 6px', width: '60%' }}>
                 <div style={{ fontSize: 10 }}>Банк получателя</div>
                 <div>{companySettings.bankName}</div>
                 <div style={{ fontSize: 10 }}>ИНН {companySettings.inn} КПП {companySettings.kpp}</div>
                 <div style={{ fontSize: 10 }}>Получатель</div>
                 <div>{companySettings.companyName}</div>
-              </td>
+                </td>
               <td style={{ border: '1px solid #000', padding: '4px 6px', width: '40%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 10 }}>БИК</span><span>{companySettings.bankBik}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 10 }}>Сч. №</span><span>{companySettings.bankAccountNumber}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 10 }}>КПП</span><span>{companySettings.kpp}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 10 }}>Сч. №</span><span>{companySettings.accountNumber}</span></div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
         <div style={{ fontWeight: 700, fontSize: 16, margin: '12px 0 8px 0' }}>Счет на оплату № {order.orderNumber} от {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU')}</div>
 
@@ -677,7 +677,7 @@ function InvoiceContent({ order, companySettings }: {
         <div style={{ fontSize: 10 }}>Действителен до {validUntil}</div>
 
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
-          <thead>
+            <thead>
             <tr>
               <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 30 }}>№</th>
               <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6 }}>Товар</th>
@@ -687,9 +687,9 @@ function InvoiceContent({ order, companySettings }: {
               <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 80 }}>Цена</th>
               <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 90 }}>в т.ч. НДС</th>
               <th style={{ border: '1px solid #000', background: '#f0f0f0', padding: 6, width: 90 }}>Всего</th>
-            </tr>
-          </thead>
-          <tbody>
+              </tr>
+            </thead>
+            <tbody>
             {order.items.map((item, index) => {
               const itemTotal = Number(item.totalPrice || (item.price * item.quantity));
               const itemVat = Number(((itemTotal * vatRate) / (100 + vatRate)).toFixed(2));
@@ -706,8 +706,8 @@ function InvoiceContent({ order, companySettings }: {
                 </tr>
               );
             })}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
 
         <div style={{ marginTop: 8, textAlign: 'right' }}>
           <div>Итого НДС: <strong>{vatIncludedTotal.toFixed(2)}</strong></div>
