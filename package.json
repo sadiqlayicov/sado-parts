@@ -18,7 +18,9 @@
     "migrate-deploy": "npx prisma migrate deploy",
     "vercel-build": "prisma generate && next build --no-lint",
     "db-push": "npx prisma db push",
-    "db-seed": "npx prisma db seed"
+    "db-seed": "npx prisma db seed",
+    "analyze": "ANALYZE=true npm run build",
+    "bundle-size": "npx bundlesize"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
@@ -50,6 +52,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@next/bundle-analyzer": "^15.5.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",

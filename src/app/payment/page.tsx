@@ -4,7 +4,36 @@ import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
 import { useCart } from '../../components/CartProvider';
-import { FaCreditCard, FaWallet, FaMobile, FaArrowLeft, FaCheck, FaTimes } from 'react-icons/fa';
+// Dynamic imports for icons to reduce initial bundle size
+import dynamic from 'next/dynamic';
+
+// Lazy load icons
+const DynamicIcons = {
+  FaCreditCard: dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaCreditCard })), {
+    loading: () => <span>💳</span>,
+    ssr: false
+  }),
+  FaWallet: dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaWallet })), {
+    loading: () => <span>💰</span>,
+    ssr: false
+  }),
+  FaMobile: dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaMobile })), {
+    loading: () => <span>📱</span>,
+    ssr: false
+  }),
+  FaArrowLeft: dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaArrowLeft })), {
+    loading: () => <span>←</span>,
+    ssr: false
+  }),
+  FaCheck: dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaCheck })), {
+    loading: () => <span>✓</span>,
+    ssr: false
+  }),
+  FaTimes: dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaTimes })), {
+    loading: () => <span>✗</span>,
+    ssr: false
+  }),
+};
 
 interface PaymentSystem {
   name: string;
@@ -127,9 +156,9 @@ function PaymentPageContent() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <FaCheck className="text-green-500" />;
+        return <DynamicIcons.FaCheck className="text-green-500" />;
       case 'cancelled':
-        return <FaTimes className="text-red-500" />;
+        return <DynamicIcons.FaTimes className="text-red-500" />;
       default:
         return <div className="w-4 h-4 bg-gray-300 rounded-full" />;
     }
@@ -163,7 +192,7 @@ function PaymentPageContent() {
             onClick={() => router.back()}
             className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
           >
-            <FaArrowLeft className="mr-2" />
+            <DynamicIcons.FaArrowLeft className="mr-2" />
             Назад
           </button>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -361,7 +390,7 @@ function PaymentPageContent() {
             {/* Təhlükəsizlik məlumatı */}
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-6">
               <div className="flex items-start">
-                <FaCheck className="text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                <DynamicIcons.FaCheck className="text-green-500 mt-0.5 mr-3 flex-shrink-0" />
                 <div>
                   <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
                     Безопасная оплата

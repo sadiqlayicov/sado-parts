@@ -6,15 +6,23 @@ import { CartProvider } from "../components/CartProvider";
 import { AuthProvider } from "../components/AuthProvider";
 import Header from "../components/Header";
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import ServiceWorkerRegister from '../components/ServiceWorkerRegister';
+import PerformanceMonitor from '../components/PerformanceMonitor';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'arial'],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: 'swap',
+  preload: false, // Only preload main font
+  fallback: ['ui-monospace', 'monospace'],
 });
 
 export const metadata: Metadata = {
@@ -45,10 +53,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ru">
       <head>
         <link rel="icon" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0ea5e9" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <meta name="yandex-verification" content="" />
         <meta name="google-site-verification" content="" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ServiceWorkerRegister />
+        <PerformanceMonitor />
         <LanguageSwitcher />
         <AuthProvider>
           <CartProvider>
