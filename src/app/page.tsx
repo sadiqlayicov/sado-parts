@@ -346,7 +346,14 @@ export default function HomePage() {
         <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
         <div className="w-full h-32 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
           {product.images && product.images.length > 0 && product.images[0] ? (
-            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+            <Image
+              src={product.images[0]}
+              alt={product.name}
+              width={300}
+              height={128}
+              className="w-full h-full object-cover"
+              unoptimized
+            />
           ) : null}
           <span className="text-white font-bold text-sm" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>{product.brand || product.name}</span>
         </div>

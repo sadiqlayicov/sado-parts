@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import React from 'react';
+import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
 import { formatId, resetIdCounter } from '@/lib/utils';
 
@@ -176,16 +177,17 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
           <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
             {form.images && form.images.map((img, idx) => (
               <div key={idx} style={{position:'relative',display:'inline-block'}}>
-                <img 
-                  src={img} 
-                  alt="preview" 
-                  style={{width:60,height:60,objectFit:'cover',borderRadius:6}} 
-                  onError={(e) => {
+                <Image
+                  src={img}
+                  alt="preview"
+                  width={60}
+                  height={60}
+                  style={{objectFit:'cover',borderRadius:6}}
+                  unoptimized
+                  onError={() => {
                     console.error('Preview image failed to load:', img);
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
-                  onLoad={(e) => {
+                  onLoadingComplete={() => {
                     console.log('Preview image loaded successfully:', img);
                   }}
                 />

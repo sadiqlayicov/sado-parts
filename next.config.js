@@ -16,6 +16,17 @@ const nextConfig = {
       },
     ];
   },
+  // Optimize bundle size by automatically transforming tree-shake-able imports
+  modularizeImports: {
+    // Transform `import { FaBeer } from 'react-icons/fa'` → `import { FaBeer } from 'react-icons/fa/FaBeer'`
+    'react-icons/fa': {
+      transform: 'react-icons/fa/{{member}}',
+    },
+    // Fallback for any other react-icons sets that might be added later
+    'react-icons': {
+      transform: 'react-icons/{{member}}',
+    },
+  },
   // i18n: {
   //   locales: ['az', 'ru', 'en', 'zh', 'de'],
   //   defaultLocale: 'az',

@@ -22,6 +22,7 @@ import {
   FaUpload,
   FaTimesCircle
 } from 'react-icons/fa';
+import Image from 'next/image';
 
 export default function AdminDashboard() {
   const { isAdmin, isAuthenticated } = useAuth();
@@ -407,10 +408,13 @@ export default function AdminDashboard() {
                       <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="flex items-center space-x-3">
                           {item.images && item.images[0] && (
-                            <img 
-                              src={item.images[0]} 
+                            <Image
+                              src={item.images[0]}
                               alt={item.productName}
+                              width={48}
+                              height={48}
                               className="w-12 h-12 object-cover rounded-lg"
+                              unoptimized
                             />
                           )}
                           <div>
