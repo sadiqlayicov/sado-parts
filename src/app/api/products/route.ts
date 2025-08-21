@@ -1,17 +1,6 @@
 import { NextRequest } from 'next/server'
-import { Pool } from 'pg'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
-
-// Create a connection pool optimized for Supabase
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 3, // Increase connection limit for Supabase
-  idleTimeoutMillis: 60000, // Increase idle timeout
-  connectionTimeoutMillis: 5000, // Increase connection timeout
-})
+import { query } from '@/lib/db'
 
 // Helper function to handle database errors
 function handleDatabaseError(error: any, operation: string) {
@@ -29,17 +18,16 @@ function handleDatabaseError(error: any, operation: string) {
  * Fetches all active products with their category information
  */
 export async function GET(request: NextRequest) {
-  let client;
-  
   try {
-    client = await pool.connect();
-
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
 
+    // Create cache key based on parameters
+    const cacheKey = `products:${categoryId || 'all'}`;
+
     // Build query based on filters
-    let query = `
+    let sqlQuery = `
       SELECT 
         p.id,
         p.name,
@@ -69,7 +57,7 @@ export async function GET(request: NextRequest) {
     if (categoryId) {
       // Include products in the requested category and all its subcategories
       // Build a recursive CTE to collect descendant category IDs
-      query = `
+      sqlQuery = `
         WITH RECURSIVE cat_tree AS (
           SELECT id FROM categories WHERE id = $${paramCount}
           UNION ALL
@@ -102,10 +90,10 @@ export async function GET(request: NextRequest) {
       paramCount++;
     }
     
-    query += ` ORDER BY p."createdAt" DESC`;
+    sqlQuery += ` ORDER BY p."createdAt" DESC`;
 
-    // Get products with categories
-    const productsResult = await client.query(query, queryParams)
+    // Get products with categories using cached query
+    const productsResult = await query(sqlQuery, queryParams, cacheKey, 2 * 60 * 1000) // 2 minutes cache
 
     // Transform the data to match the expected format
     const products = productsResult.rows.map(row => ({
@@ -134,10 +122,6 @@ export async function GET(request: NextRequest) {
     return successResponse(products, `${products.length} товаров найдено`)
   } catch (error: any) {
     return handleDatabaseError(error, 'GET /api/products')
-  } finally {
-    if (client) {
-      client.release()
-    }
   }
 }
 
@@ -146,8 +130,6 @@ export async function GET(request: NextRequest) {
  * Creates a new product with validation
  */
 export async function POST(request: NextRequest) {
-  let client;
-  
   try {
     const body = await request.json()
     const { name, description, price, salePrice, sku, stock, images, categoryId, isActive, isFeatured, artikul, catalogNumber } = body
@@ -161,10 +143,8 @@ export async function POST(request: NextRequest) {
       return errorResponse(ErrorMessages.REQUIRED_FIELD('Qiymət'), 400)
     }
 
-    client = await pool.connect();
-
     // Create product
-    const result = await client.query(`
+    const result = await query(`
       INSERT INTO products (
         name, description, price, "salePrice", sku, stock, images, 
         "categoryId", "isActive", "isFeatured", artikul, "catalogNumber"
@@ -179,9 +159,5 @@ export async function POST(request: NextRequest) {
     return successResponse(result.rows[0], 'Məhsul uğurla yaradıldı')
   } catch (error: any) {
     return handleDatabaseError(error, 'POST /api/products')
-  } finally {
-    if (client) {
-      client.release()
-    }
   }
 } 
