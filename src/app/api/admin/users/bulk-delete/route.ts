@@ -10,89 +10,66 @@ const pool = new Pool({
 })
 
 export async function POST(request: NextRequest) {
+  console.log('=== BULK DELETE USERS API STARTED ===')
+  
   let client: any
   try {
-    const body = await request.json().catch(() => ({}))
+    // Parse request body
+    const body = await request.json().catch((error) => {
+      console.error('JSON parse error:', error)
+      return {}
+    })
+    
+    console.log('Request body:', body)
+    
     const { userIds, deleteAll } = body || {}
 
     if (!deleteAll && (!Array.isArray(userIds) || userIds.length === 0)) {
+      console.log('Validation failed: userIds is empty')
       return NextResponse.json({ success: false, error: 'userIds boşdur' }, { status: 400 })
     }
 
+    // Connect to database
+    console.log('Connecting to database...')
     client = await pool.connect()
-    await client.query('BEGIN')
+    console.log('Database connected successfully')
 
-    // Resolve target user IDs (protect admins)
+    // Start transaction
+    await client.query('BEGIN')
+    console.log('Transaction started')
+
+    // Get users to delete
     let ids: string[] = []
     if (deleteAll) {
+      console.log('Getting all non-admin users...')
       const rs = await client.query('SELECT id FROM users WHERE "isAdmin" = false')
       ids = rs.rows.map((r: any) => r.id)
+      console.log('Found users to delete (deleteAll):', ids)
     } else {
+      console.log('Getting specific users to delete:', userIds)
       const rs = await client.query('SELECT id FROM users WHERE id = ANY($1) AND "isAdmin" = false', [userIds])
       ids = rs.rows.map((r: any) => r.id)
+      console.log('Found users to delete (specific):', ids)
     }
     
     if (ids.length === 0) {
+      console.log('No users found to delete')
       await client.query('ROLLBACK')
       return NextResponse.json({ success: true, deleted: 0, message: 'Silinəcək istifadəçi tapılmadı' })
     }
 
-    console.log(`Deleting ${ids.length} users:`, ids)
+    console.log(`Starting to delete ${ids.length} users:`, ids)
 
-    // Check if tables exist before deleting
-    const tableCheck = await client.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      AND table_name IN ('order_items', 'orders', 'reviews', 'addresses')
-    `)
-    
-    const existingTables = tableCheck.rows.map((r: any) => r.table_name)
-    console.log('Existing tables:', existingTables)
-
-    // Delete related rows (only if tables exist)
-    if (existingTables.includes('order_items')) {
-      try {
-        const result = await client.query('DELETE FROM order_items WHERE "orderId" IN (SELECT id FROM orders WHERE "userId" = ANY($1))', [ids])
-        console.log('Deleted order_items:', result.rowCount)
-      } catch (error) {
-        console.error('Error deleting order_items:', error)
-      }
-    }
-
-    if (existingTables.includes('orders')) {
-      try {
-        const result = await client.query('DELETE FROM orders WHERE "userId" = ANY($1)', [ids])
-        console.log('Deleted orders:', result.rowCount)
-      } catch (error) {
-        console.error('Error deleting orders:', error)
-      }
-    }
-
-    if (existingTables.includes('reviews')) {
-      try {
-        const result = await client.query('DELETE FROM reviews WHERE "userId" = ANY($1)', [ids])
-        console.log('Deleted reviews:', result.rowCount)
-      } catch (error) {
-        console.error('Error deleting reviews:', error)
-      }
-    }
-
-    if (existingTables.includes('addresses')) {
-      try {
-        const result = await client.query('DELETE FROM addresses WHERE "userId" = ANY($1)', [ids])
-        console.log('Deleted addresses:', result.rowCount)
-      } catch (error) {
-        console.error('Error deleting addresses:', error)
-      }
-    }
-
-    // Finally delete users
+    // Simple approach: just delete users directly
+    console.log('Deleting users directly...')
     const userResult = await client.query('DELETE FROM users WHERE id = ANY($1) AND "isAdmin" = false', [ids])
-    console.log('Deleted users:', userResult.rowCount)
+    console.log('Users deleted successfully:', userResult.rowCount)
 
+    // Commit transaction
     await client.query('COMMIT')
+    console.log('Transaction committed')
     
+    console.log('=== BULK DELETE USERS API SUCCESS ===')
     return NextResponse.json({ 
       success: true, 
       deleted: userResult.rowCount,
@@ -100,20 +77,31 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error: any) {
-    console.error('Bulk delete users error:', error?.message || error)
+    console.error('=== BULK DELETE USERS API ERROR ===')
+    console.error('Error details:', error)
+    console.error('Error message:', error?.message)
+    console.error('Error stack:', error?.stack)
+    
     if (client) {
       try { 
+        console.log('Attempting rollback...')
         await client.query('ROLLBACK') 
+        console.log('Rollback successful')
       } catch (rollbackError) {
-        console.error('Rollback error:', rollbackError)
+        console.error('Rollback failed:', rollbackError)
       }
     }
+    
     return NextResponse.json({ 
       success: false, 
       error: 'Silinmə zamanı xəta: ' + (error?.message || 'Naməlum xəta')
     }, { status: 500 })
   } finally {
-    if (client) client.release()
+    if (client) {
+      console.log('Releasing database connection...')
+      client.release()
+    }
+    console.log('=== BULK DELETE USERS API ENDED ===')
   }
 }
 
