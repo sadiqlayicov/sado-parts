@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useCart } from "../../components/CartProvider";
 
@@ -57,7 +58,14 @@ export default function WishlistPage() {
             {products.map((product: any) => (
               <div key={product.id} className="bg-[#232b3b] rounded-xl p-6 flex flex-col items-center relative group">
                 <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" />
-                <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} className="w-24 h-24 object-cover rounded mb-2 z-20" />
+                <Image
+                  src={product.images?.[0] || '/placeholder.png'}
+                  alt={product.name}
+                  width={96}
+                  height={96}
+                  className="w-24 h-24 object-cover rounded mb-2 z-20"
+                  unoptimized
+                />
                 <div className="font-semibold text-lg mb-1 text-center z-20">{product.name}</div>
                 <div className="text-cyan-400 font-bold text-md mb-2 z-20">{product.price?.toLocaleString()}₼</div>
                 <div className="flex gap-2 mt-2 z-20">

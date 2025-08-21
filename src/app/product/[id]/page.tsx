@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useCart } from '../../../components/CartProvider';
 import { useAuth } from '../../../components/AuthProvider';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
 
 interface Product {
@@ -167,16 +168,13 @@ export default function ProductPage() {
           <div className="space-y-4">
             <div className="aspect-square bg-[#1e293b] rounded-lg overflow-hidden">
               {product.images && product.images.length > 0 ? (
-                <img 
-                  src={product.images[selectedImage]} 
+                <Image
+                  src={product.images[selectedImage]}
                   alt={product.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    console.error('Image failed to load:', product.images?.[selectedImage]);
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                  onLoad={() => {
+                  fill
+                  className="object-cover"
+                  unoptimized
+                  onLoadingComplete={() => {
                     console.log('Image loaded successfully:', product.images?.[selectedImage]);
                   }}
                 />
@@ -198,14 +196,13 @@ export default function ProductPage() {
                       selectedImage === index ? 'border-cyan-400' : 'border-gray-600'
                     }`}
                   >
-                    <img 
-                      src={image} 
+                    <Image
+                      src={image}
                       alt={`${product.name} ${index + 1}`}
+                      width={80}
+                      height={80}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        console.error('Thumbnail image failed to load:', image);
-                        e.currentTarget.style.display = 'none';
-                      }}
+                      unoptimized
                     />
                   </button>
                 ))}

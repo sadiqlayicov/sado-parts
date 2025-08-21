@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useCart } from "./CartProvider";
 import { useAuth } from "./AuthProvider";
 import { useTranslation } from 'react-i18next';
@@ -310,10 +311,13 @@ export default function Header() {
                   >
                     <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
                       {product.images && product.images.length > 0 ? (
-                        <img
+                        <Image
                           src={product.images[0]}
                           alt={product.name}
+                          width={48}
+                          height={48}
                           className="w-full h-full object-cover rounded-lg"
+                          unoptimized
                         />
                       ) : (
                         <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -766,10 +770,13 @@ export default function Header() {
                 >
                   <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
                     {product.images && product.images.length > 0 ? (
-                      <img
+                      <Image
                         src={product.images[0]}
                         alt={product.name}
+                        width={48}
+                        height={48}
                         className="w-full h-full object-cover rounded-lg"
+                        unoptimized
                       />
                     ) : (
                       <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -837,7 +844,14 @@ function WishlistProductCard({ productId, onClose }: { productId: string, onClos
       if (!product) return <div className="bg-[#232b3b] rounded p-4 text-center">Загрузка...</div>;
   return (
     <div className="bg-[#232b3b] rounded p-4 flex flex-col items-center">
-      <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} className="w-20 h-20 object-cover rounded mb-2" />
+      <Image
+        src={product.images?.[0] || '/placeholder.png'}
+        alt={product.name}
+        width={80}
+        height={80}
+        className="w-20 h-20 object-cover rounded mb-2"
+        unoptimized
+      />
       <div className="font-semibold text-sm mb-1 text-center">{product.name}</div>
       <div className="text-cyan-400 font-bold text-sm mb-2">{product.price?.toLocaleString()}₼</div>
       <Link href={`/product/${product.id}`} className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition mb-1" onClick={onClose}>
