@@ -34,6 +34,60 @@ export async function POST(request: NextRequest) {
     client = await pool.connect()
     console.log('Database connected successfully')
 
+    // Check database structure first
+    console.log('Checking database structure...')
+    const tableStructure = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' 
+      ORDER BY ordinal_position
+    `)
+    console.log('Users table structure:', tableStructure.rows)
+
+    // Check if isAdmin column exists
+    const hasIsAdmin = tableStructure.rows.some((col: any) => col.column_name === 'isAdmin')
+    console.log('Has isAdmin column:', hasIsAdmin)
+
+    if (!hasIsAdmin) {
+      console.log('isAdmin column does not exist, using alternative approach')
+      
+      // Use a different approach - just delete by ID without admin check
+      let ids: string[] = []
+      if (deleteAll) {
+        console.log('Getting all users (no admin filter)...')
+        const rs = await client.query('SELECT id FROM users')
+        ids = rs.rows.map((r: any) => r.id)
+        console.log('Found users to delete (deleteAll):', ids)
+      } else {
+        console.log('Getting specific users to delete:', userIds)
+        const rs = await client.query('SELECT id FROM users WHERE id = ANY($1)', [userIds])
+        ids = rs.rows.map((r: any) => r.id)
+        console.log('Found users to delete (specific):', ids)
+      }
+      
+      if (ids.length === 0) {
+        console.log('No users found to delete')
+        return NextResponse.json({ success: true, deleted: 0, message: 'Silinəcək istifadəçi tapılmadı' })
+      }
+
+      console.log(`Starting to delete ${ids.length} users:`, ids)
+
+      // Delete users directly
+      console.log('Deleting users directly...')
+      const userResult = await client.query('DELETE FROM users WHERE id = ANY($1)', [ids])
+      console.log('Users deleted successfully:', userResult.rowCount)
+      
+      console.log('=== BULK DELETE USERS API SUCCESS ===')
+      return NextResponse.json({ 
+        success: true, 
+        deleted: userResult.rowCount,
+        message: `${userResult.rowCount} istifadəçi uğurla silindi`
+      })
+    }
+
+    // Original approach with isAdmin column
+    console.log('Using original approach with isAdmin column')
+    
     // Start transaction
     await client.query('BEGIN')
     console.log('Transaction started')
@@ -60,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`Starting to delete ${ids.length} users:`, ids)
 
-    // Simple approach: just delete users directly
+    // Delete users directly
     console.log('Deleting users directly...')
     const userResult = await client.query('DELETE FROM users WHERE id = ANY($1) AND "isAdmin" = false', [ids])
     console.log('Users deleted successfully:', userResult.rowCount)
