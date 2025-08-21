@@ -31,24 +31,87 @@ export async function POST(request: NextRequest) {
       const rs = await client.query('SELECT id FROM users WHERE id = ANY($1) AND "isAdmin" = false', [userIds])
       ids = rs.rows.map((r: any) => r.id)
     }
+    
     if (ids.length === 0) {
       await client.query('ROLLBACK')
-      return NextResponse.json({ success: true, deleted: 0 })
+      return NextResponse.json({ success: true, deleted: 0, message: 'Silinəcək istifadəçi tapılmadı' })
     }
 
-    // Delete related rows (best-effort)
-    await client.query('DELETE FROM order_items WHERE "orderId" IN (SELECT id FROM orders WHERE "userId" = ANY($1))', [ids])
-    await client.query('DELETE FROM orders WHERE "userId" = ANY($1)', [ids])
-    try { await client.query('DELETE FROM reviews WHERE "userId" = ANY($1)', [ids]) } catch {}
-    try { await client.query('DELETE FROM addresses WHERE "userId" = ANY($1)', [ids]) } catch {}
+    console.log(`Deleting ${ids.length} users:`, ids)
 
-    await client.query('DELETE FROM users WHERE id = ANY($1) AND "isAdmin" = false', [ids])
+    // Check if tables exist before deleting
+    const tableCheck = await client.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('order_items', 'orders', 'reviews', 'addresses')
+    `)
+    
+    const existingTables = tableCheck.rows.map((r: any) => r.table_name)
+    console.log('Existing tables:', existingTables)
+
+    // Delete related rows (only if tables exist)
+    if (existingTables.includes('order_items')) {
+      try {
+        const result = await client.query('DELETE FROM order_items WHERE "orderId" IN (SELECT id FROM orders WHERE "userId" = ANY($1))', [ids])
+        console.log('Deleted order_items:', result.rowCount)
+      } catch (error) {
+        console.error('Error deleting order_items:', error)
+      }
+    }
+
+    if (existingTables.includes('orders')) {
+      try {
+        const result = await client.query('DELETE FROM orders WHERE "userId" = ANY($1)', [ids])
+        console.log('Deleted orders:', result.rowCount)
+      } catch (error) {
+        console.error('Error deleting orders:', error)
+      }
+    }
+
+    if (existingTables.includes('reviews')) {
+      try {
+        const result = await client.query('DELETE FROM reviews WHERE "userId" = ANY($1)', [ids])
+        console.log('Deleted reviews:', result.rowCount)
+      } catch (error) {
+        console.error('Error deleting reviews:', error)
+      }
+    }
+
+    if (existingTables.includes('addresses')) {
+      try {
+        const result = await client.query('DELETE FROM addresses WHERE "userId" = ANY($1)', [ids])
+        console.log('Deleted addresses:', result.rowCount)
+      } catch (error) {
+        console.error('Error deleting addresses:', error)
+      }
+    }
+
+    // Finally delete users
+    const userResult = await client.query('DELETE FROM users WHERE id = ANY($1) AND "isAdmin" = false', [ids])
+    console.log('Deleted users:', userResult.rowCount)
+
     await client.query('COMMIT')
-    return NextResponse.json({ success: true, deleted: ids.length })
+    
+    return NextResponse.json({ 
+      success: true, 
+      deleted: userResult.rowCount,
+      message: `${userResult.rowCount} istifadəçi uğurla silindi`
+    })
+    
   } catch (error: any) {
     console.error('Bulk delete users error:', error?.message || error)
-    if (client) try { await client.query('ROLLBACK') } catch {}
-    return NextResponse.json({ success: false, error: 'Silinmə zamanı xəta' }, { status: 500 })
+    if (client) {
+      try { 
+        await client.query('ROLLBACK') 
+      } catch (rollbackError) {
+        console.error('Rollback error:', rollbackError)
+      }
+    }
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Silinmə zamanı xəta: ' + (error?.message || 'Naməlum xəta')
+    }, { status: 500 })
   } finally {
     if (client) client.release()
   }
