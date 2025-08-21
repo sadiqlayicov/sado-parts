@@ -190,11 +190,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
-          <p className="text-xs text-blue-300 text-center">
-            Демо данные: admin@sado-parts.ru / admin123
-          </p>
-        </div>
+        {/* Demo credentials notice removed */}
       </div>
 
       <style jsx>{`
