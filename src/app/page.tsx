@@ -72,6 +72,25 @@ export default function HomePage() {
     loadSettings();
   }, []);
 
+  // Load wishlist from localStorage
+  useEffect(() => {
+    function updateWishlist() {
+      if (typeof window !== 'undefined') {
+        const stored = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        setWishlist(stored);
+      }
+    }
+    
+    updateWishlist();
+    window.addEventListener('storage', updateWishlist);
+    window.addEventListener('wishlistChanged', updateWishlist);
+    
+    return () => {
+      window.removeEventListener('storage', updateWishlist);
+      window.removeEventListener('wishlistChanged', updateWishlist);
+    };
+  }, []);
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -282,28 +301,16 @@ export default function HomePage() {
     }
   };
 
-  const toggleWishlist = async (productId: string) => {
-    if (!isAuthenticated) {
-      alert('Пожалуйста, войдите в систему для добавления товаров в избранное');
-      return;
-    }
+  const toggleWishlist = (productId: string) => {
+    const updatedWishlist = wishlist.includes(productId)
+      ? wishlist.filter(id => id !== productId)
+      : [...wishlist, productId];
     
-    try {
-      const response = await fetch('/api/wishlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId })
-      });
-      
-      if (response.ok) {
-        setWishlist(prev => 
-          prev.includes(productId) 
-            ? prev.filter(id => id !== productId)
-            : [...prev, productId]
-        );
-      }
-    } catch (error) {
-      console.error('Error toggling wishlist:', error);
+    setWishlist(updatedWishlist);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+      window.dispatchEvent(new Event('wishlistChanged'));
     }
   };
 

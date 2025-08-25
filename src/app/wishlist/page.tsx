@@ -9,10 +9,21 @@ export default function WishlistPage() {
   const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = JSON.parse(localStorage.getItem('wishlist') || '[]');
-      setWishlist(stored);
+    function updateWishlist() {
+      if (typeof window !== 'undefined') {
+        const stored = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        setWishlist(stored);
+      }
     }
+    
+    updateWishlist();
+    window.addEventListener('storage', updateWishlist);
+    window.addEventListener('wishlistChanged', updateWishlist);
+    
+    return () => {
+      window.removeEventListener('storage', updateWishlist);
+      window.removeEventListener('wishlistChanged', updateWishlist);
+    };
   }, []);
 
   useEffect(() => {

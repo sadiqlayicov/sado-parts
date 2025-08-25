@@ -3,6 +3,7 @@ import { Client } from 'pg';
 
 export async function GET(req: NextRequest) {
   const ids = req.nextUrl.searchParams.get('ids')?.split(',').filter(Boolean) || [];
+  console.log('Batch API called with IDs:', ids);
   if (!ids.length) return NextResponse.json([]);
   
   const client = new Client({
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
       WHERE id = ANY($1::uuid[])
     `, [ids]);
     
+    console.log('Batch API found products:', result.rows.length);
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Get batch products error:', error);
