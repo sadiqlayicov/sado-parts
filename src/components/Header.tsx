@@ -66,11 +66,27 @@ export default function Header() {
         
         console.log('Header: Settings response:', data);
         
-        if (data.success && data.settings && data.settings.siteName) {
-          console.log('Header: Setting site name to:', data.settings.siteName);
-          setSiteName(data.settings.siteName);
+        if (data.success && data.settings) {
+          const settings = data.settings;
+          console.log('Header: Received settings:', settings);
+          
+          // Update site name
+          if (settings.siteName) {
+            console.log('Header: Setting site name to:', settings.siteName);
+            setSiteName(settings.siteName);
+          } else {
+            console.log('Header: No site name found in settings, using default');
+            setSiteName('Bilal-Parts');
+          }
+          
+          // Store settings in localStorage for other components to use
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('siteSettings', JSON.stringify(settings));
+            // Dispatch event to notify other components
+            window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settings }));
+          }
         } else {
-          console.log('Header: No site name found in settings, using default');
+          console.log('Header: No settings found in API response, using default');
           setSiteName('Bilal-Parts');
         }
       } catch (error) {
@@ -85,6 +101,23 @@ export default function Header() {
     const interval = setInterval(loadSettings, 30000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Listen for settings updates from admin panel
+  useEffect(() => {
+    const handleSettingsUpdate = (event: CustomEvent) => {
+      console.log('Header: Settings updated event received:', event.detail);
+      const settings = event.detail;
+      if (settings.siteName) {
+        setSiteName(settings.siteName);
+      }
+    };
+
+    window.addEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
+    };
   }, []);
 
   const brands = [

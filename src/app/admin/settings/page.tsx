@@ -173,7 +173,14 @@ export default function SettingsPage() {
               ...prev,
               general: {
                 ...prev.general,
-                siteName: apiSettings.siteName || prev.general.siteName
+                siteName: apiSettings.siteName || prev.general.siteName,
+                siteDescription: apiSettings.siteDescription || prev.general.siteDescription,
+                contactEmail: apiSettings.contactEmail || prev.general.contactEmail,
+                contactPhone: apiSettings.contactPhone || prev.general.contactPhone,
+                address: apiSettings.address || prev.general.address,
+                timezone: apiSettings.timezone || prev.general.timezone,
+                currency: apiSettings.currency || prev.general.currency,
+                language: apiSettings.language || prev.general.language
               },
               company: {
                 ...prev.company,
@@ -188,6 +195,12 @@ export default function SettingsPage() {
                 bankAccountNumber: apiSettings.bankAccountNumber || prev.company.bankAccountNumber,
                 directorName: apiSettings.directorName || prev.company.directorName,
                 accountantName: apiSettings.accountantName || prev.company.accountantName
+              },
+              payment: {
+                ...prev.payment,
+                p2pCardNumber: apiSettings.p2pCardNumber || prev.payment.p2pCardNumber,
+                p2pCardHolder: apiSettings.p2pCardHolder || prev.payment.p2pCardHolder,
+                p2pBankName: apiSettings.p2pBankName || prev.payment.p2pBankName
               }
             };
             
@@ -214,7 +227,17 @@ export default function SettingsPage() {
     try {
       // Prepare settings for API
       const apiSettings = {
+        // General settings
         siteName: settings.general.siteName,
+        siteDescription: settings.general.siteDescription,
+        contactEmail: settings.general.contactEmail,
+        contactPhone: settings.general.contactPhone,
+        address: settings.general.address,
+        timezone: settings.general.timezone,
+        currency: settings.general.currency,
+        language: settings.general.language,
+        
+        // Company settings
         companyName: settings.company.companyName,
         companyAddress: settings.company.companyAddress,
         inn: settings.company.inn,
@@ -226,6 +249,8 @@ export default function SettingsPage() {
         bankAccountNumber: settings.company.bankAccountNumber,
         directorName: settings.company.directorName,
         accountantName: settings.company.accountantName,
+        
+        // Payment settings
         p2pCardNumber: settings.payment.p2pCardNumber || '',
         p2pCardHolder: settings.payment.p2pCardHolder || '',
         p2pBankName: settings.payment.p2pBankName || ''
@@ -243,6 +268,37 @@ export default function SettingsPage() {
       
       if (data.success) {
         setSaveMessage('Настройки успешно сохранены!');
+        
+        // Notify other components about settings update
+        if (typeof window !== 'undefined') {
+          const updatedSettings = {
+            siteName: settings.general.siteName,
+            siteDescription: settings.general.siteDescription,
+            contactEmail: settings.general.contactEmail,
+            contactPhone: settings.general.contactPhone,
+            address: settings.general.address,
+            timezone: settings.general.timezone,
+            currency: settings.general.currency,
+            language: settings.general.language,
+            companyName: settings.company.companyName,
+            companyAddress: settings.company.companyAddress,
+            inn: settings.company.inn,
+            kpp: settings.company.kpp,
+            bik: settings.company.bik,
+            accountNumber: settings.company.accountNumber,
+            bankName: settings.company.bankName,
+            bankBik: settings.company.bankBik,
+            bankAccountNumber: settings.company.bankAccountNumber,
+            directorName: settings.company.directorName,
+            accountantName: settings.company.accountantName,
+            p2pCardNumber: settings.payment.p2pCardNumber || '',
+            p2pCardHolder: settings.payment.p2pCardHolder || '',
+            p2pBankName: settings.payment.p2pBankName || ''
+          };
+          
+          localStorage.setItem('siteSettings', JSON.stringify(updatedSettings));
+          window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: updatedSettings }));
+        }
       } else {
         setSaveMessage('Ошибка при сохранении настроек');
       }
