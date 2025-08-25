@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 export default function Footer() {
   const { t } = useTranslation();
   const [contactInfo, setContactInfo] = useState({
+    phone: '+994 12 345 67 89',
+    email: 'info@sado-parts.az',
     address: 'Bakı şəhəri, Yasamal rayonu'
   });
 
@@ -26,6 +28,8 @@ export default function Footer() {
           console.log('Footer: Received settings:', settings);
           
           setContactInfo({
+            phone: settings.contactPhone || '+994 12 345 67 89',
+            email: settings.contactEmail || 'info@sado-parts.az',
             address: settings.address || 'Bakı şəhəri, Yasamal rayonu'
           });
         }
@@ -47,8 +51,10 @@ export default function Footer() {
     const handleSettingsUpdate = (event: CustomEvent) => {
       console.log('Footer: Settings updated event received:', event.detail);
       const settings = event.detail;
-      if (settings.address) {
+      if (settings.contactPhone || settings.contactEmail || settings.address) {
         setContactInfo({
+          phone: settings.contactPhone || contactInfo.phone,
+          email: settings.contactEmail || contactInfo.email,
           address: settings.address || contactInfo.address
         });
       }
@@ -59,7 +65,7 @@ export default function Footer() {
     return () => {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
     };
-  }, [contactInfo.address]);
+  }, [contactInfo.phone, contactInfo.email, contactInfo.address]);
 
   return (
     <footer className="bg-[#0A0A1A] text-[#F0F0F0]">
@@ -76,6 +82,14 @@ export default function Footer() {
             
             {/* Contact Information */}
             <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <FaPhone className="text-gray-400 w-4 h-4" />
+                <span className="text-sm">{contactInfo.phone}</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <FaEnvelope className="text-gray-400 w-4 h-4" />
+                <span className="text-sm">{contactInfo.email}</span>
+              </div>
               <div className="flex items-center space-x-3">
                 <FaMapMarkerAlt className="text-gray-400 w-4 h-4" />
                 <span className="text-sm">{contactInfo.address}</span>
