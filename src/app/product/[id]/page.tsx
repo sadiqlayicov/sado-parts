@@ -256,16 +256,16 @@ export default function ProductPage() {
 
             {/* Price */}
             <div className="space-y-2">
-              {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
+              {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                 <div>
                   <div className="text-gray-400 line-through text-xl">
                     {product.price?.toLocaleString('ru-RU')} ₽
                   </div>
                   <div className="text-cyan-400 font-bold text-3xl">
-                    {product.salePrice?.toLocaleString('ru-RU')} ₽
+                    {calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽
                   </div>
                   <div className="text-red-400 text-sm">
-                    -{Math.round(((product.price - product.salePrice) / product.price) * 100)}% endirim
+                    -{user.discountPercentage}% endirim
                   </div>
                 </div>
               ) : (
@@ -387,18 +387,10 @@ export default function ProductPage() {
                             {similarProduct.name}
                           </h4>
                           <div className="text-cyan-400 font-bold text-sm mt-1">
-                            {similarProduct.salePrice && similarProduct.salePrice > 0 && similarProduct.salePrice < similarProduct.price ? (
-                              <div className="flex items-center gap-1">
-                                <span className="text-red-400 line-through text-xs">
-                                  {similarProduct.price?.toLocaleString('ru-RU')} ₽
-                                </span>
-                                <span className="text-cyan-400 font-bold">
-                                  {similarProduct.salePrice?.toLocaleString('ru-RU')} ₽
-                                </span>
-                              </div>
-                            ) : (
-                              `${similarProduct.price?.toLocaleString('ru-RU')} ₽`
-                            )}
+                            {isAuthenticated && isApproved && user && user.discountPercentage > 0
+                              ? `${calculateDiscountedPrice(similarProduct.price, similarProduct.salePrice)?.toFixed(2)} ₽`
+                              : `${similarProduct.price?.toLocaleString('ru-RU')} ₽`
+                            }
                           </div>
                           {similarProduct.stock > 0 ? (
                             <div className="text-green-400 text-xs mt-1">

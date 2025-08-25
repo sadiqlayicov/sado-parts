@@ -69,13 +69,13 @@ function SimilarProducts({ products }: { products: any[] }) {
               {product.artikul || 'N/A'}
             </div>
                          <div className="flex items-center gap-1">
-               {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
+               {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                  <>
                    <span className="text-red-400 line-through text-xs">
                      {product.price?.toLocaleString('ru-RU')} ₽
                    </span>
                    <span className="text-cyan-400 font-bold text-sm">
-                     {product.salePrice?.toLocaleString('ru-RU')} ₽
+                     {calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽
                    </span>
                  </>
                ) : (
@@ -187,16 +187,16 @@ export default function WishlistPage() {
                           Артикул: {product.artikul || 'N/A'} | Каталог: {product.catalogNumber || 'N/A'}
                         </div>
                                                  <div className="flex items-center gap-2">
-                           {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
+                           {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                              <>
                                <span className="text-red-400 line-through text-sm">
                                  {product.price?.toLocaleString('ru-RU')} ₽
                                </span>
                                <span className="text-cyan-400 font-bold text-lg">
-                                 {product.salePrice?.toLocaleString('ru-RU')} ₽
+                                 {calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽
                                </span>
                                <span className="text-red-400 text-sm">
-                                 -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                                 -{user.discountPercentage}%
                                </span>
                              </>
                            ) : (

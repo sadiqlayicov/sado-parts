@@ -116,7 +116,6 @@ export default function Header() {
       if (settings.siteName) {
         setSiteName(settings.siteName);
       }
-
     };
 
     window.addEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
@@ -137,7 +136,7 @@ export default function Header() {
       <div key={category.id}>
         <Link
           href={`/catalog?category=${category.id}`}
-          className={`block px-4 py-2 text-sm text-white hover:bg-cyan-600 rounded transition ${level > 0 ? 'pl-' + (level * 4 + 4) : ''}`}
+          className={`block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition ${level > 0 ? 'pl-' + (level * 4 + 4) : ''}`}
           onClick={() => setShowCategories(false)}
         >
           {level > 0 && '└─ '}{category.name}
@@ -200,19 +199,16 @@ export default function Header() {
         } else if (Array.isArray(data)) {
           allProducts = data;
         }
-        
-        const filteredProducts = allProducts.filter((product: any) => 
+
+        const filtered = allProducts.filter((product: any) => 
           product.name?.toLowerCase().includes(query.toLowerCase()) ||
-          product.sku?.toLowerCase().includes(query.toLowerCase()) ||
           product.artikul?.toLowerCase().includes(query.toLowerCase()) ||
           product.catalogNumber?.toLowerCase().includes(query.toLowerCase()) ||
           product.description?.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 10);
-        
-        setSearchResults(filteredProducts);
+        );
+
+        setSearchResults(filtered.slice(0, 8));
         setShowSearchResults(true);
-      } else {
-        setSearchResults([]);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -222,94 +218,148 @@ export default function Header() {
     }
   };
 
-  // Debounced search
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.trim()) {
-        performSearch(searchQuery);
-      } else {
-        setSearchResults([]);
-        setShowSearchResults(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  // Handle click outside search results
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSearchResults(false);
-      }
-    }
-
-    if (showSearchResults) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showSearchResults]);
-
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleSearchResultClick = (product: any) => {
-    setShowSearchResults(false);
-    setSearchQuery('');
-    router.push(`/product/${product.id}`);
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    if (value.trim()) {
+      const timeoutId = setTimeout(() => performSearch(value), 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
   };
 
   const clearSearch = () => {
     setSearchQuery('');
     setSearchResults([]);
     setShowSearchResults(false);
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
   };
 
+  const handleSearchResultClick = (product: any) => {
+    router.push(`/product/${product.id}`);
+    setShowSearchResults(false);
+    setSearchQuery('');
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsRefreshing(true);
+      await logout();
+      clearCachedData();
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Close search results when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (categoriesRef.current && !categoriesRef.current.contains(event.target as Node)) {
-        setShowCategories(false);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false);
       }
-    }
-    if (showCategories) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showCategories]);
+  }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white shadow-2xl">
-      <div className="w-full px-4 lg:px-6">
-        <div className="flex items-center justify-between h-16 lg:h-24">
-          {/* Логотип - Sol küncdə */}
-          <Link href="/" className="flex items-center gap-2 lg:gap-3">
-            <div className="w-8 h-8 lg:w-12 lg:h-12 bg-cyan-500 rounded-lg lg:rounded-xl flex items-center justify-center">
-              <span className="text-lg lg:text-2xl font-bold">S</span>
+    <header className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
+      {/* Top Bar */}
+      <div className="bg-gray-100 py-2">
+        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center text-sm">
+          <div className="flex items-center space-x-6">
+            <span className="text-gray-600">
+              <i className="fas fa-phone mr-2"></i>
+              +994 50 123 45 67
+            </span>
+            <span className="text-gray-600">
+              <i className="fas fa-envelope mr-2"></i>
+              info@bilal-parts.az
+            </span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <LanguageSwitcher />
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="text-blue-600 hover:text-blue-800 transition"
+                  >
+                    Админ панель
+                  </Link>
+                )}
+                <span className="text-gray-600">
+                  {user?.name || user?.email}
+                </span>
+                <Link
+                  href="/profile"
+                  className="text-blue-600 hover:text-blue-800 transition"
+                >
+                  Профиль
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-red-600 hover:text-red-800 transition"
+                >
+                  Выйти
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link
+                  href="/login"
+                  className="text-blue-600 hover:text-blue-800 transition"
+                >
+                  Войти
+                </Link>
+                <Link
+                  href="/register"
+                  className="text-blue-600 hover:text-blue-800 transition"
+                >
+                  Регистрация
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Header */}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">B</span>
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-lg lg:text-2xl font-bold neon-text">{siteName}</h1>
-              <p className="text-xs text-cyan-300">Запчасти для погрузчиков</p>
-            </div>
-            <div className="sm:hidden">
-              <h1 className="text-sm font-bold neon-text">{siteName}</h1>
+            <div>
+              <div className="text-xl font-bold text-gray-900">{siteName}</div>
+              <div className="text-sm text-gray-600">Запчасти для погрузчиков</div>
             </div>
           </Link>
 
-
-
-          {/* Навигация */}
-          <nav className="hidden lg:flex items-center gap-4">
-            <Link href="/">{t('home')}</Link>
+          {/* Navigation */}
+          <nav className="hidden lg:flex items-center space-x-8">
+            <Link
+              href="/"
+              className="text-gray-700 hover:text-blue-600 transition font-medium"
+            >
+              Главная страница
+            </Link>
             
-            {/* Категории */}
+            {/* Categories */}
             <div
               className="relative"
               ref={categoriesRef}
@@ -322,28 +372,28 @@ export default function Header() {
               }}
             >
               <button
-                className="hover:text-cyan-300 transition font-semibold flex items-center gap-1"
+                className="text-gray-700 hover:text-blue-600 transition font-medium flex items-center"
                 onClick={() => router.push('/catalog')}
               >
-                {t('catalog')}
-                <span className="text-xs">▼</span>
+                Каталог
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               {showCategories && (
-                <div
-                  className="absolute top-full left-0 mt-2 w-64 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-2 z-50"
-                >
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                   {loading ? (
-                    <div className="px-4 py-2 text-sm text-gray-400">Загрузка...</div>
+                    <div className="px-4 py-2 text-sm text-gray-500">Загрузка...</div>
                   ) : categories.length > 0 ? (
                     renderCategoriesForHeader(categories, 0)
                   ) : (
-                    <div className="px-4 py-2 text-sm text-gray-400">Kateqoriya tapılmadı</div>
+                    <div className="px-4 py-2 text-sm text-gray-500">Категории не найдены</div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Бренды */}
+            {/* Brands */}
             <div 
               className="relative"
               onMouseEnter={() => {
@@ -354,13 +404,15 @@ export default function Header() {
                 brandsTimeoutRef.current = setTimeout(() => setShowBrands(false), 200);
               }}
             >
-              <button className="hover:text-cyan-300 transition font-semibold flex items-center gap-1">
-                {t('brands')}
-                <span className="text-xs">▼</span>
+              <button className="text-gray-700 hover:text-blue-600 transition font-medium flex items-center">
+                Бренды
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               {showBrands && (
                 <div 
-                  className="absolute top-full left-0 mt-2 w-64 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-2 max-h-96 overflow-y-auto z-50"
+                  className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 max-h-96 overflow-y-auto z-50"
                   onMouseEnter={() => {
                     if (brandsTimeoutRef.current) clearTimeout(brandsTimeoutRef.current);
                     setShowBrands(true);
@@ -373,7 +425,7 @@ export default function Header() {
                     <Link
                       key={brand}
                       href={{ pathname: '/catalog', query: { brand: brand } }}
-                      className="block px-4 py-2 text-sm text-white hover:bg-cyan-600 rounded transition"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition"
                       onClick={() => setShowBrands(false)}
                     >
                       {brand}
@@ -383,493 +435,279 @@ export default function Header() {
               )}
             </div>
 
-            <Link href="/blog" className="hover:text-cyan-300 transition font-semibold">{t('blog')}</Link>
-            <Link href="/contacts" className="hover:text-cyan-300 transition font-semibold">{t('contacts')}</Link>
-            
-            {/* Поиск - Naviqasiya içində */}
-            <div className="relative" ref={searchRef}>
-              <div className="relative">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Поиск..."
-                  value={searchQuery}
-                  onChange={handleSearchInputChange}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && searchQuery.trim()) {
-                      e.preventDefault();
-                      router.push(`/catalog?search=${encodeURIComponent(searchQuery.trim())}`);
-                      setShowSearchResults(false);
-                      setSearchQuery('');
-                    }
-                  }}
-                  className="w-56 px-3 py-2 pl-8 pr-8 bg-[#0f172a] text-white placeholder-gray-300 border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg font-medium text-sm"
-                />
-                <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                  {searchLoading ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-400"></div>
-                  ) : (
-                    <svg className="w-3 h-3 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  )}
-                </div>
-                {searchQuery && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-cyan-300 hover:text-white"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              {/* Результаты поиска */}
-              {showSearchResults && searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-2 max-h-96 overflow-y-auto z-50 min-w-[300px]">
-                  <div className="text-sm text-gray-400 px-4 py-2 border-b border-gray-600">
-                    Найдено товаров: {searchResults.length}
-                  </div>
-                  {searchResults.map((product) => (
-                    <div
-                      key={product.id}
-                      onClick={() => handleSearchResultClick(product)}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-cyan-600/20 cursor-pointer transition border-b border-gray-700 last:border-b-0"
-                    >
-                      <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        {product.images && product.images.length > 0 ? (
-                          <img
-                            src={product.images[0]}
-                            alt={product.name}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                        ) : (
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-white truncate">{product.name}</h4>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {product.sku && (
-                            <span className="text-xs bg-cyan-600/20 text-cyan-300 px-2 py-1 rounded">
-                              SKU: {product.sku}
-                            </span>
-                          )}
-                          {product.artikul && (
-                            <span className="text-xs bg-blue-600/20 text-blue-300 px-2 py-1 rounded">
-                              Арт: {product.artikul}
-                            </span>
-                          )}
-                          {product.catalogNumber && (
-                            <span className="text-xs bg-green-600/20 text-green-300 px-2 py-1 rounded">
-                              Кат: {product.catalogNumber}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {product.price?.toLocaleString('ru-RU')} ₽
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Нет результатов */}
-              {showSearchResults && searchQuery && searchResults.length === 0 && !searchLoading && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-4 z-50">
-                  <div className="text-center text-gray-400">
-                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <p>Товар не найден</p>
-                    <p className="text-sm">Попробуйте изменить запрос</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Admin Panel Link */}
-            {isAdmin && (
-              <Link href="/admin" className="hover:text-cyan-300 transition font-semibold text-yellow-400">
-                {t('adminPanel')}
-              </Link>
-            )}
+            <Link
+              href="/blog"
+              className="text-gray-700 hover:text-blue-600 transition font-medium"
+            >
+              Блог
+            </Link>
+            <Link
+              href="/contacts"
+              className="text-gray-700 hover:text-blue-600 transition font-medium"
+            >
+              Контакты
+            </Link>
           </nav>
 
-          {/* Правые элементы */}
-          <div className="flex items-center gap-2 lg:gap-3">
-            {/* Пользователь - Desktop */}
-            <div className="hidden lg:flex items-center gap-3">
-              {isAuthenticated ? (
-                <>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-white">{user?.name}</p>
-                    {isAdmin && (
-                      <p className="text-xs text-yellow-400">Администратор</p>
-                    )}
-                    {isApproved && !isAdmin && getDiscountPercentage() > 0 && (
-                      <p className="text-xs text-green-400">Скидка {getDiscountPercentage()}%</p>
-                    )}
-                    {!isApproved && !isAdmin && (
-                      <p className="text-xs text-yellow-400">Ожидает одобрения</p>
-                    )}
-                  </div>
-                  <Link
-                    href="/profile"
-                    className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-sm transition"
-                  >
-                    {t('profile')}
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="px-3 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-semibold text-sm transition"
-                  >
-                    {t('logout')}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-sm transition"
-                  >
-                    {t('login')}
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-semibold text-sm transition"
-                  >
-                    {t('register', 'Регистрация')}
-                  </Link>
-                </>
-              )}
-            </div>
-
-            {/* Мобильные кнопки */}
-            <div className="flex items-center gap-1 lg:hidden">
-              {/* Поиск */}
-              <button
-                onClick={() => {
-                  setShowSearchResults(!showSearchResults);
-                  if (!showSearchResults) {
-                    setTimeout(() => searchInputRef.current?.focus(), 100);
+          {/* Search Bar */}
+          <div className="hidden lg:flex items-center space-x-4">
+            <div className="relative" ref={searchRef}>
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Поиск товаров..."
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    e.preventDefault();
+                    router.push(`/catalog?search=${encodeURIComponent(searchQuery)}`);
+                    setShowSearchResults(false);
                   }
                 }}
-                className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
-                title="Поиск"
+                className="w-64 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              />
+              <button
+                onClick={() => {
+                  if (searchQuery.trim()) {
+                    router.push(`/catalog?search=${encodeURIComponent(searchQuery)}`);
+                    setShowSearchResults(false);
+                  }
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
 
-              {/* Профиль */}
-              <Link
-                href={isAuthenticated ? '/profile' : '/login'}
-                className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
-                title={isAuthenticated ? 'Профиль' : 'Войти'}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </Link>
-
-              {/* Меню */}
-              <button
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
-                title="Меню"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Корзина и Wishlist */}
-            <div className="flex items-center gap-1">
-              {/* Корзина */}
-              <Link href="/cart" className="relative">
-                <div className="w-8 h-8 lg:w-9 lg:h-9 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition">
-                  <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
-                  </svg>
-                  {cartItemsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 lg:-top-1 lg:-right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center">
-                      {cartItemsCount}
-                    </span>
-                  )}
+              {/* Search Results Dropdown */}
+              {showSearchResults && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50">
+                  <div className="p-4">
+                    <div className="text-sm text-gray-500 mb-3">Найдено товаров: {searchResults.length}</div>
+                    {searchResults.map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => handleSearchResultClick(product)}
+                        className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer transition mb-2"
+                      >
+                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+                          {product.images && product.images.length > 0 ? (
+                            <img
+                              src={product.images[0]}
+                              alt={product.name}
+                              className="w-full h-full object-cover rounded"
+                            />
+                          ) : (
+                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-gray-900 truncate">{product.name}</h4>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {product.artikul && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                Арт: {product.artikul}
+                              </span>
+                            )}
+                            {product.catalogNumber && (
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                Кат: {product.catalogNumber}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {product.price?.toLocaleString('ru-RU')} ₽
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </Link>
-              
-              {/* Wishlist */}
-              <button
-                onClick={() => router.push('/wishlist')}
-                className="relative w-8 h-8 lg:w-9 lg:h-9 bg-pink-500 rounded-lg flex items-center justify-center hover:bg-pink-600 transition"
-                title="Wishlist"
-              >
-                <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                {wishlist.length > 0 && (
-                  <span className="absolute -top-1 -right-1 lg:-top-1 lg:-right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center">
-                    {wishlist.length}
-                  </span>
-                )}
-              </button>
+              )}
             </div>
-            
-            <div className="hidden sm:block">
-              <LanguageSwitcher />
-            </div>
+          </div>
+
+          {/* User Actions */}
+          <div className="flex items-center space-x-4">
+            {/* Cart */}
+            <Link
+              href="/cart"
+              className="relative p-2 text-gray-700 hover:text-blue-600 transition"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+              </svg>
+              {cartItemsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartItemsCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Wishlist */}
+            <button
+              onClick={() => setShowWishlist(!showWishlist)}
+              className="relative p-2 text-gray-700 hover:text-red-500 transition"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              {wishlist.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {wishlist.length}
+                </span>
+              )}
+            </button>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="lg:hidden p-2 text-gray-700 hover:text-blue-600 transition"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Мобильное меню */}
+      {/* Mobile Menu */}
       {showMobileMenu && (
-        <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-3">
-          <nav className="space-y-4">
-            <Link 
-              href="/" 
-              className="block px-4 py-2 text-white hover:bg-cyan-600 rounded-lg transition"
-              onClick={() => setShowMobileMenu(false)}
-            >
-              {t('home')}
-            </Link>
-            
-            <div className="space-y-2">
-              <div className="px-4 py-2 text-cyan-300 font-semibold">Категории</div>
-              {loading ? (
-                <div className="px-4 py-2 text-sm text-gray-400">Загрузка...</div>
-              ) : categories.length > 0 ? (
-                categories.map(category => (
-                  <Link
-                    key={category.id}
-                    href={`/catalog?category=${category.id}`}
-                    className="block px-4 py-2 text-sm text-white hover:bg-cyan-600 rounded-lg transition ml-4"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    {category.name}
-                  </Link>
-                ))
-              ) : (
-                <div className="px-4 py-2 text-sm text-gray-400 ml-4">Категории не найдены</div>
-              )}
+        <div className="lg:hidden bg-gray-50 border-t border-gray-200">
+          <div className="px-4 py-4 space-y-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Поиск товаров..."
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    router.push(`/catalog?search=${encodeURIComponent(searchQuery)}`);
+                    setShowMobileMenu(false);
+                  }
+                }}
+                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              />
             </div>
-
-            <div className="space-y-2">
-              <div className="px-4 py-2 text-cyan-300 font-semibold">Бренды</div>
-              {brands.map(brand => (
-                <Link
-                  key={brand}
-                  href={{ pathname: '/catalog', query: { brand: brand } }}
-                  className="block px-4 py-2 text-sm text-white hover:bg-cyan-600 rounded-lg transition ml-4"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {brand}
-                </Link>
-              ))}
-            </div>
-
-            <Link 
-              href="/blog" 
-              className="block px-4 py-2 text-white hover:bg-cyan-600 rounded-lg transition"
-              onClick={() => setShowMobileMenu(false)}
-            >
-              {t('blog')}
-            </Link>
-            
-            <Link 
-              href="/contacts" 
-              className="block px-4 py-2 text-white hover:bg-cyan-600 rounded-lg transition"
-              onClick={() => setShowMobileMenu(false)}
-            >
-              {t('contacts')}
-            </Link>
-
-            {isAdmin && (
-              <Link 
-                href="/admin" 
-                className="block px-4 py-2 text-yellow-400 hover:bg-cyan-600 rounded-lg transition"
+            <nav className="space-y-2">
+              <Link
+                href="/"
+                className="block py-2 text-gray-700 hover:text-blue-600 transition"
                 onClick={() => setShowMobileMenu(false)}
               >
-                {t('adminPanel')}
+                Главная страница
               </Link>
-            )}
-
-            {isAuthenticated ? (
-              <div className="space-y-2">
-                <Link 
-                  href="/profile" 
-                  className="block px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {t('profile')}
-                </Link>
-                <button
-                  onClick={() => {
-                    logout();
-                    setShowMobileMenu(false);
-                  }}
-                  className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-semibold transition"
-                >
-                  {t('logout')}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Link 
-                  href="/login" 
-                  className="block px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {t('login')}
-                </Link>
-                <Link 
-                  href="/register" 
-                  className="block px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-semibold text-center transition"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {t('register', 'Регистрация')}
-                </Link>
-              </div>
-            )}
-          </nav>
-        </div>
-      )}
-
-      {/* Мобильный поиск */}
-      {showSearchResults && (
-        <div className="lg:hidden bg-[#1e293b] border-t border-cyan-500/20 p-3">
-          <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Поиск товаров, артикулов, каталогов..."
-              value={searchQuery}
-              onChange={handleSearchInputChange}
-              className="w-full px-3 py-2 pl-8 pr-8 bg-[#0f172a] text-white placeholder-gray-300 border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg text-sm"
-            />
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-              {searchLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
+              <Link
+                href="/catalog"
+                className="block py-2 text-gray-700 hover:text-blue-600 transition"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Каталог
+              </Link>
+              <Link
+                href="/blog"
+                className="block py-2 text-gray-700 hover:text-blue-600 transition"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Блог
+              </Link>
+              <Link
+                href="/contacts"
+                className="block py-2 text-gray-700 hover:text-blue-600 transition"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Контакты
+              </Link>
+            </nav>
+            <div className="pt-4 border-t border-gray-200">
+              {isAuthenticated ? (
+                <div className="space-y-2">
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="block py-2 text-blue-600 hover:text-blue-800 transition"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      Админ панель
+                    </Link>
+                  )}
+                  <Link
+                    href="/profile"
+                    className="block py-2 text-blue-600 hover:text-blue-800 transition"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    Профиль
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setShowMobileMenu(false);
+                    }}
+                    className="block w-full text-left py-2 text-red-600 hover:text-red-800 transition"
+                  >
+                    Выйти
+                  </button>
+                </div>
               ) : (
-                <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <div className="space-y-2">
+                  <Link
+                    href="/login"
+                    className="block py-2 text-blue-600 hover:text-blue-800 transition"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    Войти
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="block py-2 text-blue-600 hover:text-blue-800 transition"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    Регистрация
+                  </Link>
+                </div>
               )}
             </div>
-            {searchQuery && (
-              <button
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
           </div>
-
-          {/* Мобильные результаты поиска */}
-          {searchResults.length > 0 && (
-            <div className="mt-3 max-h-80 overflow-y-auto">
-              <div className="text-sm text-gray-400 px-3 py-2 border-b border-gray-600">
-                Найдено товаров: {searchResults.length}
-              </div>
-              {searchResults.map((product) => (
-                <div
-                  key={product.id}
-                  onClick={() => handleSearchResultClick(product)}
-                  className="flex items-center gap-2 p-2 bg-white/5 rounded-lg hover:bg-cyan-600/20 cursor-pointer transition mb-2 border-b border-gray-700 last:border-b-0"
-                >
-                  <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    {product.images && product.images.length > 0 ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-white truncate">{product.name}</h4>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {product.sku && (
-                        <span className="text-xs bg-cyan-600/20 text-cyan-300 px-2 py-1 rounded">
-                          SKU: {product.sku}
-                        </span>
-                      )}
-                      {product.artikul && (
-                        <span className="text-xs bg-blue-600/20 text-blue-300 px-2 py-1 rounded">
-                          Арт: {product.artikul}
-                        </span>
-                      )}
-                      {product.catalogNumber && (
-                        <span className="text-xs bg-green-600/20 text-green-300 px-2 py-1 rounded">
-                          Кат: {product.catalogNumber}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {product.price?.toLocaleString('ru-RU')} ₽
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Нет результатов для мобильных */}
-          {searchQuery && searchResults.length === 0 && !searchLoading && (
-            <div className="mt-4 text-center text-gray-400">
-              <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <p>Товар не найден</p>
-              <p className="text-sm">Попробуйте изменить запрос</p>
-            </div>
-          )}
         </div>
       )}
 
-
+      {/* Wishlist Dropdown */}
+      {showWishlist && (
+        <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+          <div className="p-4">
+            <div className="text-sm text-gray-500 mb-3">Избранное ({wishlist.length})</div>
+            {wishlist.length === 0 ? (
+              <div className="text-gray-500 text-sm">Избранное пусто</div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {wishlist.slice(0, 5).map((item) => (
+                  <div key={item} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
+                    <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                    <div className="flex-1 text-sm">
+                      <div className="text-gray-900">Товар {item}</div>
+                      <div className="text-gray-500">ID: {item}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {wishlist.length > 0 && (
+              <Link
+                href="/wishlist"
+                className="block mt-3 text-center py-2 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm transition"
+              >
+                Посмотреть все
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </header>
-  );
-}
-
-// WishlistProductCard komponenti
-function WishlistProductCard({ productId, onClose }: { productId: string, onClose: () => void }) {
-  const [product, setProduct] = useState<any>(null);
-  useEffect(() => {
-    async function fetchProduct() {
-      const res = await fetch(`/api/products/${productId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setProduct(data);
-      }
-    }
-    fetchProduct();
-  }, [productId]);
-      if (!product) return <div className="bg-[#232b3b] rounded p-4 text-center">Загрузка...</div>;
-  return (
-    <div className="bg-[#232b3b] rounded p-4 flex flex-col items-center">
-      <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} className="w-20 h-20 object-cover rounded mb-2" />
-      <div className="font-semibold text-sm mb-1 text-center">{product.name}</div>
-              <div className="text-cyan-400 font-bold text-sm mb-2">{product.price?.toLocaleString('ru-RU')} ₽</div>
-      <Link href={`/product/${product.id}`} className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition mb-1" onClick={onClose}>
-        Ətraflı
-      </Link>
-    </div>
   );
 } 

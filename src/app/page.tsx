@@ -380,10 +380,10 @@ export default function HomePage() {
           <div className="min-h-0 flex-1 flex flex-col">
             <div className="font-semibold text-base mb-3 text-center leading-tight overflow-hidden" style={{ minHeight: '2.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.name}</div>
                                 <div className="text-center mb-4">
-                      {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
+                      {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                         <div>
                                   <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString('ru-RU')} ₽</div>
-        <div className="text-cyan-400 font-bold text-lg">{product.salePrice?.toLocaleString('ru-RU')} ₽</div>
+        <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽</div>
                         </div>
                       ) : (
                         <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString('ru-RU')} ₽</div>
@@ -425,7 +425,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
+      <main className="min-h-screen bg-white text-gray-800 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <div className="text-2xl">Загрузка...</div>
@@ -436,36 +436,44 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
-      <div className="max-w-7xl mx-auto">
+    <main className="min-h-screen bg-white text-gray-800">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Hero Section */}
         <section className="text-center mb-16">
-          <h1 className="text-6xl font-bold mb-6 neon-text">
+          <h1 className="text-5xl lg:text-6xl font-bold mb-6 text-gray-900">
             {siteName}
           </h1>
-          <p className="text-xl mb-8 text-gray-300">
+          <p className="text-xl mb-8 text-gray-600">
             Запчасти для вилочных погрузчиков в Москве
           </p>
-          <p className="text-lg mb-8 text-gray-400">
+          <p className="text-lg mb-8 text-gray-500">
             Интернет-магазин премиум-класса
           </p>
-          <Link 
-            href="/catalog" 
-            className="px-8 py-4 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-xl transition"
-          >
-            Перейти в каталог
-          </Link>
+          <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <Link 
+              href="/catalog" 
+              className="px-8 py-4 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold text-xl transition text-white"
+            >
+              Перейти в каталог
+            </Link>
+            <Link 
+              href="/contacts" 
+              className="px-8 py-4 rounded-lg border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold text-xl transition"
+            >
+              Связаться с нами
+            </Link>
+          </div>
         </section>
 
         {/* Categories Section */}
         <section className="mb-16">
-          <h2 className="text-3xl font-bold mb-8 text-center">Категории товаров</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Категории товаров</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {categories.slice(0, 8).map((category) => (
               <Link 
                 key={category.id} 
                 href={`/catalog?category=${category.id}`}
-                className="bg-white/10 rounded-lg p-6 text-center hover:bg-white/20 transition group"
+                className="bg-gray-50 rounded-lg p-6 text-center hover:bg-blue-50 transition group border border-gray-200 hover:border-blue-300"
               >
                 <div className="text-4xl mb-4 group-hover:scale-110 transition">
                   {category.name === 'Engine Parts' ? '🔧' :
@@ -477,8 +485,8 @@ export default function HomePage() {
                    category.name === 'Filters' ? '🔍' :
                    category.name === 'Lubricants' ? '🛢️' : '📦'}
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{category.name}</h3>
-                <p className="text-sm text-gray-400">{category.description}</p>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">{category.name}</h3>
+                <p className="text-sm text-gray-600">{category.description}</p>
               </Link>
             ))}
           </div>
