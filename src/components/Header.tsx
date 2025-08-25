@@ -356,7 +356,15 @@ export default function Header() {
                   placeholder="Поиск..."
                   value={searchQuery}
                   onChange={handleSearchInputChange}
-                  className="w-48 px-3 py-2 pl-8 pr-8 bg-[#0f172a] text-white placeholder-gray-300 border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg font-medium text-sm"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      e.preventDefault();
+                      router.push(`/catalog?search=${encodeURIComponent(searchQuery.trim())}`);
+                      setShowSearchResults(false);
+                      setSearchQuery('');
+                    }
+                  }}
+                  className="w-56 px-3 py-2 pl-8 pr-8 bg-[#0f172a] text-white placeholder-gray-300 border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg font-medium text-sm"
                 />
                 <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
                   {searchLoading ? (

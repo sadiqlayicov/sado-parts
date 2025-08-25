@@ -120,6 +120,8 @@ function CatalogPage() {
     if (cat) setFilter(cat);
     const brand = searchParams.get("brand");
     if (brand) setBrandFilter(brand);
+    const search = searchParams.get("search");
+    if (search) setSearchQuery(search);
   }, [searchParams]);
 
   const filteredProducts = useMemo(() => {
@@ -174,7 +176,26 @@ function CatalogPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8 neon-text">Каталог запчастей</h1>
+        <h1 className="text-4xl font-bold mb-8 neon-text">
+          {searchQuery ? `Результаты поиска: "${searchQuery}"` : 'Каталог запчастей'}
+        </h1>
+        {searchQuery && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl">
+            <p className="text-lg">
+              Найдено товаров: <span className="font-bold">{filteredProducts.length}</span>
+              {filteredProducts.length > 0 && (
+                <span className="ml-4">
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg transition"
+                  >
+                    Очистить поиск
+                  </button>
+                </span>
+              )}
+            </p>
+          </div>
+        )}
         
         {/* Discount Banner for Approved Users */}
         {isApproved && !isAdmin && getDiscountPercentage() > 0 && (
