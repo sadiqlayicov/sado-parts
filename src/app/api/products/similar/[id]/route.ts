@@ -44,6 +44,8 @@ export async function GET(
       );
     }
 
+    console.log('Current product categoryId:', currentProduct.categoryId);
+    
     // Get similar products from the same category, excluding the current product
     const { data: similarProducts, error: similarError } = await supabase
       .from('products')
@@ -58,13 +60,16 @@ export async function GET(
         isActive,
         images,
         categoryId,
-        categories!inner(name)
+        categories(name)
       `)
       .eq('categoryId', currentProduct.categoryId)
       .eq('isActive', true)
       .neq('id', productId)
       .order('createdAt', { ascending: false })
       .limit(8);
+
+    console.log('Similar products found:', similarProducts?.length || 0);
+    console.log('Similar products error:', similarError);
 
     if (similarError) {
       console.error('Error fetching similar products:', similarError);
@@ -96,7 +101,7 @@ export async function GET(
             isActive,
             images,
             categoryId,
-            categories!inner(name)
+            categories(name)
           `)
           .or(`name.ilike.%${searchTerms[0]}%,artikul.ilike.%${searchTerms[0]}%,catalogNumber.ilike.%${searchTerms[0]}%`)
           .eq('isActive', true)

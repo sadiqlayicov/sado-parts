@@ -33,7 +33,7 @@ interface SimilarProduct {
   images?: string[];
   stock: number;
   isActive: boolean;
-  categories: {
+  categories?: {
     name: string;
   };
 }
