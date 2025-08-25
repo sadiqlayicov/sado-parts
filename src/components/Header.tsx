@@ -264,104 +264,7 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Поиск - Mərkəzdə qısaldılmış */}
-          <div className="hidden lg:flex flex-1 max-w-2xl mx-4 relative" ref={searchRef}>
-            <div className="relative w-full">
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Поиск товаров, артикулов, каталогов..."
-                value={searchQuery}
-                onChange={handleSearchInputChange}
-                className="w-full px-4 py-3 pl-12 pr-12 bg-[#0f172a] text-white placeholder-gray-300 border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg font-medium text-base"
-              />
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                {searchLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
-                ) : (
-                  <svg className="w-4 h-4 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                )}
-              </div>
-              {searchQuery && (
-                <button
-                  onClick={clearSearch}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-cyan-300 hover:text-white"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
 
-            {/* Результаты поиска */}
-            {showSearchResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-2 max-h-96 overflow-y-auto z-50 min-w-[400px]">
-                <div className="text-sm text-gray-400 px-4 py-2 border-b border-gray-600">
-                  Найдено товаров: {searchResults.length}
-                </div>
-                {searchResults.map((product) => (
-                  <div
-                    key={product.id}
-                    onClick={() => handleSearchResultClick(product)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-cyan-600/20 cursor-pointer transition border-b border-gray-700 last:border-b-0"
-                  >
-                    <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                      {product.images && product.images.length > 0 ? (
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-white truncate">{product.name}</h4>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {product.sku && (
-                          <span className="text-xs bg-cyan-600/20 text-cyan-300 px-2 py-1 rounded">
-                            SKU: {product.sku}
-                          </span>
-                        )}
-                        {product.artikul && (
-                          <span className="text-xs bg-blue-600/20 text-blue-300 px-2 py-1 rounded">
-                            Арт: {product.artikul}
-                          </span>
-                        )}
-                        {product.catalogNumber && (
-                          <span className="text-xs bg-green-600/20 text-green-300 px-2 py-1 rounded">
-                            Кат: {product.catalogNumber}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {product.price?.toLocaleString('ru-RU')} ₽
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Нет результатов */}
-            {showSearchResults && searchQuery && searchResults.length === 0 && !searchLoading && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-4 z-50">
-                <div className="text-center text-gray-400">
-                  <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <p>Товар не найден</p>
-                  <p className="text-sm">Попробуйте изменить запрос</p>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Навигация */}
           <nav className="hidden lg:flex items-center gap-4">
@@ -443,6 +346,105 @@ export default function Header() {
 
             <Link href="/blog" className="hover:text-cyan-300 transition font-semibold">{t('blog')}</Link>
             <Link href="/contacts" className="hover:text-cyan-300 transition font-semibold">{t('contacts')}</Link>
+            
+            {/* Поиск - Naviqasiya içində */}
+            <div className="relative" ref={searchRef}>
+              <div className="relative">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Поиск..."
+                  value={searchQuery}
+                  onChange={handleSearchInputChange}
+                  className="w-48 px-3 py-2 pl-8 pr-8 bg-[#0f172a] text-white placeholder-gray-300 border border-cyan-500/20 focus:border-cyan-500 outline-none rounded-lg font-medium text-sm"
+                />
+                <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
+                  {searchLoading ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-400"></div>
+                  ) : (
+                    <svg className="w-3 h-3 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  )}
+                </div>
+                {searchQuery && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-cyan-300 hover:text-white"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Результаты поиска */}
+              {showSearchResults && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-2 max-h-96 overflow-y-auto z-50 min-w-[300px]">
+                  <div className="text-sm text-gray-400 px-4 py-2 border-b border-gray-600">
+                    Найдено товаров: {searchResults.length}
+                  </div>
+                  {searchResults.map((product) => (
+                    <div
+                      key={product.id}
+                      onClick={() => handleSearchResultClick(product)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-cyan-600/20 cursor-pointer transition border-b border-gray-700 last:border-b-0"
+                    >
+                      <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        {product.images && product.images.length > 0 ? (
+                          <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-white truncate">{product.name}</h4>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {product.sku && (
+                            <span className="text-xs bg-cyan-600/20 text-cyan-300 px-2 py-1 rounded">
+                              SKU: {product.sku}
+                            </span>
+                          )}
+                          {product.artikul && (
+                            <span className="text-xs bg-blue-600/20 text-blue-300 px-2 py-1 rounded">
+                              Арт: {product.artikul}
+                            </span>
+                          )}
+                          {product.catalogNumber && (
+                            <span className="text-xs bg-green-600/20 text-green-300 px-2 py-1 rounded">
+                              Кат: {product.catalogNumber}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {product.price?.toLocaleString('ru-RU')} ₽
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Нет результатов */}
+              {showSearchResults && searchQuery && searchResults.length === 0 && !searchLoading && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-xl shadow-2xl border border-cyan-500/20 py-4 z-50">
+                  <div className="text-center text-gray-400">
+                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <p>Товар не найден</p>
+                    <p className="text-sm">Попробуйте изменить запрос</p>
+                  </div>
+                </div>
+              )}
+            </div>
             
             {/* Admin Panel Link */}
             {isAdmin && (
