@@ -162,9 +162,9 @@ export default function ProductPage() {
           </ol>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Product Images */}
-          <div className="space-y-4">
+          <div className="lg:col-span-1 space-y-4">
             <div className="aspect-square bg-[#1e293b] rounded-lg overflow-hidden">
               {product.images && product.images.length > 0 ? (
                 <img 
@@ -214,7 +214,7 @@ export default function ProductPage() {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="lg:col-span-1 space-y-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
               {product.category && (
@@ -308,82 +308,80 @@ export default function ProductPage() {
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Similar Products Section */}
-        {similarProducts.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-8 text-center">Oxşar Məhsullar</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {similarProducts.map((similarProduct) => (
-                <Link
-                  key={similarProduct.id}
-                  href={`/product/${similarProduct.id}`}
-                  className="bg-[#1e293b] rounded-lg overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
-                >
-                  <div className="aspect-square bg-gradient-to-br from-cyan-500 to-blue-600 relative overflow-hidden">
-                    {similarProduct.images && similarProduct.images.length > 0 ? (
-                      <img
-                        src={similarProduct.images[0]}
-                        alt={similarProduct.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm text-center px-2">
-                          {similarProduct.name}
-                        </span>
-                      </div>
-                    )}
-                    {!similarProduct.isActive && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                        <span className="text-white font-bold">Deaktiv</span>
-                      </div>
-                    )}
-                    {similarProduct.stock === 0 && (
-                      <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                        Stokda yoxdur
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="p-4">
-                    <h3 className="font-semibold text-white mb-2 line-clamp-2 group-hover:text-cyan-400 transition">
-                      {similarProduct.name}
-                    </h3>
-                    
-                    {similarProduct.categories && (
-                      <p className="text-gray-400 text-sm mb-2">
-                        {similarProduct.categories.name}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="text-cyan-400 font-bold">
-                        {isAuthenticated && isApproved && user && user.discountPercentage > 0
-                          ? `${calculateDiscountedPrice(similarProduct.price, similarProduct.salePrice)?.toFixed(2)} ₽`
-                          : `${similarProduct.price?.toLocaleString('ru-RU')} ₽`
-                        }
-                      </div>
-                      
-                      {similarProduct.artikul && (
-                        <div className="text-gray-400 text-xs">
-                          {similarProduct.artikul}
+          {/* Similar Products - Right Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-[#1e293b] rounded-xl p-6 shadow-lg">
+              <h3 className="text-xl font-bold mb-4 text-cyan-400">Oxşar Məhsullar</h3>
+              {similarProducts.length > 0 ? (
+                <div className="space-y-4">
+                  {similarProducts.slice(0, 5).map((similarProduct) => (
+                    <Link
+                      key={similarProduct.id}
+                      href={`/product/${similarProduct.id}`}
+                      className="block bg-[#0f172a] rounded-lg p-4 hover:bg-[#1e293b] transition-all duration-300 group"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {similarProduct.images && similarProduct.images.length > 0 ? (
+                            <img
+                              src={similarProduct.images[0]}
+                              alt={similarProduct.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-white text-xs text-center">
+                              {similarProduct.name}
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    
-                    {similarProduct.stock > 0 && (
-                      <div className="text-green-400 text-xs mt-1">
-                        Stok: {similarProduct.stock} ədəd
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-white text-sm line-clamp-2 group-hover:text-cyan-400 transition">
+                            {similarProduct.name}
+                          </h4>
+                          <div className="text-cyan-400 font-bold text-sm mt-1">
+                            {isAuthenticated && isApproved && user && user.discountPercentage > 0
+                              ? `${calculateDiscountedPrice(similarProduct.price, similarProduct.salePrice)?.toFixed(2)} ₽`
+                              : `${similarProduct.price?.toLocaleString('ru-RU')} ₽`
+                            }
+                          </div>
+                          {similarProduct.stock > 0 ? (
+                            <div className="text-green-400 text-xs mt-1">
+                              Stok: {similarProduct.stock} ədəd
+                            </div>
+                          ) : (
+                            <div className="text-red-400 text-xs mt-1">
+                              Stokda yoxdur
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </Link>
-              ))}
+                    </Link>
+                  ))}
+                  {similarProducts.length > 5 && (
+                    <div className="text-center pt-2">
+                      <Link
+                        href="/catalog"
+                        className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition"
+                      >
+                        Bütün oxşar məhsulları gör →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 py-8">
+                  <svg className="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  <p className="text-sm">Oxşar məhsul tapılmadı</p>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
+
+
       </div>
     </div>
   );
