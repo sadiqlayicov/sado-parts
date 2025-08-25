@@ -3,9 +3,63 @@
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaFacebook, FaInstagram, FaLinkedin, FaPaperPlane, FaQuestion } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
 
 export default function Footer() {
   const { t } = useTranslation();
+  const [contactInfo, setContactInfo] = useState({
+    address: 'Bakı şəhəri, Yasamal rayonu'
+  });
+
+  // Load settings from API
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        console.log('Footer: Loading site settings...');
+        const response = await fetch('/api/admin/settings');
+        const data = await response.json();
+        
+        console.log('Footer: Settings response:', data);
+        
+        if (data.success && data.settings) {
+          const settings = data.settings;
+          console.log('Footer: Received settings:', settings);
+          
+          setContactInfo({
+            address: settings.address || 'Bakı şəhəri, Yasamal rayonu'
+          });
+        }
+      } catch (error) {
+        console.error('Footer: Error loading site settings:', error);
+      }
+    };
+
+    loadSettings();
+    
+    // Set up interval to refresh settings every 30 seconds
+    const interval = setInterval(loadSettings, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Listen for settings updates from admin panel
+  useEffect(() => {
+    const handleSettingsUpdate = (event: CustomEvent) => {
+      console.log('Footer: Settings updated event received:', event.detail);
+      const settings = event.detail;
+      if (settings.address) {
+        setContactInfo({
+          address: settings.address || contactInfo.address
+        });
+      }
+    };
+
+    window.addEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
+    };
+  }, [contactInfo.address]);
 
   return (
     <footer className="bg-[#0A0A1A] text-[#F0F0F0]">
@@ -23,16 +77,8 @@ export default function Footer() {
             {/* Contact Information */}
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
-                <FaPhone className="text-gray-400 w-4 h-4" />
-                <span className="text-sm">+994 12 345 67 89</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <FaEnvelope className="text-gray-400 w-4 h-4" />
-                <span className="text-sm">info@sado-parts.az</span>
-              </div>
-              <div className="flex items-center space-x-3">
                 <FaMapMarkerAlt className="text-gray-400 w-4 h-4" />
-                <span className="text-sm">Bakı şəhəri, Yasamal rayonu</span>
+                <span className="text-sm">{contactInfo.address}</span>
               </div>
             </div>
 
