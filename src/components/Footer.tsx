@@ -12,6 +12,11 @@ export default function Footer() {
     email: 'info@sado-parts.az',
     address: 'Bakı şəhəri, Yasamal rayonu'
   });
+  
+  const [siteInfo, setSiteInfo] = useState({
+    siteName: 'SADO-PARTS',
+    siteDescription: '2008-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.'
+  });
 
   // Load settings from API
   useEffect(() => {
@@ -32,6 +37,11 @@ export default function Footer() {
             email: settings.contactEmail || 'info@sado-parts.az',
             address: settings.address || 'Bakı şəhəri, Yasamal rayonu'
           });
+          
+          setSiteInfo({
+            siteName: settings.siteName || 'SADO-PARTS',
+            siteDescription: settings.siteDescription || '2008-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.'
+          });
         }
       } catch (error) {
         console.error('Footer: Error loading site settings:', error);
@@ -51,11 +61,16 @@ export default function Footer() {
     const handleSettingsUpdate = (event: CustomEvent) => {
       console.log('Footer: Settings updated event received:', event.detail);
       const settings = event.detail;
-      if (settings.contactPhone || settings.contactEmail || settings.address) {
+      if (settings.contactPhone || settings.contactEmail || settings.address || settings.siteName || settings.siteDescription) {
         setContactInfo({
           phone: settings.contactPhone || contactInfo.phone,
           email: settings.contactEmail || contactInfo.email,
           address: settings.address || contactInfo.address
+        });
+        
+        setSiteInfo({
+          siteName: settings.siteName || siteInfo.siteName,
+          siteDescription: settings.siteDescription || siteInfo.siteDescription
         });
       }
     };
@@ -65,20 +80,19 @@ export default function Footer() {
     return () => {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
     };
-  }, [contactInfo.phone, contactInfo.email, contactInfo.address]);
+  }, [contactInfo.phone, contactInfo.email, contactInfo.address, siteInfo.siteName, siteInfo.siteDescription]);
 
   return (
     <footer className="bg-[#0A0A1A] text-[#F0F0F0]">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Company Information */}
-          <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-white">SADO-PARTS</h3>
-            <p className="text-sm leading-relaxed">
-              2008-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. 
-              Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.
-            </p>
+                     {/* Company Information */}
+           <div className="space-y-4">
+             <h3 className="text-2xl font-bold text-white">{siteInfo.siteName}</h3>
+             <p className="text-sm leading-relaxed">
+               {siteInfo.siteDescription}
+             </p>
             
             {/* Contact Information */}
             <div className="space-y-3">
