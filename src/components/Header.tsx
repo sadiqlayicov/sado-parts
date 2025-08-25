@@ -556,25 +556,13 @@ export default function Header() {
           </nav>
 
           {/* Правые элементы */}
-          <div className="flex items-center gap-2 lg:gap-2">
-            {/* Пользователь */}
-            <div className="relative hidden lg:block">
+          <div className="flex items-center gap-2 lg:gap-3">
+            {/* Пользователь - Desktop */}
+            <div className="hidden lg:flex items-center gap-3">
               {isAuthenticated ? (
-                <div className="flex items-center gap-3">
+                <>
                   <div className="text-right">
-                    <p className="text-sm font-semibold">{user?.name}</p>
-                    {user?.name === 'Admin User' && (
-                      <button
-                        onClick={() => {
-                          clearCachedData();
-                          alert('Кэш очищен. Пожалуйста, войдите снова.');
-                        }}
-                        className="text-xs text-red-400 hover:text-red-300 transition"
-                        title="Очистить кэш"
-                      >
-                        Очистить кэш
-                      </button>
-                    )}
+                    <p className="text-sm font-semibold text-white">{user?.name}</p>
                     {isAdmin && (
                       <p className="text-xs text-yellow-400">Администратор</p>
                     )}
@@ -582,125 +570,113 @@ export default function Header() {
                       <p className="text-xs text-green-400">Скидка {getDiscountPercentage()}%</p>
                     )}
                     {!isApproved && !isAdmin && (
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-yellow-400">Ожидает одобрения</p>
-                        <button
-                          onClick={async () => {
-                            setIsRefreshing(true);
-                            await refreshUserStatus();
-                            setIsRefreshing(false);
-                          }}
-                          className="text-xs text-cyan-400 hover:text-cyan-300 transition"
-                          title="Обновить статус"
-                          disabled={isRefreshing}
-                        >
-                          {isRefreshing ? '⏳' : '🔄'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            clearCachedData();
-                            alert('Кэш очищен. Пожалуйста, войдите снова.');
-                          }}
-                          className="text-xs text-red-400 hover:text-red-300 transition"
-                          title="Очистить кэш и перелогиниться"
-                        >
-                          🔄
-                        </button>
-                      </div>
+                      <p className="text-xs text-yellow-400">Ожидает одобрения</p>
                     )}
                   </div>
                   <Link
                     href="/profile"
-                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-sm transition"
+                    className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-sm transition"
                   >
                     {t('profile')}
                   </Link>
                   <button
                     onClick={logout}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-semibold text-sm transition"
+                    className="px-3 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-semibold text-sm transition"
                   >
                     {t('logout')}
                   </button>
-                </div>
+                </>
               ) : (
-                <div className="flex items-center gap-2">
+                <>
                   <Link
                     href="/login"
-                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold transition"
+                    className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-sm transition"
                   >
                     {t('login')}
                   </Link>
                   <Link
                     href="/register"
-                    className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-semibold transition"
+                    className="px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-semibold text-sm transition"
                   >
                     {t('register', 'Регистрация')}
                   </Link>
-                </div>
+                </>
               )}
             </div>
 
-            {/* Мобильное меню */}
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
-              title="Меню"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            {/* Мобильные кнопки */}
+            <div className="flex items-center gap-1 lg:hidden">
+              {/* Поиск */}
+              <button
+                onClick={() => {
+                  setShowSearchResults(!showSearchResults);
+                  if (!showSearchResults) {
+                    setTimeout(() => searchInputRef.current?.focus(), 100);
+                  }
+                }}
+                className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
+                title="Поиск"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
 
-            {/* Быстрый доступ к профилю на мобиле */}
-            <Link
-              href={isAuthenticated ? '/profile' : '/login'}
-              className="lg:hidden w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
-              title={isAuthenticated ? 'Профиль' : 'Войти'}
-            >
-              <span className="text-sm">👤</span>
-            </Link>
+              {/* Профиль */}
+              <Link
+                href={isAuthenticated ? '/profile' : '/login'}
+                className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
+                title={isAuthenticated ? 'Профиль' : 'Войти'}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </Link>
 
-            {/* Мобильный поиск */}
-            <button
-              onClick={() => {
-                setShowSearchResults(!showSearchResults);
-                if (!showSearchResults) {
-                  setTimeout(() => searchInputRef.current?.focus(), 100);
-                }
-              }}
-              className="lg:hidden w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
-              title="Поиск"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+              {/* Меню */}
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition"
+                title="Меню"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
 
-            {/* Корзина */}
-            <Link href="/cart" className="relative">
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition">
-                <span className="text-sm lg:text-lg">🛒</span>
-                {cartItemsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center">
-                    {cartItemsCount}
+            {/* Корзина и Wishlist */}
+            <div className="flex items-center gap-1">
+              {/* Корзина */}
+              <Link href="/cart" className="relative">
+                <div className="w-8 h-8 lg:w-9 lg:h-9 bg-cyan-500 rounded-lg flex items-center justify-center hover:bg-cyan-600 transition">
+                  <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                  </svg>
+                  {cartItemsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 lg:-top-1 lg:-right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center">
+                      {cartItemsCount}
+                    </span>
+                  )}
+                </div>
+              </Link>
+              
+              {/* Wishlist */}
+              <button
+                onClick={() => router.push('/wishlist')}
+                className="relative w-8 h-8 lg:w-9 lg:h-9 bg-pink-500 rounded-lg flex items-center justify-center hover:bg-pink-600 transition"
+                title="Wishlist"
+              >
+                <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                {wishlist.length > 0 && (
+                  <span className="absolute -top-1 -right-1 lg:-top-1 lg:-right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center">
+                    {wishlist.length}
                   </span>
                 )}
-              </div>
-            </Link>
-            
-            {/* Wishlist düyməsi */}
-            <button
-              onClick={() => router.push('/wishlist')}
-              className="relative w-8 h-8 lg:w-10 lg:h-10 bg-pink-500 rounded-lg flex items-center justify-center hover:bg-pink-600 transition"
-              title="Wishlist"
-            >
-              <span className="text-sm lg:text-lg">♥</span>
-              {wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center">
-                  {wishlist.length}
-                </span>
-              )}
-            </button>
+              </button>
+            </div>
             
             <div className="hidden sm:block">
               <LanguageSwitcher />
