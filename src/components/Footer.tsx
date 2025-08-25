@@ -245,7 +245,7 @@ export default function Footer() {
             {/* Copyright & Legal */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
               <p className="text-sm text-gray-400">
-                © 2024 Sado-Parts. Все права защищены.
+                © 2024 Bilal-Parts. Все права защищены.
               </p>
               <div className="flex flex-wrap gap-4 text-sm">
                 <Link href="/privacy" className="text-gray-400 hover:text-cyan-400 transition">
