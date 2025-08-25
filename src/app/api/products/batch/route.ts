@@ -16,10 +16,13 @@ export async function GET(req: NextRequest) {
   try {
     await client.connect();
     
-    // Validate UUID format and filter out invalid ones
+    // Accept both UUID format and Supabase custom ID format
     const validIds = ids.filter(id => {
+      // UUID format: 8-4-4-4-12
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      return uuidRegex.test(id);
+      // Supabase custom ID format: 25 characters
+      const customIdRegex = /^[a-z0-9]{25}$/i;
+      return uuidRegex.test(id) || customIdRegex.test(id);
     });
     
     console.log('Valid UUIDs:', validIds);
@@ -32,7 +35,7 @@ export async function GET(req: NextRequest) {
     // First, let's check if these IDs exist in the database at all
     const checkResult = await client.query(`
       SELECT id, name FROM products 
-      WHERE id = ANY($1::uuid[])
+      WHERE id = ANY($1)
     `, [validIds]);
     
     console.log('Products found in database:', checkResult.rows);
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest) {
     // Now get full product details - include inactive products for wishlist
     const result = await client.query(`
       SELECT * FROM products 
-      WHERE id = ANY($1::uuid[])
+      WHERE id = ANY($1)
     `, [validIds]);
     
     console.log('Batch API found products:', result.rows.length);
