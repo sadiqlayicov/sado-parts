@@ -49,6 +49,8 @@ export default function ProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [isInWishlist, setIsInWishlist] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -106,6 +108,31 @@ export default function ProductPage() {
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity >= 1 && newQuantity <= (product?.stock || 1)) {
       setQuantity(newQuantity);
+    }
+  };
+
+  // Wishlist functions
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      setWishlist(stored);
+      setIsInWishlist(stored.includes(product?.id));
+    }
+  }, [product?.id]);
+
+  const toggleWishlist = () => {
+    if (!product) return;
+    
+    const updatedWishlist = isInWishlist 
+      ? wishlist.filter(id => id !== product.id)
+      : [...wishlist, product.id];
+    
+    setWishlist(updatedWishlist);
+    setIsInWishlist(!isInWishlist);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+      window.dispatchEvent(new Event('wishlistChanged'));
     }
   };
 
@@ -267,7 +294,7 @@ export default function ProductPage() {
               </div>
             )}
 
-            {/* Add to Cart */}
+            {/* Add to Cart and Wishlist */}
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <label className="font-semibold">Miqdar:</label>
@@ -290,22 +317,36 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              <button
-                onClick={handleAddToCart}
-                disabled={!product.isActive || product.stock === 0}
-                className={`w-full py-4 rounded-lg font-semibold text-lg transition ${
-                  product.isActive && product.stock > 0
-                    ? 'bg-cyan-500 hover:bg-cyan-600'
-                    : 'bg-gray-600 cursor-not-allowed'
-                }`}
-              >
-                {product.isActive && product.stock > 0 
-                  ? 'Səbətə əlavə et' 
-                  : product.stock === 0 
-                    ? 'Stokda yoxdur' 
-                    : 'Məhsul deaktivdir'
-                }
-              </button>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!product.isActive || product.stock === 0}
+                  className={`flex-1 py-4 rounded-lg font-semibold text-lg transition ${
+                    product.isActive && product.stock > 0
+                      ? 'bg-cyan-500 hover:bg-cyan-600'
+                      : 'bg-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  {product.isActive && product.stock > 0 
+                    ? 'Səbətə əlavə et' 
+                    : product.stock === 0 
+                      ? 'Stokda yoxdur' 
+                      : 'Məhsul deaktivdir'
+                  }
+                </button>
+                
+                <button
+                  onClick={toggleWishlist}
+                  className={`px-4 py-4 rounded-lg font-semibold text-lg transition ${
+                    isInWishlist 
+                      ? 'bg-red-500 hover:bg-red-600' 
+                      : 'bg-gray-600 hover:bg-gray-500'
+                  }`}
+                  title={isInWishlist ? 'Wishlist-dən çıxar' : 'Wishlist-ə əlavə et'}
+                >
+                  {isInWishlist ? '❤️' : '🤍'}
+                </button>
+              </div>
             </div>
           </div>
 

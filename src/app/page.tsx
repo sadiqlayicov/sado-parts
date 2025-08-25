@@ -145,6 +145,8 @@ export default function HomePage() {
     fetchData();
   }, []);
 
+
+
   // Top satılanlar üçün orderItems-ları yığ
   useEffect(() => {
     let isMounted = true;
