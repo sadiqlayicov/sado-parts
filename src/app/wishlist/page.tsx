@@ -29,19 +29,31 @@ export default function WishlistPage() {
   useEffect(() => {
     async function fetchProducts() {
       const validIds = wishlist.filter(Boolean);
+      console.log('Wishlist page - wishlist IDs:', wishlist);
+      console.log('Wishlist page - valid IDs:', validIds);
+      
       if (validIds.length === 0) {
+        console.log('Wishlist page - no valid IDs, setting products to empty');
         setProducts([]);
         return;
       }
+      
+      console.log('Wishlist page - fetching products for IDs:', validIds);
       const res = await fetch(`/api/products/batch?ids=${validIds.join(',')}`);
+      console.log('Wishlist page - API response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('Wishlist page - API response data:', data);
         setProducts(data);
+        
         if (data.length === 0 && validIds.length > 0) {
+          console.log('Wishlist page - no products found, clearing wishlist');
           localStorage.setItem('wishlist', '[]');
           setWishlist([]);
         }
       } else {
+        console.log('Wishlist page - API error, setting products to empty');
         setProducts([]);
       }
     }

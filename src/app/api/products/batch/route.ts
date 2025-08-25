@@ -16,11 +16,23 @@ export async function GET(req: NextRequest) {
   try {
     await client.connect();
     
-    const placeholders = ids.map((_, index) => `$${index + 1}`).join(',');
+    // Validate UUID format and filter out invalid ones
+    const validIds = ids.filter(id => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(id);
+    });
+    
+    console.log('Valid UUIDs:', validIds);
+    
+    if (validIds.length === 0) {
+      console.log('No valid UUIDs found');
+      return NextResponse.json([]);
+    }
+    
     const result = await client.query(`
       SELECT * FROM products 
       WHERE id = ANY($1::uuid[])
-    `, [ids]);
+    `, [validIds]);
     
     console.log('Batch API found products:', result.rows.length);
     return NextResponse.json(result.rows);
