@@ -2,11 +2,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "../../components/CartProvider";
+import { useAuth } from "../../components/AuthProvider";
 
 // Similar Products Component
 function SimilarProducts({ products }: { products: any[] }) {
   const [similarProducts, setSimilarProducts] = useState<any[]>([]);
   const { addToCart } = useCart();
+  const { isAuthenticated, isApproved, user, calculateDiscountedPrice } = useAuth();
 
   useEffect(() => {
     async function fetchSimilarProducts() {
@@ -99,6 +101,7 @@ function SimilarProducts({ products }: { products: any[] }) {
 
 export default function WishlistPage() {
   const { addToCart } = useCart();
+  const { isAuthenticated, isApproved, user, calculateDiscountedPrice } = useAuth();
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [products, setProducts] = useState<any[]>([]);
 
