@@ -163,10 +163,10 @@ function CatalogPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-6">
+      <main className="min-h-screen bg-white text-gray-800 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center h-64">
-            <div className="text-xl">Загрузка...</div>
+            <div className="text-xl text-gray-600">Загрузка...</div>
           </div>
         </div>
       </main>
@@ -174,20 +174,20 @@ function CatalogPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-6">
+    <main className="min-h-screen bg-white text-gray-800 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8 neon-text">
+        <h1 className="text-4xl font-bold mb-8 text-gray-900">
           {searchQuery ? `Результаты поиска: "${searchQuery}"` : 'Каталог запчастей'}
         </h1>
         {searchQuery && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl">
-            <p className="text-lg">
-              Найдено товаров: <span className="font-bold">{filteredProducts.length}</span>
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+            <p className="text-lg text-gray-700">
+              Найдено товаров: <span className="font-bold text-blue-600">{filteredProducts.length}</span>
               {filteredProducts.length > 0 && (
                 <span className="ml-4">
                   <button 
                     onClick={() => setSearchQuery('')}
-                    className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg transition"
+                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition"
                   >
                     Очистить поиск
                   </button>
@@ -199,45 +199,45 @@ function CatalogPage() {
         
         {/* Discount Banner for Approved Users */}
         {isApproved && !isAdmin && getDiscountPercentage() > 0 && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-center">
-            <h2 className="text-xl font-bold mb-2">🎉 Скидка {getDiscountPercentage()}% для одобренных пользователей!</h2>
-            <p>Все цены указаны с учетом скидки</p>
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
+            <h2 className="text-xl font-bold mb-2 text-green-800">🎉 Скидка {getDiscountPercentage()}% для одобренных пользователей!</h2>
+            <p className="text-green-700">Все цены указаны с учетом скидки</p>
           </div>
         )}
 
         {/* Approval Pending Banner */}
         {!isApproved && !isAdmin && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl text-center">
-            <h2 className="text-xl font-bold mb-2">⏳ Ваш аккаунт ожидает одобрения</h2>
-            <p>После одобрения администратором вы получите доступ к специальным ценам</p>
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-center">
+            <h2 className="text-xl font-bold mb-2 text-yellow-800">⏳ Ваш аккаунт ожидает одобрения</h2>
+            <p className="text-yellow-700">После одобрения администратором вы получите доступ к специальным ценам</p>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Фильтры */}
           <div className="lg:col-span-1">
-            <div className="bg-[#1e293b] rounded-xl p-6 shadow-lg">
-              <h2 className="text-xl font-bold mb-4">Фильтры</h2>
+            <div className="bg-gray-50 rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">Фильтры</h2>
               
               {/* Поиск */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold mb-2">Поиск</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Поиск</label>
                 <input
                   type="text"
                   placeholder="Название, описание, артикул..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
+                  className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 />
               </div>
 
               {/* Категории */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold mb-2">Категория</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Категория</label>
                 <select
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
+                  className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 >
                   <option value="" key="all">Все категории</option>
                   {renderCategoriesForSelect(categories, 0)}
@@ -246,11 +246,11 @@ function CatalogPage() {
 
               {/* Бренды */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold mb-2">Бренд</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Бренд</label>
                 <select
                   value={brandFilter}
                   onChange={(e) => setBrandFilter(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
+                  className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 >
                   <option value="" key="all">Все бренды</option>
                   {brands.map((brand, idx) => (
@@ -261,11 +261,11 @@ function CatalogPage() {
 
               {/* Цена */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold mb-2">Цена</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Цена</label>
                 <select
                   value={priceFilter}
                   onChange={(e) => setPriceFilter(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
+                  className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 >
                   <option value="">Любая цена</option>
                   <option value="0-1000">До 1,000 ₽</option>
@@ -279,11 +279,11 @@ function CatalogPage() {
 
               {/* Наличие */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold mb-2">Наличие</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Наличие</label>
                 <select
                   value={stockFilter}
                   onChange={(e) => setStockFilter(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
+                  className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 >
                   <option value="">Любое количество</option>
                   <option value="1-5">1-5 шт</option>
@@ -295,14 +295,14 @@ function CatalogPage() {
 
               {/* Товаров на странице */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold mb-2">Товаров на странице</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Товаров на странице</label>
                 <select
                   value={perPage}
                   onChange={(e) => {
                     setPerPage(Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-cyan-500/20 focus:border-cyan-500 outline-none"
+                  className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 >
                   <option value={10}>10</option>
                   <option value={25}>25</option>
@@ -331,16 +331,16 @@ function CatalogPage() {
           {/* Товары */}
           <div className="lg:col-span-3">
             <div className="mb-6 flex items-center justify-between">
-              <p className="text-lg">
-                Найдено товаров: <span className="font-bold text-cyan-400">{filteredProducts.length}</span>
+              <p className="text-lg text-gray-700">
+                Найдено товаров: <span className="font-bold text-blue-600">{filteredProducts.length}</span>
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {currentProducts.map(product => (
-                <div key={product.id} className="bg-[#1e293b] rounded-lg p-4 shadow-lg hover:scale-105 transition relative group cursor-pointer">
+                <div key={product.id} className="bg-white rounded-lg p-4 shadow-lg hover:scale-105 transition relative group cursor-pointer border border-gray-200 hover:border-blue-300">
                   <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" />
-                  <div className="w-full h-32 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg mb-3 flex items-center justify-center overflow-hidden relative z-20">
+                  <div className="w-full h-32 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden relative z-20">
                     {product.images && product.images.length > 0 && product.images[0] ? (
                       <img
                         src={product.images[0]}
@@ -348,24 +348,24 @@ function CatalogPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : null}
-                    <span className="text-white font-bold text-sm" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>
+                    <span className="text-gray-600 font-bold text-sm" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>
                       {product.brand || product.name}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-sm mb-2 line-clamp-2">{product.name}</h3>
-                  <p className="text-gray-300 text-xs mb-2 line-clamp-2">{product.description}</p>
-                  <p className="text-cyan-300 text-xs mb-1">Арт: {product.artikul || product.sku || '-'}</p>
-                  <p className="text-cyan-300 text-xs mb-1">Кат: {product.category?.name || '-'}</p>
-                  <p className="text-cyan-300 text-xs mb-3">Код: {product.catalogNumber || '-'}</p>
+                  <h3 className="font-semibold text-sm mb-2 line-clamp-2 text-gray-900">{product.name}</h3>
+                  <p className="text-gray-600 text-xs mb-2 line-clamp-2">{product.description}</p>
+                  <p className="text-blue-600 text-xs mb-1">Арт: {product.artikul || product.sku || '-'}</p>
+                  <p className="text-blue-600 text-xs mb-1">Кат: {product.category?.name || '-'}</p>
+                  <p className="text-blue-600 text-xs mb-3">Код: {product.catalogNumber || '-'}</p>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex flex-col">
                       {isApproved && !isAdmin && getDiscountPercentage() > 0 ? (
                         <>
-                          <span className="text-sm text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
-                          <span className="text-lg font-bold text-green-400">{calculateDiscountedPrice(product.price, product.salePrice).toLocaleString()} ₽</span>
+                          <span className="text-sm text-gray-500 line-through">{product.price.toLocaleString()} ₽</span>
+                          <span className="text-lg font-bold text-green-600">{calculateDiscountedPrice(product.price, product.salePrice).toLocaleString()} ₽</span>
                         </>
                       ) : (
-                        <span className="text-lg font-bold text-cyan-400">{product.price.toLocaleString()} ₽</span>
+                        <span className="text-lg font-bold text-blue-600">{product.price.toLocaleString()} ₽</span>
                       )}
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -378,13 +378,13 @@ function CatalogPage() {
                   <div className="flex gap-1 mt-2 z-20 relative justify-center">
                     <button
                       onClick={e => { e.stopPropagation(); e.preventDefault(); addToCart(product.id, 1); }}
-                      className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition text-xs"
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold text-center transition text-xs"
                     >
                       В корзину
                     </button>
                     <button
                       onClick={e => { e.stopPropagation(); e.preventDefault(); handleWishlist(product.id); }}
-                      className={`px-3 py-1 rounded-lg text-white font-semibold text-center transition text-xs ${wishlist.includes(product.id) ? 'bg-red-500' : 'bg-white/10 hover:bg-red-500'}`}
+                      className={`px-3 py-1 rounded-lg text-white font-semibold text-center transition text-xs ${wishlist.includes(product.id) ? 'bg-red-500' : 'bg-gray-300 hover:bg-red-500'}`}
                       title={wishlist.includes(product.id) ? 'Удалить из избранного' : 'Добавить в избранное'}
                     >
                       ♥
@@ -392,7 +392,7 @@ function CatalogPage() {
                   </div>
                   <Link
                     href={`/product/${product.id}`}
-                    className="w-full px-3 py-1 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white font-semibold text-center transition block mt-2 z-20 relative text-xs"
+                    className="w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold text-center transition block mt-2 z-20 relative text-xs"
                   >
                     Подробнее
                   </Link>
