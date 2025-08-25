@@ -28,13 +28,25 @@ export async function GET(req: NextRequest) {
       console.log('No valid UUIDs found');
       return NextResponse.json([]);
     }
+
+    // First, let's check if these IDs exist in the database at all
+    const checkResult = await client.query(`
+      SELECT id, name FROM products 
+      WHERE id = ANY($1::uuid[])
+    `, [validIds]);
     
+    console.log('Products found in database:', checkResult.rows);
+    console.log('Product IDs in database:', checkResult.rows.map(row => row.id));
+    
+    // Now get full product details - include inactive products for wishlist
     const result = await client.query(`
       SELECT * FROM products 
       WHERE id = ANY($1::uuid[])
     `, [validIds]);
     
     console.log('Batch API found products:', result.rows.length);
+    console.log('Product names found:', result.rows.map(row => row.name));
+    
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Get batch products error:', error);

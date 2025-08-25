@@ -42,20 +42,17 @@ export default function WishlistPage() {
       const res = await fetch(`/api/products/batch?ids=${validIds.join(',')}`);
       console.log('Wishlist page - API response status:', res.status);
       
-      if (res.ok) {
-        const data = await res.json();
-        console.log('Wishlist page - API response data:', data);
-        setProducts(data);
-        
-        if (data.length === 0 && validIds.length > 0) {
-          console.log('Wishlist page - no products found, clearing wishlist');
-          localStorage.setItem('wishlist', '[]');
-          setWishlist([]);
+              if (res.ok) {
+          const data = await res.json();
+          console.log('Wishlist page - API response data:', data);
+          setProducts(data);
+          
+          // Don't clear wishlist if products are not found - they might exist but not be active
+          // Only clear if there's an actual error
+        } else {
+          console.log('Wishlist page - API error, setting products to empty');
+          setProducts([]);
         }
-      } else {
-        console.log('Wishlist page - API error, setting products to empty');
-        setProducts([]);
-      }
     }
     fetchProducts();
   }, [wishlist]);
