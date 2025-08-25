@@ -38,6 +38,7 @@ export async function GET(
       .single();
 
     if (productError || !currentProduct) {
+      console.log('Product not found for ID:', productId);
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
@@ -45,6 +46,14 @@ export async function GET(
     }
 
     console.log('Current product categoryId:', currentProduct.categoryId);
+    
+    // If no category, return empty array
+    if (!currentProduct.categoryId) {
+      return NextResponse.json({
+        success: true,
+        products: []
+      });
+    }
     
     // Get similar products from the same category, excluding the current product
     const { data: similarProducts, error: similarError } = await supabase
@@ -79,52 +88,59 @@ export async function GET(
       );
     }
 
+    // If we have enough products from the same category, return them
+    if (similarProducts && similarProducts.length >= 4) {
+      return NextResponse.json({
+        success: true,
+        products: similarProducts
+      });
+    }
+
     // If we don't have enough products from the same category, get products with similar names or artikul
-    if (!similarProducts || similarProducts.length < 4) {
-      const searchTerms = [
-        currentProduct.name.split(' ')[0], // First word of product name
-        currentProduct.artikul?.substring(0, 4), // First 4 characters of artikul
-        currentProduct.catalogNumber?.substring(0, 4) // First 4 characters of catalog number
-      ].filter(Boolean);
+    const searchTerms = [
+      currentProduct.name.split(' ')[0], // First word of product name
+      currentProduct.artikul?.substring(0, 4), // First 4 characters of artikul
+      currentProduct.catalogNumber?.substring(0, 4) // First 4 characters of catalog number
+    ].filter(Boolean);
 
-      if (searchTerms.length > 0) {
-        const { data: additionalProducts, error: additionalError } = await supabase
-          .from('products')
-          .select(`
-            id,
-            name,
-            price,
-            salePrice,
-            artikul,
-            catalogNumber,
-            stock,
-            isActive,
-            images,
-            categoryId,
-            categories(name)
-          `)
-          .or(`name.ilike.%${searchTerms[0]}%,artikul.ilike.%${searchTerms[0]}%,catalogNumber.ilike.%${searchTerms[0]}%`)
-          .eq('isActive', true)
-          .neq('id', productId)
-          .neq('categoryId', currentProduct.categoryId)
-          .order('createdAt', { ascending: false })
-          .limit(8 - (similarProducts?.length || 0));
+    if (searchTerms.length > 0) {
+      const { data: additionalProducts, error: additionalError } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          price,
+          salePrice,
+          artikul,
+          catalogNumber,
+          stock,
+          isActive,
+          images,
+          categoryId,
+          categories(name)
+        `)
+        .or(`name.ilike.%${searchTerms[0]}%,artikul.ilike.%${searchTerms[0]}%,catalogNumber.ilike.%${searchTerms[0]}%`)
+        .eq('isActive', true)
+        .neq('id', productId)
+        .neq('categoryId', currentProduct.categoryId)
+        .order('createdAt', { ascending: false })
+        .limit(8 - (similarProducts?.length || 0));
 
-        if (!additionalError && additionalProducts) {
-          const combinedProducts = [...(similarProducts || []), ...additionalProducts];
-          // Remove duplicates based on ID
-          const uniqueProducts = combinedProducts.filter((product, index, self) => 
-            index === self.findIndex(p => p.id === product.id)
-          );
+      if (!additionalError && additionalProducts) {
+        const combinedProducts = [...(similarProducts || []), ...additionalProducts];
+        // Remove duplicates based on ID
+        const uniqueProducts = combinedProducts.filter((product, index, self) => 
+          index === self.findIndex(p => p.id === product.id)
+        );
 
-          return NextResponse.json({
-            success: true,
-            products: uniqueProducts.slice(0, 8)
-          });
-        }
+        return NextResponse.json({
+          success: true,
+          products: uniqueProducts.slice(0, 8)
+        });
       }
     }
 
+    // Return whatever we have
     return NextResponse.json({
       success: true,
       products: similarProducts || []

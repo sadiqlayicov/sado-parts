@@ -68,22 +68,22 @@ function SimilarProducts({ products }: { products: any[] }) {
             <div className="text-xs text-gray-400 mb-1">
               {product.artikul || 'N/A'}
             </div>
-            <div className="flex items-center gap-1">
-              {product.salePrice && product.salePrice < product.price ? (
-                <>
-                  <span className="text-red-400 line-through text-xs">
-                    {product.price?.toLocaleString('ru-RU')} ₽
-                  </span>
-                  <span className="text-cyan-400 font-bold text-sm">
-                    {product.salePrice?.toLocaleString('ru-RU')} ₽
-                  </span>
-                </>
-              ) : (
-                <span className="text-cyan-400 font-bold text-sm">
-                  {product.price?.toLocaleString('ru-RU')} ₽
-                </span>
-              )}
-            </div>
+                         <div className="flex items-center gap-1">
+               {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
+                 <>
+                   <span className="text-red-400 line-through text-xs">
+                     {product.price?.toLocaleString('ru-RU')} ₽
+                   </span>
+                   <span className="text-cyan-400 font-bold text-sm">
+                     {product.salePrice?.toLocaleString('ru-RU')} ₽
+                   </span>
+                 </>
+               ) : (
+                 <span className="text-cyan-400 font-bold text-sm">
+                   {product.price?.toLocaleString('ru-RU')} ₽
+                 </span>
+               )}
+             </div>
           </div>
           <button
             onClick={() => addToCart(product.id, 1)}
@@ -186,25 +186,25 @@ export default function WishlistPage() {
                         <div className="text-sm text-gray-400 mb-1">
                           Артикул: {product.artikul || 'N/A'} | Каталог: {product.catalogNumber || 'N/A'}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {product.salePrice && product.salePrice < product.price ? (
-                            <>
-                              <span className="text-red-400 line-through text-sm">
-                                {product.price?.toLocaleString('ru-RU')} ₽
-                              </span>
-                              <span className="text-cyan-400 font-bold text-lg">
-                                {product.salePrice?.toLocaleString('ru-RU')} ₽
-                              </span>
-                              <span className="text-red-400 text-sm">
-                                -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-cyan-400 font-bold text-lg">
-                              {product.price?.toLocaleString('ru-RU')} ₽
-                            </span>
-                          )}
-                        </div>
+                                                 <div className="flex items-center gap-2">
+                           {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
+                             <>
+                               <span className="text-red-400 line-through text-sm">
+                                 {product.price?.toLocaleString('ru-RU')} ₽
+                               </span>
+                               <span className="text-cyan-400 font-bold text-lg">
+                                 {product.salePrice?.toLocaleString('ru-RU')} ₽
+                               </span>
+                               <span className="text-red-400 text-sm">
+                                 -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                               </span>
+                             </>
+                           ) : (
+                             <span className="text-cyan-400 font-bold text-lg">
+                               {product.price?.toLocaleString('ru-RU')} ₽
+                             </span>
+                           )}
+                         </div>
                       </div>
                       <div className="flex gap-2 z-20">
                         <button

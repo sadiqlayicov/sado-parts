@@ -359,10 +359,10 @@ function CatalogPage() {
                   <p className="text-cyan-300 text-xs mb-3">Код: {product.catalogNumber || '-'}</p>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex flex-col">
-                      {isApproved && !isAdmin && getDiscountPercentage() > 0 ? (
+                      {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
                         <>
                           <span className="text-sm text-gray-400 line-through">{product.price.toLocaleString()} ₽</span>
-                          <span className="text-lg font-bold text-green-400">{calculateDiscountedPrice(product.price, product.salePrice).toLocaleString()} ₽</span>
+                          <span className="text-lg font-bold text-green-400">{product.salePrice.toLocaleString()} ₽</span>
                         </>
                       ) : (
                         <span className="text-lg font-bold text-cyan-400">{product.price.toLocaleString()} ₽</span>

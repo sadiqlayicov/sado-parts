@@ -62,12 +62,9 @@ export default function ProductPage() {
           return;
         }
 
-        // Fetch product and similar products in parallel
-        const [productResponse, similarResponse] = await Promise.all([
-          fetch(`/api/products/${productId}`),
-          fetch(`/api/products/similar/${productId}`)
-        ]);
-
+        // Fetch product first
+        const productResponse = await fetch(`/api/products/${productId}`);
+        
         if (!productResponse.ok) {
           throw new Error('Məhsul tapılmadı');
         }
@@ -81,12 +78,18 @@ export default function ProductPage() {
           throw new Error('Məhsul məlumatları düzgün formatda deyil');
         }
 
-        // Handle similar products
-        if (similarResponse.ok) {
-          const similarData = await similarResponse.json();
-          if (similarData.success && similarData.products) {
-            setSimilarProducts(similarData.products);
+        // Fetch similar products after we have the product data
+        try {
+          const similarResponse = await fetch(`/api/products/similar/${productId}`);
+          if (similarResponse.ok) {
+            const similarData = await similarResponse.json();
+            if (similarData.success && similarData.products) {
+              setSimilarProducts(similarData.products);
+            }
           }
+        } catch (similarError) {
+          console.error('Error fetching similar products:', similarError);
+          // Don't fail the entire page if similar products fail
         }
       } catch (err: any) {
         console.error('Error fetching product:', err);
@@ -253,13 +256,16 @@ export default function ProductPage() {
 
             {/* Price */}
             <div className="space-y-2">
-              {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
+              {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
                 <div>
                   <div className="text-gray-400 line-through text-xl">
                     {product.price?.toLocaleString('ru-RU')} ₽
                   </div>
                   <div className="text-cyan-400 font-bold text-3xl">
-                    {calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽
+                    {product.salePrice?.toLocaleString('ru-RU')} ₽
+                  </div>
+                  <div className="text-red-400 text-sm">
+                    -{Math.round(((product.price - product.salePrice) / product.price) * 100)}% endirim
                   </div>
                 </div>
               ) : (
@@ -381,10 +387,18 @@ export default function ProductPage() {
                             {similarProduct.name}
                           </h4>
                           <div className="text-cyan-400 font-bold text-sm mt-1">
-                            {isAuthenticated && isApproved && user && user.discountPercentage > 0
-                              ? `${calculateDiscountedPrice(similarProduct.price, similarProduct.salePrice)?.toFixed(2)} ₽`
-                              : `${similarProduct.price?.toLocaleString('ru-RU')} ₽`
-                            }
+                            {similarProduct.salePrice && similarProduct.salePrice > 0 && similarProduct.salePrice < similarProduct.price ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-red-400 line-through text-xs">
+                                  {similarProduct.price?.toLocaleString('ru-RU')} ₽
+                                </span>
+                                <span className="text-cyan-400 font-bold">
+                                  {similarProduct.salePrice?.toLocaleString('ru-RU')} ₽
+                                </span>
+                              </div>
+                            ) : (
+                              `${similarProduct.price?.toLocaleString('ru-RU')} ₽`
+                            )}
                           </div>
                           {similarProduct.stock > 0 ? (
                             <div className="text-green-400 text-xs mt-1">

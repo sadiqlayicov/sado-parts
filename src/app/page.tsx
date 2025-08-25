@@ -380,10 +380,10 @@ export default function HomePage() {
           <div className="min-h-0 flex-1 flex flex-col">
             <div className="font-semibold text-base mb-3 text-center leading-tight overflow-hidden" style={{ minHeight: '2.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.name}</div>
                                 <div className="text-center mb-4">
-                      {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
+                      {product.salePrice && product.salePrice > 0 && product.salePrice < product.price ? (
                         <div>
                                   <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString('ru-RU')} ₽</div>
-        <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽</div>
+        <div className="text-cyan-400 font-bold text-lg">{product.salePrice?.toLocaleString('ru-RU')} ₽</div>
                         </div>
                       ) : (
                         <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString('ru-RU')} ₽</div>

@@ -14,7 +14,7 @@ export default function Footer() {
   });
   
   const [siteInfo, setSiteInfo] = useState({
-    siteName: 'SADO-PARTS',
+    siteName: 'BILAL-PARTS',
     siteDescription: '2008-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.'
   });
 
@@ -33,8 +33,8 @@ export default function Footer() {
           });
           
           setSiteInfo({
-            siteName: settings.siteName || 'SADO-PARTS',
-            siteDescription: settings.siteDescription || '2008-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.'
+            siteName: settings.siteName || 'Bilal-PARTS',
+            siteDescription: settings.siteDescription || '2024-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.'
           });
           return;
         }
@@ -52,7 +52,7 @@ export default function Footer() {
           });
           
           setSiteInfo({
-            siteName: settings.siteName || 'SADO-PARTS',
+            siteName: settings.siteName || 'BILAL-PARTS',
             siteDescription: settings.siteDescription || '2008-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.'
           });
         }
