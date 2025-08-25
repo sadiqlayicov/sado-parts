@@ -46,21 +46,29 @@ export default function HomePage() {
     };
   };
 
-  // Load site settings
+  // Load site settings with caching
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        console.log('Loading site settings...');
+        // Check if settings are cached
+        const cachedSettings = localStorage.getItem('siteSettings');
+        if (cachedSettings) {
+          const settings = JSON.parse(cachedSettings);
+          if (settings.siteName) {
+            setSiteName(settings.siteName.toUpperCase());
+            return;
+          }
+        }
+
         const response = await fetch('/api/admin/settings');
         const data = await response.json();
         
-        console.log('Settings response:', data);
-        
         if (data.success && data.settings && data.settings.siteName) {
-          console.log('Setting site name to:', data.settings.siteName);
           setSiteName(data.settings.siteName.toUpperCase());
+          // Cache settings for 5 minutes
+          localStorage.setItem('siteSettings', JSON.stringify(data.settings));
+          setTimeout(() => localStorage.removeItem('siteSettings'), 5 * 60 * 1000);
         } else {
-          console.log('No site name found in settings, using default');
           setSiteName('BILAL-PARTS');
         }
       } catch (error) {
@@ -94,53 +102,62 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        console.log('Fetching products...');
-        const productsRes = await fetch('/api/products');
-        console.log('Products response status:', productsRes.status);
+        // Check if products are cached
+        const cachedProducts = localStorage.getItem('cachedProducts');
+        const cacheTime = localStorage.getItem('productsCacheTime');
+        const now = Date.now();
         
+        if (cachedProducts && cacheTime && (now - parseInt(cacheTime)) < 10 * 60 * 1000) { // 10 minutes cache
+          const productsData = JSON.parse(cachedProducts);
+          setProducts(productsData);
+          return;
+        }
+
+        const productsRes = await fetch('/api/products');
         const productsData = await productsRes.json();
-        console.log('Products data:', productsData);
         
         // Check if response has success and data properties (new API format)
         if (productsData.success && Array.isArray(productsData.data)) {
           setProducts(productsData.data);
-          console.log(`Loaded ${productsData.data.length} products`);
-          // Debug: Check first few products for salePrice values
-          if (productsData.data.length > 0) {
-            console.log('First 3 products salePrice values:', productsData.data.slice(0, 3).map((p: any) => ({
-              name: p.name,
-              price: p.price,
-              salePrice: p.salePrice
-            })));
-          }
+          // Cache products for 10 minutes
+          localStorage.setItem('cachedProducts', JSON.stringify(productsData.data));
+          localStorage.setItem('productsCacheTime', now.toString());
         } else if (Array.isArray(productsData)) {
           // Fallback for old API format
           setProducts(productsData);
-          console.log(`Loaded ${productsData.length} products`);
-          // Debug: Check first few products for salePrice values
-          if (productsData.length > 0) {
-            console.log('First 3 products salePrice values:', productsData.slice(0, 3).map((p: any) => ({
-              name: p.name,
-              price: p.price,
-              salePrice: p.salePrice
-            })));
-          }
+          // Cache products for 10 minutes
+          localStorage.setItem('cachedProducts', JSON.stringify(productsData));
+          localStorage.setItem('productsCacheTime', now.toString());
         } else {
-          console.error('Products data is not in expected format:', productsData);
           setProducts([]);
         }
         
-        const categoriesRes = await fetch('/api/categories');
-        if (categoriesRes.ok) {
-          const categoriesData = await categoriesRes.json();
-          // Check if response has success and data properties (new API format)
-          if (categoriesData.success && Array.isArray(categoriesData.data)) {
-            setCategories(categoriesData.data);
-          } else if (Array.isArray(categoriesData)) {
-            // Fallback for old API format
-            setCategories(categoriesData);
-          } else {
-            setCategories([]);
+        // Check if categories are cached
+        const cachedCategories = localStorage.getItem('cachedCategories');
+        const categoriesCacheTime = localStorage.getItem('categoriesCacheTime');
+        
+        if (cachedCategories && categoriesCacheTime && (now - parseInt(categoriesCacheTime)) < 30 * 60 * 1000) { // 30 minutes cache
+          const categoriesData = JSON.parse(cachedCategories);
+          setCategories(categoriesData);
+        } else {
+          const categoriesRes = await fetch('/api/categories');
+          if (categoriesRes.ok) {
+            const categoriesData = await categoriesRes.json();
+            // Check if response has success and data properties (new API format)
+            if (categoriesData.success && Array.isArray(categoriesData.data)) {
+              setCategories(categoriesData.data);
+              // Cache categories for 30 minutes
+              localStorage.setItem('cachedCategories', JSON.stringify(categoriesData.data));
+              localStorage.setItem('categoriesCacheTime', now.toString());
+            } else if (Array.isArray(categoriesData)) {
+              // Fallback for old API format
+              setCategories(categoriesData);
+              // Cache categories for 30 minutes
+              localStorage.setItem('cachedCategories', JSON.stringify(categoriesData));
+              localStorage.setItem('categoriesCacheTime', now.toString());
+            } else {
+              setCategories([]);
+            }
           }
         }
         

@@ -18,19 +18,32 @@ export default function Footer() {
     siteDescription: '2008-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.'
   });
 
-  // Load settings from API
+  // Load settings from API with caching
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        console.log('Footer: Loading site settings...');
+        // Check if settings are cached
+        const cachedSettings = localStorage.getItem('siteSettings');
+        if (cachedSettings) {
+          const settings = JSON.parse(cachedSettings);
+          setContactInfo({
+            phone: settings.contactPhone || '+994 12 345 67 89',
+            email: settings.contactEmail || 'info@sado-parts.az',
+            address: settings.address || 'Bakı şəhəri, Yasamal rayonu'
+          });
+          
+          setSiteInfo({
+            siteName: settings.siteName || 'SADO-PARTS',
+            siteDescription: settings.siteDescription || '2008-ci ildən bəri Azərbaycanda forklift sahəsində etibarlı tərəfdaş. Yüksək keyfiyyətli məhsul və xidmətlərlə müştərilərimizin ehtiyaclarını qarşılayırıq.'
+          });
+          return;
+        }
+
         const response = await fetch('/api/admin/settings');
         const data = await response.json();
         
-        console.log('Footer: Settings response:', data);
-        
         if (data.success && data.settings) {
           const settings = data.settings;
-          console.log('Footer: Received settings:', settings);
           
           setContactInfo({
             phone: settings.contactPhone || '+994 12 345 67 89',
@@ -50,8 +63,8 @@ export default function Footer() {
 
     loadSettings();
     
-    // Set up interval to refresh settings every 30 seconds
-    const interval = setInterval(loadSettings, 30000);
+    // Set up interval to refresh settings every 5 minutes instead of 30 seconds
+    const interval = setInterval(loadSettings, 5 * 60 * 1000);
     
     return () => clearInterval(interval);
   }, []);

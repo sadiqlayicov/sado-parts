@@ -56,39 +56,42 @@ export default function Header() {
     };
   }, []);
 
-  // Load site settings
+  // Load site settings with caching
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        console.log('Header: Loading site settings...');
+        // Check if settings are cached
+        const cachedSettings = localStorage.getItem('siteSettings');
+        if (cachedSettings) {
+          const settings = JSON.parse(cachedSettings);
+          if (settings.siteName) {
+            setSiteName(settings.siteName);
+            return;
+          }
+        }
+
         const response = await fetch('/api/admin/settings');
         const data = await response.json();
         
-        console.log('Header: Settings response:', data);
-        
         if (data.success && data.settings) {
           const settings = data.settings;
-          console.log('Header: Received settings:', settings);
           
           // Update site name
           if (settings.siteName) {
-            console.log('Header: Setting site name to:', settings.siteName);
             setSiteName(settings.siteName);
           } else {
-            console.log('Header: No site name found in settings, using default');
             setSiteName('Bilal-Parts');
           }
-          
-
           
           // Store settings in localStorage for other components to use
           if (typeof window !== 'undefined') {
             localStorage.setItem('siteSettings', JSON.stringify(settings));
+            // Cache settings for 5 minutes
+            setTimeout(() => localStorage.removeItem('siteSettings'), 5 * 60 * 1000);
             // Dispatch event to notify other components
             window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settings }));
           }
         } else {
-          console.log('Header: No settings found in API response, using default');
           setSiteName('Bilal-Parts');
         }
       } catch (error) {
@@ -99,8 +102,8 @@ export default function Header() {
 
     loadSettings();
     
-    // Set up interval to refresh settings every 30 seconds
-    const interval = setInterval(loadSettings, 30000);
+    // Set up interval to refresh settings every 5 minutes instead of 30 seconds
+    const interval = setInterval(loadSettings, 5 * 60 * 1000);
     
     return () => clearInterval(interval);
   }, []);

@@ -32,6 +32,11 @@ export async function GET(request: NextRequest) {
   let client;
   
   try {
+    // Add caching headers
+    const response = new Response();
+    response.headers.set('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
+    response.headers.set('Vary', 'Accept-Encoding');
+    
     client = await pool.connect();
 
     // Get query parameters
