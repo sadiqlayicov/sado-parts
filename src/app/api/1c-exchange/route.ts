@@ -779,7 +779,7 @@ function generateCommerceMLOffers(offers: any[]) {
     xml += '        <Цена>\n';
     xml += '          <ИдТипаЦены>1</ИдТипаЦены>\n';
     xml += `          <ЦенаЗаЕдиницу>${offer.price}</ЦенаЗаЕдиницу>\n`;
-    xml += '          <Валюта>AZN</Валюта>\n';
+            xml += '          <Валюта>RUB</Валюта>\n';
     xml += '          <Налог>\n';
     xml += '            <Наименование>НДС</Наименование>\n';
     xml += '            <УчтеноВСумме>false</УчтеноВСумме>\n';
@@ -806,7 +806,7 @@ function generateCommerceMLOrders(orders: any[]) {
     xml += '      <Дата>' + new Date(order.createdAt).toISOString().split('T')[0] + '</Дата>\n';
     xml += '      <ХозОперация>Заказ товара</ХозОперация>\n';
     xml += '      <Роль>Продавец</Роль>\n';
-    xml += '      <Валюта>' + (order.currency || 'AZN') + '</Валюта>\n';
+            xml += '      <Валюта>' + (order.currency || 'RUB') + '</Валюта>\n';
     xml += '      <Курс>1</Курс>\n';
     xml += '      <Сумма>' + order.totalAmount + '</Сумма>\n';
     xml += '      <Контрагенты>\n';

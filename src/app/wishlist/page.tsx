@@ -59,7 +59,7 @@ export default function WishlistPage() {
                 <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" />
                 <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} className="w-24 h-24 object-cover rounded mb-2 z-20" />
                 <div className="font-semibold text-lg mb-1 text-center z-20">{product.name}</div>
-                <div className="text-cyan-400 font-bold text-md mb-2 z-20">{product.price?.toLocaleString()}₼</div>
+                <div className="text-cyan-400 font-bold text-md mb-2 z-20">{product.price?.toLocaleString('ru-RU')} ₽</div>
                 <div className="flex gap-2 mt-2 z-20">
                   <button
                     onClick={e => { e.stopPropagation(); e.preventDefault(); addToCart(product.id, 1); }}

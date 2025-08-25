@@ -839,7 +839,7 @@ function WishlistProductCard({ productId, onClose }: { productId: string, onClos
     <div className="bg-[#232b3b] rounded p-4 flex flex-col items-center">
       <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} className="w-20 h-20 object-cover rounded mb-2" />
       <div className="font-semibold text-sm mb-1 text-center">{product.name}</div>
-      <div className="text-cyan-400 font-bold text-sm mb-2">{product.price?.toLocaleString()}₼</div>
+              <div className="text-cyan-400 font-bold text-sm mb-2">{product.price?.toLocaleString('ru-RU')} ₽</div>
       <Link href={`/product/${product.id}`} className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition mb-1" onClick={onClose}>
         Ətraflı
       </Link>

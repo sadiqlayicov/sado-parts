@@ -373,8 +373,8 @@ export default function AdminOrderDetailsPage() {
                             </button>
                           </div>
                         </div>
-                        <p className="text-gray-400 text-sm">{item.price.toFixed(2)} ₼</p>
-                        <p className="text-cyan-500 font-bold">{item.totalPrice.toFixed(2)} ₼</p>
+                                <p className="text-gray-400 text-sm">{item.price.toFixed(2)} ₽</p>
+        <p className="text-cyan-500 font-bold">{item.totalPrice.toFixed(2)} ₽</p>
                         <button
                           onClick={() => removeItem(item.id)}
                           className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition"
@@ -462,7 +462,7 @@ export default function AdminOrderDetailsPage() {
                 <div className="flex justify-between">
                                      <span className="text-gray-400">Общая сумма:</span>
                   <span className="text-cyan-400 font-bold">
-                    {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼
+                    {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₽
                   </span>
                 </div>
               </div>

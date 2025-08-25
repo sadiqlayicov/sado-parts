@@ -459,8 +459,8 @@ export default function UserOrderDetailsPage() {
                       </td>
                       <td><span class="quantity-badge">${item.sku}</span></td>
                       <td><span class="quantity-badge">${item.quantity} ədəd</span></td>
-                      <td class="price">${item.price.toFixed(2)} ₼</td>
-                      <td class="total-price">${item.totalPrice.toFixed(2)} ₼</td>
+                              <td class="price">${item.price.toFixed(2)} ₽</td>
+        <td class="total-price">${item.totalPrice.toFixed(2)} ₽</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -618,8 +618,8 @@ export default function UserOrderDetailsPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-white font-medium">{item.quantity} ədəd</p>
-                        <p className="text-gray-400 text-sm">{item.price.toFixed(2)} ₼</p>
-                        <p className="text-cyan-500 font-bold">{item.totalPrice.toFixed(2)} ₼</p>
+                                <p className="text-gray-400 text-sm">{item.price.toFixed(2)} ₽</p>
+        <p className="text-cyan-500 font-bold">{item.totalPrice.toFixed(2)} ₽</p>
                       </div>
                     </div>
                   </div>
@@ -647,7 +647,7 @@ export default function UserOrderDetailsPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-400">Ümumi məbləğ:</span>
                   <span className="text-cyan-400 font-bold">
-                    {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₼
+                    {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₽
                   </span>
                 </div>
               </div>

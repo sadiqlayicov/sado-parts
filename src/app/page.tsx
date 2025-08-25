@@ -356,11 +356,11 @@ export default function HomePage() {
                                 <div className="text-center mb-4">
                       {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                         <div>
-                          <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString()}₼</div>
-                          <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)}₼</div>
+                                  <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString('ru-RU')} ₽</div>
+        <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽</div>
                         </div>
                       ) : (
-                        <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString()}₼</div>
+                        <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString('ru-RU')} ₽</div>
                       )}
                     </div>
             <div className="text-xs text-gray-400 text-center space-y-1 mb-6">

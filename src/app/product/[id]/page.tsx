@@ -229,15 +229,15 @@ export default function ProductPage() {
               {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                 <div>
                   <div className="text-gray-400 line-through text-xl">
-                    {product.price?.toLocaleString()}₼
+                    {product.price?.toLocaleString('ru-RU')} ₽
                   </div>
                   <div className="text-cyan-400 font-bold text-3xl">
-                    {calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)}₼
+                    {calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽
                   </div>
                 </div>
               ) : (
                 <div className="text-cyan-400 font-bold text-3xl">
-                  {product.price?.toLocaleString()}₼
+                  {product.price?.toLocaleString('ru-RU')} ₽
                 </div>
               )}
             </div>
@@ -361,8 +361,8 @@ export default function ProductPage() {
                     <div className="flex items-center justify-between">
                       <div className="text-cyan-400 font-bold">
                         {isAuthenticated && isApproved && user && user.discountPercentage > 0
-                          ? `${calculateDiscountedPrice(similarProduct.price, similarProduct.salePrice)?.toFixed(2)}₼`
-                          : `${similarProduct.price?.toLocaleString()}₼`
+                          ? `${calculateDiscountedPrice(similarProduct.price, similarProduct.salePrice)?.toFixed(2)} ₽`
+                          : `${similarProduct.price?.toLocaleString('ru-RU')} ₽`
                         }
                       </div>
                       

@@ -99,7 +99,7 @@ model Order {
   orderNumber String   @unique
   status      String   @default("pending") // pending, processing, shipped, delivered, cancelled
   totalAmount Float
-  currency    String   @default("AZN")
+  currency    String   @default("RUB")
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

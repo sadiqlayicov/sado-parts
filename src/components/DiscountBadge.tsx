@@ -27,15 +27,15 @@ export default function DiscountBadge({ originalPrice, productSalePrice, classNa
             🎉 Sizin endiriminiz: {discountPercentage}%
           </p>
           <p className="text-xs text-green-600">
-            Qənaət: {savings.toFixed(2)} ₼
+            Qənaət: {savings.toFixed(2)} ₽
           </p>
         </div>
         <div className="text-right">
           <p className="text-lg font-bold text-green-800">
-            {discountedPrice.toFixed(2)} ₼
+            {discountedPrice.toFixed(2)} ₽
           </p>
           <p className="text-xs text-green-600 line-through">
-            {originalPrice.toFixed(2)} ₼
+            {originalPrice.toFixed(2)} ₽
           </p>
         </div>
       </div>

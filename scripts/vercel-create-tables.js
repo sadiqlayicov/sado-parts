@@ -37,7 +37,7 @@ async function createTables() {
         "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         status VARCHAR(50) NOT NULL DEFAULT 'pending',
         "totalAmount" DECIMAL(10,2) NOT NULL,
-        currency VARCHAR(10) NOT NULL DEFAULT 'AZN',
+        currency VARCHAR(10) NOT NULL DEFAULT 'RUB',
         notes TEXT,
         "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -41,14 +41,14 @@ async function checkOrders() {
     const sampleOrders = await client.query('SELECT id, "orderNumber", "userId", status, "totalAmount" FROM orders LIMIT 5');
     console.log('📋 Sample orders:');
     sampleOrders.rows.forEach(order => {
-      console.log(`  - ${order.orderNumber}: ${order.totalAmount}₼ (${order.status})`);
+      console.log(`  - ${order.orderNumber}: ${order.totalAmount}₽ (${order.status})`);
     });
 
     // Get sample order items
     const sampleOrderItems = await client.query('SELECT "orderId", "productId", quantity, price FROM order_items LIMIT 5');
     console.log('📋 Sample order items:');
     sampleOrderItems.rows.forEach(item => {
-      console.log(`  - Order: ${item.orderId}, Product: ${item.productId}, Qty: ${item.quantity}, Price: ${item.price}₼`);
+              console.log(`  - Order: ${item.orderId}, Product: ${item.productId}, Qty: ${item.quantity}, Price: ${item.price}₽`);
     });
 
   } catch (error) {
