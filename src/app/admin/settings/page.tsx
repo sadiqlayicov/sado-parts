@@ -334,13 +334,13 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Настройки</h1>
-          <p className="text-gray-600 dark:text-gray-400">Управление системными настройками</p>
+          <h1 className="text-3xl font-bold text-gray-900">Настройки</h1>
+          <p className="text-gray-600">Управление системными настройками</p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={handleReset}
-            className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition flex items-center"
+            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition flex items-center"
           >
             <FaUndo className="mr-2" />
             Сбросить
@@ -357,19 +357,19 @@ export default function SettingsPage() {
       </div>
 
       {saveMessage && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <p className="text-green-800 dark:text-green-200">{saveMessage}</p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-green-800">{saveMessage}</p>
         </div>
       )}
 
       {isLoading && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-blue-800 dark:text-blue-200">Загрузка настроек...</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-blue-800">Загрузка настроек...</p>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -393,22 +393,22 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow">
         <div className="p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">Загрузка...</span>
+              <span className="ml-2 text-gray-600">Загрузка...</span>
             </div>
           ) : (
             <>
               {activeTab === 'general' && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Общие настройки</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Общие настройки</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Название сайта
                       </label>
                       <input
@@ -418,12 +418,12 @@ export default function SettingsPage() {
                           ...prev,
                           general: { ...prev.general, siteName: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Описание сайта
                       </label>
                       <input
@@ -433,12 +433,12 @@ export default function SettingsPage() {
                           ...prev,
                           general: { ...prev.general, siteDescription: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Email для связи
                       </label>
                       <input
@@ -448,12 +448,12 @@ export default function SettingsPage() {
                           ...prev,
                           general: { ...prev.general, contactEmail: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Телефон для связи
                       </label>
                       <input
@@ -463,12 +463,12 @@ export default function SettingsPage() {
                           ...prev,
                           general: { ...prev.general, contactPhone: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                       />
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Адрес
                       </label>
                       <input
@@ -478,12 +478,12 @@ export default function SettingsPage() {
                           ...prev,
                           general: { ...prev.general, address: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Часовой пояс
                       </label>
                       <select
@@ -492,7 +492,7 @@ export default function SettingsPage() {
                           ...prev,
                           general: { ...prev.general, timezone: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                       >
                         <option value="Europe/Moscow">Москва (UTC+3)</option>
                         <option value="Europe/London">Лондон (UTC+0)</option>
@@ -501,7 +501,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Валюта
                       </label>
                       <select
@@ -510,7 +510,7 @@ export default function SettingsPage() {
                           ...prev,
                           general: { ...prev.general, currency: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       >
                         <option value="RUB">Рубль (₽)</option>
                         <option value="USD">Доллар ($)</option>
@@ -523,11 +523,11 @@ export default function SettingsPage() {
 
               {activeTab === 'company' && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Информация о компании</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Информация о компании</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Название компании
                       </label>
                       <input
@@ -537,13 +537,13 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, companyName: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="ООО 'Название компании'"
                       />
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Адрес компании
                       </label>
                       <input
@@ -553,13 +553,13 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, companyAddress: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="г. Москва, ул. Примерная, д. 123"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         ИНН
                       </label>
                       <input
@@ -569,13 +569,13 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, inn: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="7707083893"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         КПП
                       </label>
                       <input
@@ -585,13 +585,13 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, kpp: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="770701001"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         БИК
                       </label>
                       <input
@@ -601,13 +601,13 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, bik: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="044525225"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Счет №
                       </label>
                       <input
@@ -617,17 +617,17 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, accountNumber: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="40702810123456789012"
                       />
                     </div>
 
                     <div className="md:col-span-2">
-                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Банковские реквизиты</h4>
+                      <h4 className="text-md font-medium text-gray-900 mb-4">Банковские реквизиты</h4>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Название банка
                       </label>
                       <input
@@ -637,13 +637,13 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, bankName: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="Сбербанк"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         БИК банка
                       </label>
                       <input
@@ -653,13 +653,13 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, bankBik: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="044525225"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Корр. счет банка
                       </label>
                       <input
@@ -669,17 +669,17 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, bankAccountNumber: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="30101810200000000225"
                       />
                     </div>
 
                     <div className="md:col-span-2">
-                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Подписи</h4>
+                      <h4 className="text-md font-medium text-gray-900 mb-4">Подписи</h4>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Руководитель
                       </label>
                       <input
@@ -689,13 +689,13 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, directorName: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="Иванов И.И."
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Бухгалтер
                       </label>
                       <input
@@ -705,7 +705,7 @@ export default function SettingsPage() {
                           ...prev,
                           company: { ...prev.company, accountantName: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                         placeholder="Петрова П.П."
                       />
                     </div>
@@ -715,11 +715,11 @@ export default function SettingsPage() {
 
               {activeTab === 'security' && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Настройки безопасности</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Настройки безопасности</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Таймаут сессии (минуты)
                       </label>
                       <input
@@ -729,12 +729,12 @@ export default function SettingsPage() {
                           ...prev,
                           security: { ...prev.security, sessionTimeout: parseInt(e.target.value) }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Минимальная длина пароля
                       </label>
                       <input
@@ -744,12 +744,12 @@ export default function SettingsPage() {
                           ...prev,
                           security: { ...prev.security, passwordMinLength: parseInt(e.target.value) }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Максимум попыток входа
                       </label>
                       <input
@@ -759,7 +759,7 @@ export default function SettingsPage() {
                           ...prev,
                           security: { ...prev.security, maxLoginAttempts: parseInt(e.target.value) }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       />
                     </div>
 
@@ -774,7 +774,7 @@ export default function SettingsPage() {
                           }))}
                           className="mr-2"
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Требовать двухфакторную аутентификацию</span>
+                        <span className="text-sm text-gray-700 ">Требовать двухфакторную аутентификацию</span>
                       </label>
                       
                       <label className="flex items-center">
@@ -787,7 +787,7 @@ export default function SettingsPage() {
                           }))}
                           className="mr-2"
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Включить CAPTCHA</span>
+                        <span className="text-sm text-gray-700 ">Включить CAPTCHA</span>
                       </label>
                     </div>
                   </div>
@@ -796,7 +796,7 @@ export default function SettingsPage() {
 
               {activeTab === 'notifications' && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Настройки уведомлений</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Настройки уведомлений</h3>
                   
                   <div className="space-y-4">
                     <label className="flex items-center">
@@ -809,7 +809,7 @@ export default function SettingsPage() {
                         }))}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Email уведомления</span>
+                      <span className="text-sm text-gray-700 ">Email уведомления</span>
                     </label>
                     
                     <label className="flex items-center">
@@ -822,7 +822,7 @@ export default function SettingsPage() {
                         }))}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">SMS уведомления</span>
+                      <span className="text-sm text-gray-700 ">SMS уведомления</span>
                     </label>
                     
                     <label className="flex items-center">
@@ -835,7 +835,7 @@ export default function SettingsPage() {
                         }))}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Уведомления о заказах</span>
+                      <span className="text-sm text-gray-700 ">Уведомления о заказах</span>
                     </label>
                     
                     <label className="flex items-center">
@@ -848,7 +848,7 @@ export default function SettingsPage() {
                         }))}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Уведомления о складских остатках</span>
+                      <span className="text-sm text-gray-700 ">Уведомления о складских остатках</span>
                     </label>
                     
                     <label className="flex items-center">
@@ -861,7 +861,7 @@ export default function SettingsPage() {
                         }))}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Уведомления о новых отзывах</span>
+                      <span className="text-sm text-gray-700 ">Уведомления о новых отзывах</span>
                     </label>
                   </div>
                 </div>
@@ -869,12 +869,12 @@ export default function SettingsPage() {
 
               {activeTab === 'payment' && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Настройки платежей</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Настройки платежей</h3>
                   
                   <div className="space-y-6">
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="border border-gray-200  rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white">Stripe</h4>
+                        <h4 className="font-medium text-gray-900">Stripe</h4>
                         <label className="flex items-center">
                           <input
                             type="checkbox"
@@ -885,13 +885,13 @@ export default function SettingsPage() {
                             }))}
                             className="mr-2"
                           />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">Включить</span>
+                          <span className="text-sm text-gray-700 ">Включить</span>
                         </label>
                       </div>
                       
                       {settings.payment.stripeEnabled && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-sm font-medium text-gray-700  mb-2">
                             Публичный ключ
                           </label>
                           <input
@@ -901,15 +901,15 @@ export default function SettingsPage() {
                               ...prev,
                               payment: { ...prev.payment, stripeKey: e.target.value }
                             }))}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                           />
                         </div>
                       )}
                     </div>
 
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="border border-gray-200  rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white">PayPal</h4>
+                        <h4 className="font-medium text-gray-900">PayPal</h4>
                         <label className="flex items-center">
                           <input
                             type="checkbox"
@@ -920,13 +920,13 @@ export default function SettingsPage() {
                             }))}
                             className="mr-2"
                           />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">Включить</span>
+                          <span className="text-sm text-gray-700 ">Включить</span>
                         </label>
                       </div>
                       
                       {settings.payment.paypalEnabled && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-sm font-medium text-gray-700  mb-2">
                             Client ID
                           </label>
                           <input
@@ -936,15 +936,15 @@ export default function SettingsPage() {
                               ...prev,
                               payment: { ...prev.payment, paypalClientId: e.target.value }
                             }))}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                           />
                         </div>
                       )}
                     </div>
 
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="border border-gray-200  rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white">Банковский перевод</h4>
+                        <h4 className="font-medium text-gray-900">Банковский перевод</h4>
                         <label className="flex items-center">
                           <input
                             type="checkbox"
@@ -955,13 +955,13 @@ export default function SettingsPage() {
                             }))}
                             className="mr-2"
                           />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">Включить</span>
+                          <span className="text-sm text-gray-700 ">Включить</span>
                         </label>
                       </div>
                       
                       {settings.payment.bankTransferEnabled && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-sm font-medium text-gray-700  mb-2">
                             Банковские реквизиты
                           </label>
                           <textarea
@@ -971,19 +971,19 @@ export default function SettingsPage() {
                               payment: { ...prev.payment, bankDetails: e.target.value }
                             }))}
                             rows={4}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                           />
                         </div>
                       )}
                     </div>
 
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="border border-gray-200  rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white">P2P перевод (карта)</h4>
+                        <h4 className="font-medium text-gray-900">P2P перевод (карта)</h4>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Номер карты</label>
+                          <label className="block text-sm font-medium text-gray-700  mb-2">Номер карты</label>
                           <input
                             type="text"
                             value={settings.payment.p2pCardNumber || ''}
@@ -991,12 +991,12 @@ export default function SettingsPage() {
                               ...prev,
                               payment: { ...prev.payment, p2pCardNumber: e.target.value }
                             }))}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                             placeholder="0000 0000 0000 0000"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Владелец карты</label>
+                          <label className="block text-sm font-medium text-gray-700  mb-2">Владелец карты</label>
                           <input
                             type="text"
                             value={settings.payment.p2pCardHolder || ''}
@@ -1004,12 +1004,12 @@ export default function SettingsPage() {
                               ...prev,
                               payment: { ...prev.payment, p2pCardHolder: e.target.value }
                             }))}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                             placeholder="IVAN IVANOV"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Банк</label>
+                          <label className="block text-sm font-medium text-gray-700  mb-2">Банк</label>
                           <input
                             type="text"
                             value={settings.payment.p2pBankName || ''}
@@ -1017,7 +1017,7 @@ export default function SettingsPage() {
                               ...prev,
                               payment: { ...prev.payment, p2pBankName: e.target.value }
                             }))}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                             placeholder="Сбербанк"
                           />
                         </div>
@@ -1030,11 +1030,11 @@ export default function SettingsPage() {
 
               {activeTab === 'shipping' && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Настройки доставки</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Настройки доставки</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Порог бесплатной доставки (₽)
                       </label>
                       <input
@@ -1044,12 +1044,12 @@ export default function SettingsPage() {
                           ...prev,
                           shipping: { ...prev.shipping, freeShippingThreshold: parseInt(e.target.value) }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Стоимость стандартной доставки (₽)
                       </label>
                       <input
@@ -1059,12 +1059,12 @@ export default function SettingsPage() {
                           ...prev,
                           shipping: { ...prev.shipping, defaultShippingCost: parseInt(e.target.value) }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Стоимость экспресс-доставки (₽)
                       </label>
                       <input
@@ -1074,7 +1074,7 @@ export default function SettingsPage() {
                           ...prev,
                           shipping: { ...prev.shipping, expressShippingCost: parseInt(e.target.value) }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       />
                     </div>
 
@@ -1089,7 +1089,7 @@ export default function SettingsPage() {
                           }))}
                           className="mr-2"
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Включить самовывоз</span>
+                        <span className="text-sm text-gray-700 ">Включить самовывоз</span>
                       </label>
                       
                       <label className="flex items-center">
@@ -1102,7 +1102,7 @@ export default function SettingsPage() {
                           }))}
                           className="mr-2"
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Включить доставку</span>
+                        <span className="text-sm text-gray-700 ">Включить доставку</span>
                       </label>
                     </div>
                   </div>
@@ -1111,11 +1111,11 @@ export default function SettingsPage() {
 
               {activeTab === 'appearance' && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Настройки внешнего вида</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Настройки внешнего вида</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Тема оформления
                       </label>
                       <select
@@ -1124,7 +1124,7 @@ export default function SettingsPage() {
                           ...prev,
                           appearance: { ...prev.appearance, theme: e.target.value as any }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       >
                         <option value="light">Светлая</option>
                         <option value="dark">Темная</option>
@@ -1133,7 +1133,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         Основной цвет
                       </label>
                       <input
@@ -1143,12 +1143,12 @@ export default function SettingsPage() {
                           ...prev,
                           appearance: { ...prev.appearance, primaryColor: e.target.value }
                         }))}
-                        className="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full h-10 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         URL логотипа
                       </label>
                       <input
@@ -1158,12 +1158,12 @@ export default function SettingsPage() {
                           ...prev,
                           appearance: { ...prev.appearance, logoUrl: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700  mb-2">
                         URL фавикона
                       </label>
                       <input
@@ -1173,7 +1173,7 @@ export default function SettingsPage() {
                           ...prev,
                           appearance: { ...prev.appearance, faviconUrl: e.target.value }
                         }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 "
                       />
                     </div>
                   </div>
