@@ -17,10 +17,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   let client;
+  let productId: string;
   
   try {
     const { id } = await params;
-    const productId = id;
+    productId = id;
     
     console.log('Similar products API called with product ID:', productId);
     
