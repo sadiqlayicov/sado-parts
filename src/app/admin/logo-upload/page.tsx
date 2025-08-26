@@ -144,7 +144,7 @@ export default function LogoUploadPage() {
                   className="max-w-full max-h-64 mx-auto object-contain"
                 />
                 <p className="text-sm text-gray-600 mt-2 text-center">
-                  {selectedFile?.name} ({(selectedFile?.size / 1024 / 1024).toFixed(2)} MB)
+                  {selectedFile?.name} ({(selectedFile?.size ? (selectedFile.size / 1024 / 1024).toFixed(2) : '0.00')} MB)
                 </p>
               </div>
             </div>
