@@ -17,7 +17,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   let client;
-  let productId: string;
+  let productId: string = '';
   
   try {
     const { id } = await params;
