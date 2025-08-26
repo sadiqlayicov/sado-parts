@@ -1,28 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { Pool } from 'pg';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-let supabase: any = null;
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-}
+// Create a connection pool optimized for Supabase
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    },
+    max: 3,
+    idleTimeoutMillis: 60000,
+    connectionTimeoutMillis: 5000,
+});
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let client;
+  
   try {
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Supabase client is not configured' },
-        { status: 500 }
-      );
-    }
-
     const { id } = await params;
     const productId = id;
+    
     if (!productId) {
       return NextResponse.json(
         { error: 'Product ID is required' },
@@ -30,14 +29,16 @@ export async function GET(
       );
     }
 
-    // First, get the current product to find its category
-    const { data: currentProduct, error: productError } = await supabase
-      .from('products')
-      .select('categoryId, name, artikul, catalogNumber')
-      .eq('id', productId)
-      .single();
+    client = await pool.connect();
 
-    if (productError || !currentProduct) {
+    // First, get the current product to find its category
+    const currentProductResult = await client.query(`
+      SELECT categoryId, name, artikul, "catalogNumber"
+      FROM products 
+      WHERE id = $1
+    `, [productId]);
+
+    if (currentProductResult.rows.length === 0) {
       console.log('Product not found for ID:', productId);
       return NextResponse.json(
         { error: 'Product not found' },
@@ -45,6 +46,7 @@ export async function GET(
       );
     }
 
+    const currentProduct = currentProductResult.rows[0];
     console.log('Current product categoryId:', currentProduct.categoryId);
     
     // If no category, return empty array
@@ -56,40 +58,33 @@ export async function GET(
     }
     
     // Get similar products from the same category, excluding the current product
-    const { data: similarProducts, error: similarError } = await supabase
-      .from('products')
-      .select(`
-        id,
-        name,
-        price,
-        salePrice,
-        artikul,
-        catalogNumber,
-        stock,
-        isActive,
-        images,
-        categoryId,
-        categories(name)
-      `)
-      .eq('categoryId', currentProduct.categoryId)
-      .eq('isActive', true)
-      .neq('id', productId)
-      .order('createdAt', { ascending: false })
-      .limit(8);
+    const similarProductsResult = await client.query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.price,
+        p."salePrice",
+        p.artikul,
+        p."catalogNumber",
+        p.stock,
+        p."isActive",
+        p.images,
+        p."categoryId",
+        c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p."categoryId" = c.id
+      WHERE p."categoryId" = $1 
+        AND p."isActive" = true 
+        AND p.id != $2
+      ORDER BY p."createdAt" DESC
+      LIMIT 8
+    `, [currentProduct.categoryId, productId]);
 
-    console.log('Similar products found:', similarProducts?.length || 0);
-    console.log('Similar products error:', similarError);
-
-    if (similarError) {
-      console.error('Error fetching similar products:', similarError);
-      return NextResponse.json(
-        { error: 'Failed to fetch similar products' },
-        { status: 500 }
-      );
-    }
+    const similarProducts = similarProductsResult.rows;
+    console.log('Similar products found:', similarProducts.length);
 
     // If we have enough products from the same category, return them
-    if (similarProducts && similarProducts.length >= 4) {
+    if (similarProducts.length >= 4) {
       return NextResponse.json({
         success: true,
         products: similarProducts
@@ -98,36 +93,40 @@ export async function GET(
 
     // If we don't have enough products from the same category, get products with similar names or artikul
     const searchTerms = [
-      currentProduct.name.split(' ')[0], // First word of product name
+      currentProduct.name?.split(' ')[0], // First word of product name
       currentProduct.artikul?.substring(0, 4), // First 4 characters of artikul
       currentProduct.catalogNumber?.substring(0, 4) // First 4 characters of catalog number
     ].filter(Boolean);
 
     if (searchTerms.length > 0) {
-      const { data: additionalProducts, error: additionalError } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          price,
-          salePrice,
-          artikul,
-          catalogNumber,
-          stock,
-          isActive,
-          images,
-          categoryId,
-          categories(name)
-        `)
-        .or(`name.ilike.%${searchTerms[0]}%,artikul.ilike.%${searchTerms[0]}%,catalogNumber.ilike.%${searchTerms[0]}%`)
-        .eq('isActive', true)
-        .neq('id', productId)
-        .neq('categoryId', currentProduct.categoryId)
-        .order('createdAt', { ascending: false })
-        .limit(8 - (similarProducts?.length || 0));
+      const searchTerm = searchTerms[0];
+      const additionalProductsResult = await client.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.price,
+          p."salePrice",
+          p.artikul,
+          p."catalogNumber",
+          p.stock,
+          p."isActive",
+          p.images,
+          p."categoryId",
+          c.name as category_name
+        FROM products p
+        LEFT JOIN categories c ON p."categoryId" = c.id
+        WHERE (p.name ILIKE $1 OR p.artikul ILIKE $1 OR p."catalogNumber" ILIKE $1)
+          AND p."isActive" = true 
+          AND p.id != $2
+          AND p."categoryId" != $3
+        ORDER BY p."createdAt" DESC
+        LIMIT $4
+      `, [`%${searchTerm}%`, productId, currentProduct.categoryId, 8 - similarProducts.length]);
 
-      if (!additionalError && additionalProducts) {
-        const combinedProducts = [...(similarProducts || []), ...additionalProducts];
+      const additionalProducts = additionalProductsResult.rows;
+      
+      if (additionalProducts.length > 0) {
+        const combinedProducts = [...similarProducts, ...additionalProducts];
         // Remove duplicates based on ID
         const uniqueProducts = combinedProducts.filter((product, index, self) => 
           index === self.findIndex(p => p.id === product.id)
@@ -143,7 +142,7 @@ export async function GET(
     // Return whatever we have
     return NextResponse.json({
       success: true,
-      products: similarProducts || []
+      products: similarProducts
     });
 
   } catch (error: any) {
@@ -152,5 +151,9 @@ export async function GET(
       { error: 'Failed to fetch similar products' },
       { status: 500 }
     );
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }

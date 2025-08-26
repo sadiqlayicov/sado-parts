@@ -427,14 +427,14 @@ export default function HomePage() {
       {/* Hero Banner Section */}
       <section className="relative h-96 lg:h-[500px] bg-gradient-to-r from-blue-600 to-blue-800 overflow-hidden">
         {/* Background Image */}
-        <div className="absolute inset-0 bg-black/40 z-10"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-blue-700/80 z-20"></div>
+        <div className="absolute inset-0 bg-black/20 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-blue-700/40 z-20"></div>
         
         {/* Banner Image */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="/banner-forklift-real.jpg" 
-            alt="Forklift Parts" 
+            src="/banner-promotional.jpg" 
+            alt="Professional Technical Support - Bilal Parts" 
             className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
@@ -449,10 +449,10 @@ export default function HomePage() {
               {siteName}
             </h1>
             <p className="text-xl lg:text-2xl mb-4 drop-shadow-md">
-              Запчасти для вилочных погрузчиков в Москве
+              Professional Technical Support
             </p>
             <p className="text-lg lg:text-xl mb-8 text-blue-100 drop-shadow-md">
-              Интернет-магазин премиум-класса
+              Powerful Parts Research System & Strong Supply Chain
             </p>
             <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
               <Link 
