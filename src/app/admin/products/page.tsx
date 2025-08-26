@@ -126,34 +126,34 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
   };
   return (
     <div style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.4)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <form onSubmit={e => { e.preventDefault(); onSave(form); }} style={{background:'#232b3b',padding:32,borderRadius:8,minWidth:350,color:'#fff',boxShadow:'0 2px 16px #0008'}}>
+      <form onSubmit={e => { e.preventDefault(); onSave(form); }} style={{background:'#ffffff',padding:32,borderRadius:8,minWidth:350,color:'#333',boxShadow:'0 2px 16px rgba(0,0,0,0.1)',border:'1px solid #e5e7eb'}}>
         <h3>{initial.id ? t('edit_product', 'Məhsulu redaktə et') : t('add_product', 'Yeni məhsul əlavə et')}</h3>
         <div style={{margin:'12px 0'}}>
-          <label>{t('name', 'Ad')}:</label><br/>
-          <input name="name" value={form.name} onChange={handleChange} required style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}} />
+          <label style={{color:'#374151',fontWeight:'500'}}>{t('name', 'Ad')}:</label><br/>
+          <input name="name" value={form.name} onChange={handleChange} required style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}} />
         </div>
         <div style={{margin:'12px 0'}}>
-          <label>{t('category', 'Kateqoriya')}:</label><br/>
-          <select name="category" value={typeof form.category === 'object' ? form.category?.name : form.category} onChange={handleChange} required style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}}>
+          <label style={{color:'#374151',fontWeight:'500'}}>{t('category', 'Kateqoriya')}:</label><br/>
+          <select name="category" value={typeof form.category === 'object' ? form.category?.name : form.category} onChange={handleChange} required style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}}>
             <option value="">{t('select', 'Seçin')}</option>
             {renderCategoryOptions(categories, 0)}
           </select>
         </div>
         <div style={{margin:'12px 0'}}>
-          <label>{t('artikul', 'Artikul')}:</label><br/>
-          <input name="artikul" value={form.artikul} onChange={handleChange} style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}} />
+          <label style={{color:'#374151',fontWeight:'500'}}>{t('artikul', 'Artikul')}:</label><br/>
+          <input name="artikul" value={form.artikul} onChange={handleChange} style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}} />
         </div>
         <div style={{margin:'12px 0'}}>
-          <label>{t('catalog_number', 'Kataloq №')}:</label><br/>
-          <input name="catalogNumber" value={form.catalogNumber} onChange={handleChange} style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}} />
+          <label style={{color:'#374151',fontWeight:'500'}}>{t('catalog_number', 'Kataloq №')}:</label><br/>
+          <input name="catalogNumber" value={form.catalogNumber} onChange={handleChange} style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}} />
         </div>
         <div style={{margin:'12px 0'}}>
-          <label>{t('description', 'Təsvir')}:</label><br/>
-          <textarea name="description" value={form.description} onChange={handleChange} style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4,minHeight:80}} />
+          <label style={{color:'#374151',fontWeight:'500'}}>{t('description', 'Təsvir')}:</label><br/>
+          <textarea name="description" value={form.description} onChange={handleChange} style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4,minHeight:80}} />
         </div>
         <div style={{margin:'12px 0'}}>
-          <label>{t('price', 'Qiymət')}:</label><br/>
-          <input name="price" type="number" value={form.price} onChange={handleChange} required style={{width:'100%',padding:6,background:'#1e293b',color:'#fff',border:'1px solid #475569',borderRadius:4}} />
+          <label style={{color:'#374151',fontWeight:'500'}}>{t('price', 'Qiymət')}:</label><br/>
+          <input name="price" type="number" value={form.price} onChange={handleChange} required style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}} />
         </div>
         {/* Şəkil yükləmə inputu və preview */}
         <div style={{margin:'12px 0'}}>
@@ -161,7 +161,7 @@ function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormP
           <button
             type="button"
             onClick={() => document.getElementById('product-image-upload')?.click()}
-            style={{padding:'6px 18px',background:'#0af',color:'#fff',border:'none',borderRadius:4,marginBottom:8,cursor:'pointer'}}
+            style={{padding:'6px 18px',background:'#3b82f6',color:'#fff',border:'none',borderRadius:4,marginBottom:8,cursor:'pointer'}}
           >
             {t('select_image', 'Şəkil seç')}
           </button>
