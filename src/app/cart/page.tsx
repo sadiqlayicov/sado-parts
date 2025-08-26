@@ -155,7 +155,7 @@ export default function CartPage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-white text-gray-800 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Загрузка корзины...</p>
@@ -168,7 +168,7 @@ export default function CartPage() {
   if (cartItems.length === 0) {
     return (
       <main className="min-h-screen bg-white text-gray-800 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold mb-8 text-gray-900">Корзина</h1>
           
           <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 text-center">
@@ -193,10 +193,10 @@ export default function CartPage() {
 
   return (
     <main className="min-h-screen bg-white text-gray-800 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold mb-8 text-gray-900">Корзина</h1>
         
-        <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-gray-200">
+        <div className="bg-white rounded-xl p-6 md:p-8 shadow-lg border border-gray-200">
           {/* Məhsullar siyahısı */}
           <div className="space-y-4 mb-6">
             {cartItems.map((item) => {
@@ -293,29 +293,29 @@ export default function CartPage() {
           </div>
           
           {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Link
               href="/catalog"
-              className="flex-1 sm:flex-none bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition text-center"
+              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition text-center text-sm"
             >
               Продолжить покупки
             </Link>
             <Link
               href="/profile"
-              className="flex-1 sm:flex-none bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition text-center"
+              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition text-center text-sm"
             >
               Мой профиль
             </Link>
             <button
               onClick={handleClearCart}
-              className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition"
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition text-sm"
             >
               Очистить корзину
             </button>
             <button
               onClick={handleCheckout}
               disabled={checkoutLoading}
-              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg transition"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition text-sm"
             >
               {checkoutLoading ? 'Обработка...' : 'Оформить заказ и получить счет'}
             </button>
