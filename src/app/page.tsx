@@ -338,7 +338,7 @@ export default function HomePage() {
 
   const getTopSellersProducts = () => {
     return products.filter(product => 
-      topSellers.some(seller => seller.productId === product.id)
+      topSellers.some(seller => seller.id === product.id)
     ).slice(0, 4);
   };
 
@@ -476,34 +476,46 @@ export default function HomePage() {
         {/* Categories Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Категории товаров</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.slice(0, 8).map((category) => (
-              <Link 
-                key={category.id} 
-                href={`/catalog?category=${category.id}`}
-                className="bg-white rounded-lg p-6 text-center hover:bg-blue-50 transition group border border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md"
-              >
-                <div className="text-4xl mb-4 group-hover:scale-110 transition">
-                  {category.name === 'Engine Parts' ? '🔧' :
-                   category.name === 'Transmission' ? '⚙️' :
-                   category.name === 'Brake System' ? '🛑' :
-                   category.name === 'Hydraulic Systems' ? '💧' :
-                   category.name === 'Electrical' ? '⚡' :
-                   category.name === 'Tires & Wheels' ? '🛞' :
-                   category.name === 'Filters' ? '🔍' :
-                   category.name === 'Lubricants' ? '🛢️' : '📦'}
-                </div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">{category.name}</h3>
-                <p className="text-sm text-gray-600">{category.description}</p>
-              </Link>
-            ))}
-          </div>
+          {categories.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              <div className="text-4xl mb-4">📦</div>
+              <p>Категории загружаются...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {categories.slice(0, 8).map((category) => (
+                <Link 
+                  key={category.id} 
+                  href={`/catalog?category=${category.id}`}
+                  className="bg-white rounded-lg p-6 text-center hover:bg-blue-50 transition group border border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md"
+                >
+                  <div className="text-4xl mb-4 group-hover:scale-110 transition">
+                    {category.name === 'Engine Parts' ? '🔧' :
+                     category.name === 'Transmission' ? '⚙️' :
+                     category.name === 'Brake System' ? '🛑' :
+                     category.name === 'Hydraulic Systems' ? '💧' :
+                     category.name === 'Electrical' ? '⚡' :
+                     category.name === 'Tires & Wheels' ? '🛞' :
+                     category.name === 'Filters' ? '🔍' :
+                     category.name === 'Lubricants' ? '🛢️' : '📦'}
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2 text-gray-900">{category.name}</h3>
+                  <p className="text-sm text-gray-600">{category.description || 'Описание категории'}</p>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Top Sellers Section */}
-        {topSellers.length > 0 && (
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Топ продаж</h2>
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Топ продаж</h2>
+          {getTopSellersProducts().length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              <div className="text-4xl mb-4">🏆</div>
+              <p>Топ продаж загружается...</p>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {getTopSellersProducts().map((product) => {
                 const translatedProduct = translateProductData(product);
@@ -576,8 +588,8 @@ export default function HomePage() {
                 );
               })}
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         {/* Latest Products Section */}
         <section className="mb-16">
