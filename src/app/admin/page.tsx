@@ -174,8 +174,8 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Панель управления</h1>
-          <p className="text-gray-600 dark:text-gray-400">Добро пожаловать в административную панель</p>
+          <h1 className="text-3xl font-bold text-gray-900">Панель управления</h1>
+          <p className="text-gray-600">Добро пожаловать в административную панель</p>
         </div>
         <div className="flex space-x-3">
           <button 
@@ -197,50 +197,50 @@ export default function AdminDashboard() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-              <FaUsers className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <FaUsers className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Пользователи</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalUsers}</p>
+              <p className="text-sm font-medium text-gray-600">Пользователи</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
-              <FaBox className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="p-3 bg-green-100 rounded-lg">
+              <FaBox className="h-6 w-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Товары</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalProducts}</p>
+              <p className="text-sm font-medium text-gray-600">Товары</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-              <FaShoppingCart className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <FaShoppingCart className="h-6 w-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Заказы</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalOrders}</p>
+              <p className="text-sm font-medium text-gray-600">Заказы</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-              <FaCreditCard className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+            <div className="p-3 bg-yellow-100 rounded-lg">
+              <FaCreditCard className="h-6 w-6 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Выручка</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-gray-600">Выручка</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {(stats.totalRevenue / 1000000).toFixed(1)}M ₽
               </p>
             </div>
@@ -250,33 +250,33 @@ export default function AdminDashboard() {
 
       {/* Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center">
-            <FaExclamationTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+            <FaExclamationTriangle className="h-5 w-5 text-yellow-600" />
             <div className="ml-3">
-              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+              <p className="text-sm font-medium text-yellow-800">
                 {stats.pendingOrders} заказов ожидают обработки
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
-            <FaExclamationTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <FaExclamationTriangle className="h-5 w-5 text-red-600" />
             <div className="ml-3">
-              <p className="text-sm font-medium text-red-800 dark:text-red-200">
+              <p className="text-sm font-medium text-red-800">
                 {stats.lowStockProducts} товаров с низким остатком
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center">
-            <FaStar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <FaStar className="h-5 w-5 text-blue-600" />
             <div className="ml-3">
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              <p className="text-sm font-medium text-blue-800">
                 {stats.newReviews} новых отзывов
               </p>
             </div>
@@ -287,9 +287,9 @@ export default function AdminDashboard() {
       {/* Recent Orders and Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Последние заказы</h3>
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Последние заказы</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -299,10 +299,10 @@ export default function AdminDashboard() {
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       #{order.orderNumber || order.id} - {order.customer}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{new Date(order.createdAt).toLocaleString('ru-RU')}</p>
+                    <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString('ru-RU')}</p>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    <span className="text-sm font-medium text-gray-900">
                       {Number(order.amount || 0).toLocaleString()} ₽
                     </span>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${getStatusColor(order.status)}`}>
@@ -310,7 +310,7 @@ export default function AdminDashboard() {
                     </span>
                     <button
                       onClick={() => handleViewOrder(order.id)}
-                      className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                      className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                     >
                       <FaEye className="h-4 w-4" />
                     </button>
@@ -321,7 +321,7 @@ export default function AdminDashboard() {
             <div className="mt-4">
               <button
                 onClick={handleViewAllOrders}
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                className="text-sm text-blue-600 hover:text-blue-700"
               >
                 Посмотреть все заказы →
               </button>
@@ -330,9 +330,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent Activities */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Последние действия</h3>
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Последние действия</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -342,8 +342,8 @@ export default function AdminDashboard() {
                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                   </div>
                   <div className="ml-3 flex-1">
-                    <p className="text-sm text-gray-900 dark:text-white">{activity.message}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{activity.time}</p>
+                    <p className="text-sm text-gray-900">{activity.message}</p>
+                    <p className="text-sm text-gray-500">{activity.time}</p>
                   </div>
                 </div>
               ))}
@@ -351,7 +351,7 @@ export default function AdminDashboard() {
             <div className="mt-4">
               <button
                 onClick={handleViewAllActivities}
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                className="text-sm text-blue-600 hover:text-blue-700"
               >
                 Посмотреть все действия →
               </button>

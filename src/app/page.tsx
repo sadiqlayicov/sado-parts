@@ -427,13 +427,13 @@ export default function HomePage() {
       {/* Hero Banner Section */}
       <section className="relative h-96 lg:h-[500px] bg-gradient-to-r from-blue-600 to-blue-800 overflow-hidden">
         {/* Background Image */}
-        <div className="absolute inset-0 bg-black/20 z-10"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-blue-700/40 z-20"></div>
+        <div className="absolute inset-0 bg-black/10 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-blue-700/20 z-20"></div>
         
         {/* Banner Image */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="/banner-promotional.jpg" 
+            src="/banner-forklift-real.jpg" 
             alt="Professional Technical Support - Bilal Parts" 
             className="w-full h-full object-cover"
             onError={(e) => {
