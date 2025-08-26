@@ -95,66 +95,106 @@ export default function ContactsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
-      <h1 className="text-4xl font-bold mb-8 neon-text">Контакты</h1>
-      <div className="mb-8">
-        <p className="mb-2">Адрес: {contactInfo.address}</p>
-        <p className="mb-2">Телефон: <a href={`tel:${contactInfo.phone.replace(/\s/g, '')}`} className="text-cyan-400 hover:underline">{contactInfo.phone}</a></p>
-        <p className="mb-2">Email: <a href={`mailto:${contactInfo.email}`} className="text-cyan-400 hover:underline">{contactInfo.email}</a></p>
-      </div>
-      
-      {submitStatus === 'success' && (
-        <div className="mb-6 p-4 bg-green-600 rounded-lg text-white">
-          Сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время.
-        </div>
-      )}
-      
-      {submitStatus === 'error' && (
-        <div className="mb-6 p-4 bg-red-600 rounded-lg text-white">
-          Ошибка при отправке сообщения. Пожалуйста, попробуйте еще раз.
-        </div>
-      )}
+    <main className="min-h-screen bg-white text-gray-800 p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold mb-8 text-gray-900">Контакты</h1>
+        
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-900">Контактная информация</h2>
+            <div className="space-y-4">
+              <div>
+                <p className="text-gray-600 mb-1">Адрес:</p>
+                <p className="text-gray-900 font-medium">{contactInfo.address}</p>
+              </div>
+              <div>
+                <p className="text-gray-600 mb-1">Телефон:</p>
+                <a href={`tel:${contactInfo.phone.replace(/\s/g, '')}`} className="text-blue-600 hover:text-blue-700 font-medium">
+                  {contactInfo.phone}
+                </a>
+              </div>
+              <div>
+                <p className="text-gray-600 mb-1">Email:</p>
+                <a href={`mailto:${contactInfo.email}`} className="text-blue-600 hover:text-blue-700 font-medium">
+                  {contactInfo.email}
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-900">Напишите нам</h2>
+            
+            {submitStatus === 'success' && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-800 text-sm">Сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время.</p>
+              </div>
+            )}
+            
+            {submitStatus === 'error' && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm">Ошибка при отправке сообщения. Пожалуйста, попробуйте еще раз.</p>
+              </div>
+            )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-xl">
-        <input 
-          type="text" 
-          name="name"
-          value={formData.name}
-          onChange={handleInputChange}
-          placeholder="Ваше имя" 
-          className="px-6 py-3 rounded-lg text-black text-lg outline-none focus:ring-2 focus:ring-cyan-400 transition" 
-          required 
-        />
-        <input 
-          type="email" 
-          name="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          placeholder="Ваш email" 
-          className="px-6 py-3 rounded-lg text-black text-lg outline-none focus:ring-2 focus:ring-cyan-400 transition" 
-          required 
-        />
-        <textarea 
-          name="message"
-          value={formData.message}
-          onChange={handleInputChange}
-          placeholder="Ваше сообщение" 
-          className="px-6 py-3 rounded-lg text-black text-lg outline-none focus:ring-2 focus:ring-cyan-400 transition" 
-          rows={4} 
-          required 
-        />
-        <button 
-          type="submit" 
-          disabled={isSubmitting}
-          className={`px-8 py-3 rounded-lg font-semibold text-lg transition ${
-            isSubmitting 
-              ? 'bg-gray-500 cursor-not-allowed' 
-              : 'bg-cyan-500 hover:bg-cyan-600'
-          }`}
-        >
-          {isSubmitting ? 'Отправка...' : 'Отправить'}
-        </button>
-      </form>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium mb-2 text-gray-700">Ваше имя</label>
+                <input 
+                  type="text" 
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
+                  placeholder="Введите ваше имя"
+                  required 
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-700">Ваш email</label>
+                <input 
+                  type="email" 
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
+                  placeholder="email@example.com"
+                  required 
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="message" className="block text-sm font-medium mb-2 text-gray-700">Ваше сообщение</label>
+                <textarea 
+                  id="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none" 
+                  rows={4} 
+                  placeholder="Введите ваше сообщение"
+                  required 
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className={`w-full px-6 py-3 rounded-lg font-semibold text-lg transition ${
+                  isSubmitting 
+                    ? 'bg-gray-400 cursor-not-allowed text-white' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                {isSubmitting ? 'Отправка...' : 'Отправить'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </main>
   );
 } 

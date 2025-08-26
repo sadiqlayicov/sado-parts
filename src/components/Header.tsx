@@ -514,7 +514,7 @@ export default function Header() {
         </div>
 
         {/* User Info Bar */}
-        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+        <div className="flex justify-between items-center mt-4 pt-4">
           <div className="flex items-center space-x-6 text-sm">
             <span className="text-gray-600">
               <i className="fas fa-phone mr-2"></i>

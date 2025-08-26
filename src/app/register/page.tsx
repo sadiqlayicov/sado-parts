@@ -302,17 +302,17 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white flex items-center justify-center p-8">
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/20">
+    <main className="min-h-screen bg-white text-gray-800 flex items-center justify-center p-8">
+      <div className="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl border border-gray-200">
         <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold mb-2 neon-text">Регистрация</h2>
-          <p className="text-gray-300">Создайте новый аккаунт</p>
+          <h2 className="text-3xl font-bold mb-2 text-gray-900">Регистрация</h2>
+          <p className="text-gray-600">Создайте новый аккаунт</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium mb-2">Имя</label>
+              <label htmlFor="firstName" className="block text-sm font-medium mb-2 text-gray-700">Имя</label>
               <input 
                 type="text" 
                 id="firstName" 
@@ -321,12 +321,12 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 required 
                 disabled={isLoading}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
                 placeholder="Введите ваше имя"
               />
             </div>
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium mb-2">Фамилия</label>
+              <label htmlFor="lastName" className="block text-sm font-medium mb-2 text-gray-700">Фамилия</label>
               <input 
                 type="text" 
                 id="lastName" 
@@ -335,14 +335,14 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 required 
                 disabled={isLoading}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
                 placeholder="Введите вашу фамилию"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-700">Email</label>
             <input 
               type="email" 
               id="email" 
@@ -351,13 +351,13 @@ export default function RegisterPage() {
               onChange={handleInputChange}
               required 
               disabled={isLoading}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
               placeholder="email@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium mb-2">Телефон</label>
+            <label htmlFor="phone" className="block text-sm font-medium mb-2 text-gray-700">Телефон</label>
             <input 
               type="tel" 
               id="phone" 
@@ -366,13 +366,13 @@ export default function RegisterPage() {
               onChange={handleInputChange}
               required 
               disabled={isLoading}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
               placeholder="+994 50 123 45 67"
             />
           </div>
 
           <div>
-            <label htmlFor="inn" className="block text-sm font-medium mb-2">ВОЕН (ИНН)</label>
+            <label htmlFor="inn" className="block text-sm font-medium mb-2 text-gray-700">ВОЕН (ИНН)</label>
             <input 
               type="text" 
               id="inn" 
@@ -380,59 +380,43 @@ export default function RegisterPage() {
               value={formData.inn}
               onChange={handleInputChange}
               disabled={isLoading}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
               placeholder="Введите ваш ВОЕН"
             />
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="country" className="block text-sm font-medium mb-2">Страна</label>
+              <label htmlFor="country" className="block text-sm font-medium mb-2 text-gray-700">Страна</label>
               <select
                 id="country"
                 name="country"
                 value={formData.country}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white'
-                }}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
               >
-                <option value="" style={{ backgroundColor: '#1e293b', color: 'white' }}>Выберите страну</option>
+                <option value="">Выберите страну</option>
                 {countries.map((country) => (
-                  <option 
-                    key={country.name} 
-                    value={country.name}
-                    style={{ backgroundColor: '#1e293b', color: 'white' }}
-                  >
+                  <option key={country.name} value={country.name}>
                     {country.name}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="city" className="block text-sm font-medium mb-2">Город</label>
+              <label htmlFor="city" className="block text-sm font-medium mb-2 text-gray-700">Город</label>
               <select
                 id="city"
                 name="city"
                 value={formData.city}
                 onChange={handleInputChange}
                 disabled={isLoading || !formData.country}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white'
-                }}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="" style={{ backgroundColor: '#1e293b', color: 'white' }}>Выберите город</option>
+                <option value="">Выберите город</option>
                 {formData.country && getCitiesForCountry(formData.country).map((city) => (
-                  <option 
-                    key={city} 
-                    value={city}
-                    style={{ backgroundColor: '#1e293b', color: 'white' }}
-                  >
+                  <option key={city} value={city}>
                     {city}
                   </option>
                 ))}
@@ -441,7 +425,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="address" className="block text-sm font-medium mb-2">Адрес</label>
+            <label htmlFor="address" className="block text-sm font-medium mb-2 text-gray-700">Адрес</label>
             <textarea
               id="address"
               name="address"
@@ -449,14 +433,14 @@ export default function RegisterPage() {
               onChange={handleInputChange}
               rows={3}
               disabled={isLoading}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50 resize-none"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50 resize-none"
               placeholder="Введите ваш адрес"
             />
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">Пароль</label>
+              <label htmlFor="password" className="block text-sm font-medium mb-2 text-gray-700">Пароль</label>
               <input 
                 type="password" 
                 id="password" 
@@ -465,12 +449,12 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 required 
                 disabled={isLoading}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
                 placeholder="Введите ваш пароль"
               />
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">Подтвердите пароль</label>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2 text-gray-700">Подтвердите пароль</label>
               <input 
                 type="password" 
                 id="confirmPassword" 
@@ -479,7 +463,7 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 required 
                 disabled={isLoading}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
                 placeholder="Повторите ваш пароль"
               />
             </div>
@@ -495,11 +479,11 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 required 
                 disabled={isLoading}
-                className="h-4 w-4 text-cyan-500 focus:ring-cyan-500 border-white/20 rounded disabled:opacity-50 bg-white/10"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
               />
             </div>
             <div className="ml-3 text-sm">
-              <label htmlFor="terms" className="font-medium text-gray-300">
+              <label htmlFor="terms" className="font-medium text-gray-700">
                 Я принимаю условия использования
               </label>
             </div>
@@ -509,7 +493,7 @@ export default function RegisterPage() {
             <button 
               type="submit" 
               disabled={isLoading}
-              className="w-full px-6 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 disabled:bg-cyan-400 font-semibold text-lg transition duration-200 shadow-md hover:transform hover:-translate-y-1px disabled:transform-none"
+              className="w-full px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 font-semibold text-lg transition duration-200 shadow-md text-white"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -527,68 +511,14 @@ export default function RegisterPage() {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-600">
             У вас уже есть аккаунт?{' '}
-            <a href="/login" className="text-cyan-400 hover:text-cyan-300 font-medium">
+            <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
               Войти
             </a>
           </p>
         </div>
       </div>
-
-
-
-      <style jsx>{`
-        @keyframes scaleIn {
-          0% { transform: scale(0.8); opacity: 0; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .animate-scaleIn {
-          animation: scaleIn 0.3s ease-out;
-        }
-        .neon-text {
-          text-shadow: 0 0 10px rgba(6, 182, 212, 0.5), 0 0 20px rgba(6, 182, 212, 0.3);
-        }
-        
-        /* Select dropdown styles */
-        select {
-          background-color: rgba(255, 255, 255, 0.1) !important;
-          color: white !important;
-        }
-        
-        select option {
-          background-color: #1e293b !important;
-          color: white !important;
-          padding: 8px;
-        }
-        
-        select option:hover {
-          background-color: #334155 !important;
-        }
-        
-        select:focus option:checked {
-          background-color: #0ea5e9 !important;
-        }
-        
-        /* Custom scrollbar for select dropdowns */
-        select::-webkit-scrollbar {
-          width: 8px;
-        }
-        
-        select::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-        }
-        
-        select::-webkit-scrollbar-thumb {
-          background: rgba(6, 182, 212, 0.5);
-          border-radius: 4px;
-        }
-        
-        select::-webkit-scrollbar-thumb:hover {
-          background: rgba(6, 182, 212, 0.7);
-        }
-      `}</style>
     </main>
   );
 } 

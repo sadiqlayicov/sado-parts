@@ -69,23 +69,23 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white flex items-center justify-center p-8">
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/20">
+    <main className="min-h-screen bg-white text-gray-800 flex items-center justify-center p-8">
+      <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-200">
         <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold mb-2 neon-text">Вход в аккаунт</h2>
-          <p className="text-gray-300">Войдите в свой аккаунт</p>
+          <h2 className="text-3xl font-bold mb-2 text-gray-900">Вход в аккаунт</h2>
+          <p className="text-gray-600">Войдите в свой аккаунт</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-            <p className="text-red-300 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-sm">{error}</p>
           </div>
         )}
 
         {!needVerify && (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-700">Email</label>
             <input
               type="email"
               id="email"
@@ -94,13 +94,13 @@ export default function LoginPage() {
               onChange={handleInputChange}
               required
               disabled={isLoading}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
               placeholder="email@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">Пароль</label>
+            <label htmlFor="password" className="block text-sm font-medium mb-2 text-gray-700">Пароль</label>
             <input
               type="password"
               id="password"
@@ -109,7 +109,7 @@ export default function LoginPage() {
               onChange={handleInputChange}
               required
               disabled={isLoading}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
               placeholder="Введите ваш пароль"
             />
           </div>
@@ -118,7 +118,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-6 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 disabled:bg-cyan-400 font-semibold text-lg transition duration-200 shadow-md hover:transform hover:-translate-y-1px disabled:transform-none"
+              className="w-full px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 font-semibold text-lg transition duration-200 shadow-md text-white"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -139,16 +139,16 @@ export default function LoginPage() {
         {needVerify && (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2">Код из email</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Код из email</label>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="123456"
               />
               {debugCode && (
-                <p className="mt-2 text-xs text-gray-300">Временный код: <span className="font-mono">{debugCode}</span></p>
+                <p className="mt-2 text-xs text-gray-500">Временный код: <span className="font-mono">{debugCode}</span></p>
               )}
             </div>
             <button
@@ -173,7 +173,7 @@ export default function LoginPage() {
                   setIsLoading(false);
                 }
               }}
-              className="w-full px-6 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-lg"
+              className="w-full px-6 py-3 rounded-lg bg-green-600 hover:bg-green-700 font-semibold text-lg text-white transition"
               disabled={isLoading}
             >
               Подтвердить и войти
@@ -182,22 +182,14 @@ export default function LoginPage() {
         )}
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-600">
             Нет аккаунта?{' '}
-            <a href="/register" className="text-cyan-400 hover:text-cyan-300 font-medium">
+            <a href="/register" className="text-blue-600 hover:text-blue-700 font-medium">
               Зарегистрироваться
             </a>
           </p>
         </div>
-
-        {/* Demo credentials notice removed */}
       </div>
-
-      <style jsx>{`
-        .neon-text {
-          text-shadow: 0 0 10px rgba(6, 182, 212, 0.5), 0 0 20px rgba(6, 182, 212, 0.3);
-        }
-      `}</style>
     </main>
   );
 } 
