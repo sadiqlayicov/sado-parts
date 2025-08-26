@@ -26,7 +26,9 @@ export default function Header() {
   const brandsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [wishlistProducts, setWishlistProducts] = useState<any[]>([]);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [showWishlist, setShowWishlist] = useState(false);
+  const wishlistRef = useRef<HTMLDivElement>(null);
 
   // Search functionality
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +46,7 @@ export default function Header() {
     function updateWishlist() {
       if (typeof window !== 'undefined') {
         const stored = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        console.log('Wishlist updated from localStorage:', stored);
         setWishlist(stored);
       }
     }
@@ -59,39 +62,62 @@ export default function Header() {
   // Fetch wishlist products when wishlist changes
   useEffect(() => {
     const fetchWishlistProducts = async () => {
+      console.log('Fetching wishlist products for:', wishlist);
+      
       if (wishlist.length === 0) {
         setWishlistProducts([]);
+        setWishlistLoading(false);
         return;
       }
 
+      setWishlistLoading(true);
       try {
-        const response = await fetch('/api/products/batch', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ids: wishlist }),
-        });
+        // Use GET method with query parameters
+        const idsParam = wishlist.join(',');
+        console.log('Making request to batch API with IDs:', idsParam);
+        
+        const response = await fetch(`/api/products/batch?ids=${encodeURIComponent(idsParam)}`);
 
         if (response.ok) {
           const data = await response.json();
-          if (data.success && Array.isArray(data.products)) {
-            setWishlistProducts(data.products);
+          console.log('Batch API response:', data);
+          
+          // The API returns the products directly as an array
+          if (Array.isArray(data)) {
+            console.log('Setting wishlist products:', data.length, 'products');
+            setWishlistProducts(data);
           } else {
+            console.error('Unexpected response format:', data);
             setWishlistProducts([]);
           }
         } else {
-          console.error('Failed to fetch wishlist products');
+          console.error('Failed to fetch wishlist products:', response.status);
           setWishlistProducts([]);
         }
       } catch (error) {
         console.error('Error fetching wishlist products:', error);
         setWishlistProducts([]);
+      } finally {
+        setWishlistLoading(false);
       }
     };
 
     fetchWishlistProducts();
   }, [wishlist]);
+
+  // Close wishlist dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wishlistRef.current && !wishlistRef.current.contains(event.target as Node)) {
+        setShowWishlist(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Load site settings with caching
   useEffect(() => {
@@ -312,67 +338,6 @@ export default function Header() {
 
   return (
     <header className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
-      {/* Contact Info Bar - Top Section */}
-      <div className="bg-gray-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="flex justify-between items-center text-sm">
-            <div className="flex items-center space-x-6">
-              <span className="text-gray-600">
-                <i className="fas fa-phone mr-2"></i>
-                +994 50 123 45 67
-              </span>
-              <span className="text-gray-600">
-                <i className="fas fa-envelope mr-2"></i>
-                info@bilal-parts.az
-              </span>
-            </div>
-            <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <div className="flex items-center space-x-4">
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className="text-blue-600 hover:text-blue-800 transition"
-                    >
-                      Админ панель
-                    </Link>
-                  )}
-                  <span className="text-gray-600">
-                    {user?.name || user?.email}
-                  </span>
-                  <Link
-                    href="/profile"
-                    className="text-blue-600 hover:text-blue-800 transition"
-                  >
-                    Профиль
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="text-red-600 hover:text-red-800 transition"
-                  >
-                    Выйти
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-4">
-                  <Link
-                    href="/login"
-                    className="text-blue-600 hover:text-blue-800 transition"
-                  >
-                    Войти
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="text-blue-600 hover:text-blue-800 transition"
-                  >
-                    Регистрация
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Header */}
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -601,6 +566,52 @@ export default function Header() {
               )}
             </button>
 
+            {/* User Authentication Links */}
+            <div className="hidden lg:flex items-center space-x-4 ml-4">
+              {isAuthenticated ? (
+                <>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="text-blue-600 hover:text-blue-800 transition text-sm font-medium"
+                    >
+                      Админ панель
+                    </Link>
+                  )}
+                  <span className="text-gray-600 text-sm">
+                    {user?.name || user?.email}
+                  </span>
+                  <Link
+                    href="/profile"
+                    className="text-blue-600 hover:text-blue-800 transition text-sm font-medium"
+                  >
+                    Профиль
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-red-600 hover:text-red-800 transition text-sm font-medium"
+                  >
+                    Выйти
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-blue-600 hover:text-blue-800 transition text-sm font-medium"
+                  >
+                    Войти
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="text-blue-600 hover:text-blue-800 transition text-sm font-medium"
+                  >
+                    Регистрация
+                  </Link>
+                </>
+              )}
+            </div>
+
             {/* Mobile Menu Button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -717,51 +728,52 @@ export default function Header() {
         </div>
       )}
 
-      {/* Wishlist Dropdown */}
-      {showWishlist && (
-        <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                                      {/* Wishlist Dropdown */}
+                {showWishlist && (
+                  <div ref={wishlistRef} className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
           <div className="p-4">
             <div className="text-sm text-gray-500 mb-3">Избранное ({wishlist.length})</div>
             {wishlist.length === 0 ? (
               <div className="text-gray-500 text-sm">Избранное пусто</div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {wishlistProducts.slice(0, 5).map((product) => (
-                  <div key={product.id} className="flex items-center space-x-3 p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
-                    <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
-                      {product.images && product.images.length > 0 ? (
-                        <img 
-                          src={product.images[0]} 
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder.png';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-gray-500 text-xs">No img</span>
+                {wishlistProducts.length > 0 ? (
+                  wishlistProducts.slice(0, 5).map((product) => (
+                    <div key={product.id} className="flex items-center space-x-3 p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
+                      <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                        {product.images && product.images.length > 0 ? (
+                          <img 
+                            src={product.images[0]} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder.png';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                            <span className="text-gray-500 text-xs">No img</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 text-sm min-w-0">
+                        <div className="text-gray-900 font-medium truncate">{product.name}</div>
+                        <div className="text-gray-500 text-xs">
+                          {product.artikul && `Артикул: ${product.artikul}`}
+                          {product.catalogNumber && product.artikul && ' • '}
+                          {product.catalogNumber && `Каталог: ${product.catalogNumber}`}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1 text-sm min-w-0">
-                      <div className="text-gray-900 font-medium truncate">{product.name}</div>
-                      <div className="text-gray-500 text-xs">
-                        {product.artikul && `Артикул: ${product.artikul}`}
-                        {product.catalogNumber && product.artikul && ' • '}
-                        {product.catalogNumber && `Каталог: ${product.catalogNumber}`}
-                      </div>
-                      <div className="text-blue-600 font-semibold text-xs">
-                        {product.price} ₽
+                        <div className="text-blue-600 font-semibold text-xs">
+                          {product.price} ₽
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {wishlistProducts.length === 0 && wishlist.length > 0 && (
+                  ))
+                ) : wishlistLoading ? (
                   <div className="text-gray-500 text-sm text-center py-4">
                     Загрузка товаров...
                   </div>
-                )}
+                ) : null}
               </div>
             )}
             {wishlist.length > 0 && (

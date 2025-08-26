@@ -1,659 +1,297 @@
 'use client';
-import { useEffect, useState } from 'react';
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { formatId, resetIdCounter } from '@/lib/utils';
 
-interface Product {
-  id: string;
-  name: string;
-  category?: { name: string };
-  artikul?: string;
-  catalogNumber?: string;
-  description?: string;
-  price?: number;
-  isActive?: boolean;
-  isFeatured?: boolean;
-  images?: string[]; // <-- Əlavə olundu
-}
-
-interface ProductFormProps {
-  initial?: Partial<Product>;
-  categories: any[]; // hierarchical categories tree
-  onSave: (data: any) => void;
-  onClose: () => void;
-}
-
-function ProductForm({ initial = {}, categories, onSave, onClose }: ProductFormProps) {
-  const { t } = useTranslation();
-  const [form, setForm] = useState({
-    name: initial.name || '',
-    category: initial.category?.name || initial.category || '',
-    artikul: initial.artikul || '',
-    catalogNumber: initial.catalogNumber || '',
-    description: initial.description || '',
-    price: initial.price || '',
-    isActive: initial.isActive ?? true,
-    isFeatured: initial.isFeatured ?? false,
-    images: initial.images || [],
-  });
-  const handleChange = (e: any) => {
-    const { name, value, type, checked } = e.target;
-    setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
-  };
-  const [newCategory, setNewCategory] = useState('');
-  React.useEffect(() => {}, [categories]);
-
-  const renderCategoryOptions = (cats: any[], level: number = 0): React.ReactElement[] => {
-    return cats.flatMap((cat: any) => [
-      <option key={cat.id} value={cat.name}>{`${'—'.repeat(level)}${cat.name}`}</option>,
-      ...(cat.children && cat.children.length > 0 ? renderCategoryOptions(cat.children, level + 1) : [])
-    ]);
-  };
-  // Backend kateqoriya əlavə et
-  const handleAddCategory = async () => {
-    if(newCategory){
-      try {
-        // Backend-ə göndər
-        const res = await fetch('/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: newCategory })
-        });
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error('Add category error:', errorText);
-          alert(`Kateqoriya əlavə edilə bilmədi: ${errorText}`);
-          return;
-        }
-        
-        const data = await res.json();
-        if (data.success) {
-          // YENİ: Kateqoriyaları yenidən fetch et
-          const updated = await fetch('/api/categories');
-          const updatedData = await updated.json();
-          setForm(f=>({...f,category:newCategory}));
-          setNewCategory('');
-          alert('Kateqoriya uğurla əlavə edildi');
-        } else {
-          alert(`Kateqoriya əlavə edilə bilmədi: ${data.error || 'Naməlum xəta'}`);
-        }
-      } catch (error) {
-        console.error('Add category error:', error);
-        alert('Kateqoriya əlavə edilərkən xəta baş verdi');
-      }
-    }
-  };
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const uploaded: string[] = [];
-    
-    console.log('Starting image upload for', files.length, 'files');
-    
-    for (const file of files) {
-      console.log('Uploading file:', file.name, file.type, file.size);
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      try {
-        const res = await fetch('/api/upload', { method: 'POST', body: formData });
-        console.log('Upload response status:', res.status);
-        
-        const data = await res.json();
-        console.log('Upload response data:', data);
-        
-        if (data.url) {
-          console.log('Successfully uploaded image:', data.url);
-          uploaded.push(data.url);
-        } else {
-          console.error('Upload failed - no URL returned:', data);
-          alert(`Şəkil yüklənmədi: ${data.error || 'Naməlum xəta'}`);
-        }
-      } catch (error) {
-        console.error('Upload error:', error);
-        alert(`Şəkil yüklənmədi: ${error}`);
-      }
-    }
-    
-    console.log('All uploads completed. URLs:', uploaded);
-    setForm(f => ({ ...f, images: [...(f.images || []), ...uploaded] }));
-  };
-  // Şəkil silmək üçün handler
-  const handleImageDelete = (idx: number) => {
-    setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
-  };
-  return (
-    <div style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.4)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <form onSubmit={e => { e.preventDefault(); onSave(form); }} style={{background:'#ffffff',padding:32,borderRadius:8,minWidth:350,color:'#333',boxShadow:'0 2px 16px rgba(0,0,0,0.1)',border:'1px solid #e5e7eb'}}>
-        <h3>{initial.id ? t('edit_product', 'Məhsulu redaktə et') : t('add_product', 'Yeni məhsul əlavə et')}</h3>
-        <div style={{margin:'12px 0'}}>
-          <label style={{color:'#374151',fontWeight:'500'}}>{t('name', 'Ad')}:</label><br/>
-          <input name="name" value={form.name} onChange={handleChange} required style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}} />
-        </div>
-        <div style={{margin:'12px 0'}}>
-          <label style={{color:'#374151',fontWeight:'500'}}>{t('category', 'Kateqoriya')}:</label><br/>
-          <select name="category" value={typeof form.category === 'object' ? form.category?.name : form.category} onChange={handleChange} required style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}}>
-            <option value="">{t('select', 'Seçin')}</option>
-            {renderCategoryOptions(categories, 0)}
-          </select>
-        </div>
-        <div style={{margin:'12px 0'}}>
-          <label style={{color:'#374151',fontWeight:'500'}}>{t('artikul', 'Artikul')}:</label><br/>
-          <input name="artikul" value={form.artikul} onChange={handleChange} style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}} />
-        </div>
-        <div style={{margin:'12px 0'}}>
-          <label style={{color:'#374151',fontWeight:'500'}}>{t('catalog_number', 'Kataloq №')}:</label><br/>
-          <input name="catalogNumber" value={form.catalogNumber} onChange={handleChange} style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}} />
-        </div>
-        <div style={{margin:'12px 0'}}>
-          <label style={{color:'#374151',fontWeight:'500'}}>{t('description', 'Təsvir')}:</label><br/>
-          <textarea name="description" value={form.description} onChange={handleChange} style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4,minHeight:80}} />
-        </div>
-        <div style={{margin:'12px 0'}}>
-          <label style={{color:'#374151',fontWeight:'500'}}>{t('price', 'Qiymət')}:</label><br/>
-          <input name="price" type="number" value={form.price} onChange={handleChange} required style={{width:'100%',padding:6,background:'#ffffff',color:'#333',border:'1px solid #d1d5db',borderRadius:4}} />
-        </div>
-        {/* Şəkil yükləmə inputu və preview */}
-        <div style={{margin:'12px 0'}}>
-          <label>{t('upload_image', 'Şəkil yüklə (bir və ya bir neçə)')}:</label><br/>
-          <button
-            type="button"
-            onClick={() => document.getElementById('product-image-upload')?.click()}
-            style={{padding:'6px 18px',background:'#3b82f6',color:'#fff',border:'none',borderRadius:4,marginBottom:8,cursor:'pointer'}}
-          >
-            {t('select_image', 'Şəkil seç')}
-          </button>
-          <input
-            id="product-image-upload"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            style={{display:'none'}}
-          />
-          <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
-            {form.images && form.images.map((img, idx) => (
-              <div key={idx} style={{position:'relative',display:'inline-block'}}>
-                <img 
-                  src={img} 
-                  alt="preview" 
-                  style={{width:60,height:60,objectFit:'cover',borderRadius:6}} 
-                  onError={(e) => {
-                    console.error('Preview image failed to load:', img);
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                  onLoad={(e) => {
-                    console.log('Preview image loaded successfully:', img);
-                  }}
-                />
-                <div 
-                  className="hidden"
-                  style={{
-                    width: 60, 
-                    height: 60, 
-                    backgroundColor: '#f0f0f0', 
-                    borderRadius: 6,
-                    display: 'none',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px',
-                    color: '#666'
-                  }}
-                >
-                  Error
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleImageDelete(idx)}
-                  style={{position:'absolute',top:2,right:2,background:'#f44',color:'#fff',border:'none',borderRadius:'50%',width:20,height:20,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontWeight:'bold',fontSize:14,padding:0,lineHeight:1}}
-                  title={t('delete', 'Sil')}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div style={{margin:'12px 0',display:'flex',gap:16}}>
-          <label><input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange}/> {t('active', 'Aktiv')}</label>
-          <label><input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={handleChange}/> {t('show_on_home', 'Ana səhifədə göstər')}</label>
-        </div>
-        <div style={{marginTop:16,display:'flex',gap:12,justifyContent:'flex-end'}}>
-          <button type="button" onClick={onClose} style={{padding:'6px 18px'}}>{t('close', 'Bağla')}</button>
-          <button type="submit" style={{padding:'6px 18px',background:'#0af',color:'#fff',border:'none',borderRadius:4}}>{initial.id ? t('save', 'Yadda saxla') : t('add', 'Əlavə et')}</button>
-        </div>
-      </form>
-    </div>
-  );
-}
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../../components/AuthProvider';
+import { useRouter } from 'next/navigation';
+import { FaPlus, FaEdit, FaTrash, FaSearch } from 'react-icons/fa';
 
 export default function ProductsPage() {
-  const { t } = useTranslation();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const [products, setProducts] = useState([
+    {
+      id: 1,
+      name: 'Electrical Wiring Harness',
+      category: 'test alt kateqoriya',
+      artikul: 'EWH-006',
+      catalogNumber: 'test kataloq nomresi sadiq',
+      description: 'Electrical wiring harness for vehicle electrical systems',
+      price: 150,
+      isActive: true,
+      isFeatured: true,
+      image: '/placeholder.png'
+    },
+    {
+      id: 2,
+      name: 'Tire Set (4 pieces)',
+      category: 'Filters',
+      artikul: 'TS-007',
+      catalogNumber: 'CAT-010',
+      description: 'Complete tire set for vehicle wheels',
+      price: 450,
+      isActive: true,
+      isFeatured: false,
+      image: '/placeholder.png'
+    },
+    {
+      id: 3,
+      name: 'Body Panel - Front Bumper',
+      category: 'Hydraulic Systems',
+      artikul: 'BP-008',
+      catalogNumber: 'CAT-009',
+      description: 'Front bumper panel for vehicle body repair',
+      price: 320,
+      isActive: true,
+      isFeatured: false,
+      image: '/placeholder.png'
+    },
+    {
+      id: 4,
+      name: 'Hydraulic Hose',
+      category: 'Hydraulic Systems',
+      artikul: 'HH-009',
+      catalogNumber: '',
+      description: 'Durable hydraulic hose for hydraulic systems',
+      price: 75,
+      isActive: true,
+      isFeatured: false,
+      image: '/placeholder.png'
+    },
+    {
+      id: 5,
+      name: 'Fuel Filter',
+      category: 'Filters',
+      artikul: 'FF-010',
+      catalogNumber: '',
+      description: 'High-quality fuel filter for optimal engine performance',
+      price: 30,
+      isActive: true,
+      isFeatured: false,
+      image: '/placeholder.png'
+    }
+  ]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [showForm, setShowForm] = useState(false);
-  const [editProduct, setEditProduct] = useState<Product|null>(null);
-  const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
-  const flattenCategoryNames = (cats: any[]): string[] => {
-    const names: string[] = [];
-    const walk = (list: any[]) => {
-      for (const c of list || []) {
-        if (c && c.name) names.push(c.name);
-        if (c && c.children && c.children.length) walk(c.children);
-      }
-    };
-    walk(cats);
-    return names;
-  };
+  const [itemsPerPage] = useState(20);
 
-    useEffect(() => {
-    resetIdCounter(); // Reset ID counter when component mounts
-    async function fetchProductsAndCategories() {
-      try {
-        console.log('Fetching products and categories...');
-        const [productsRes, categoriesRes] = await Promise.all([
-          fetch('/api/products', {
-            cache: 'no-store'
-          }),
-          fetch('/api/categories', {
-            cache: 'no-store'
-          })
-        ]);
-        
-        console.log('Products response status:', productsRes.status);
-        console.log('Categories response status:', categoriesRes.status);
-        
-        if (!productsRes.ok) {
-          const errorText = await productsRes.text();
-          console.error('Products API Error:', errorText);
-          throw new Error(`Products API error: ${productsRes.status}`);
-        }
-        
-        if (!categoriesRes.ok) {
-          const errorText = await categoriesRes.text();
-          console.error('Categories API Error:', errorText);
-          throw new Error(`Categories API error: ${categoriesRes.status}`);
-        }
-        
-        const productsData = await productsRes.json();
-        const categoriesData = await categoriesRes.json();
-        
-        console.log('Products response data:', productsData);
-        console.log('Categories response data:', categoriesData);
-        
-        // Handle products data
-        let productsArray = [];
-        if (productsData.success && Array.isArray(productsData.data)) {
-          productsArray = productsData.data;
-        } else if (Array.isArray(productsData)) {
-          productsArray = productsData;
-        }
-        setProducts(productsArray);
-        
-        // Handle categories data (hierarchical)
-        let categoriesArray: any[] = [];
-        if (categoriesData.success && Array.isArray(categoriesData.data)) {
-          categoriesArray = categoriesData.data;
-        } else if (Array.isArray(categoriesData)) {
-          categoriesArray = categoriesData;
-        }
-        setCategories(categoriesArray);
-        
-        console.log('Products set:', productsArray.length);
-        console.log('Categories set:', categoriesArray);
-      } catch (err: any) {
-        console.error('Error fetching products and categories:', err);
-        setError(err.message || 'Məhsullar və kateqoriyalar yüklənərkən xəta baş verdi');
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProductsAndCategories();
-  }, []);
-
-  // Modal açılan kimi kateqoriyaları yenilə
   useEffect(() => {
-    if (showForm) {
-      fetch('/api/categories')
-        .then(res => res.json())
-        .then(data => {
-          let categoriesArray: any[] = [];
-          if (data.success && Array.isArray(data.data)) {
-            categoriesArray = data.data;
-          } else if (Array.isArray(data)) {
-            categoriesArray = data;
-          }
-          setCategories(categoriesArray);
-        })
-        .catch(err => console.error('Error updating categories:', err));
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
     }
-  }, [showForm]);
+    if (!user?.isAdmin) {
+      router.push('/');
+      return;
+    }
+  }, [isAuthenticated, user, router]);
 
-  // Filtrlənmiş məhsullar
   const filteredProducts = products.filter(product => {
-    // YENİ: product undefined olarsa skip et
-    if (!product) return false;
-    
-    const matchesSearch =
-      product.name?.toLowerCase().includes(search.toLowerCase()) ||
-      product.artikul?.toLowerCase().includes(search.toLowerCase()) ||
-      product.catalogNumber?.toLowerCase().includes(search.toLowerCase()) ||
-      product.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter
-      ? (
-          (product.category && typeof product.category === 'object' && product.category.name === categoryFilter) ||
-          (typeof product.category === 'string' && product.category === categoryFilter)
-        )
-      : true;
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.artikul.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.catalogNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  // Səhifələmə
-  const totalProducts = filteredProducts.length;
-  const totalPages = Math.ceil(totalProducts / pageSize);
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, pageSize === -1 ? undefined : currentPage * pageSize);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
-  // Kateqoriyaları çıxarmaq üçün ayrıca dəyişən yoxdur, yalnız state-dəki 'categories' istifadə olunur.
+  const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
 
-  const handleAdd = () => { setEditProduct(null); setShowForm(true); };
-  const handleEdit = (product: Product) => { setEditProduct(product); setShowForm(true); };
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Məhsulu silmək istədiyinizə əminsiniz?')) return;
-    setSaving(true);
-    await fetch(`/api/products/${id}`, { method: 'DELETE' });
-    setProducts(p => p.filter(pr => pr.id !== id));
-    setSaving(false);
-  };
-  const handleSave = async (data: any) => {
-    setSaving(true);
-    let categoryId = null;
-    // Mövcud kateqoriyalardan id-ni tap
-    const categoriesRes = await fetch('/api/categories');
-    const categoriesData = await categoriesRes.json();
-    
-    let categoriesArray: any[] = [];
-    if (categoriesData.success && Array.isArray(categoriesData.data)) {
-      categoriesArray = categoriesData.data;
-    } else if (Array.isArray(categoriesData)) {
-      categoriesArray = categoriesData;
-    }
-    
-    // Find by name in the tree
-    const flatten = (cats:any[]): any[] => cats.flatMap(c => [c, ...(c.children ? flatten(c.children) : [])]);
-    const found = flatten(categoriesArray).find((c:any)=>c.name===data.category);
-    if(found) categoryId = found.id;
-    else if(data.category) {
-      // Yeni kateqoriyanı backend-ə əlavə et
-      const res = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: data.category })
-      });
-      const cat = await res.json();
-      categoryId = cat.id;
-    }
-    let product: any;
-    if (editProduct) {
-      // Redaktə
-             const res = await fetch(`/api/products/${editProduct.id}`, {
-         method: 'PUT',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-           ...data,
-           artikul: data.artikul || '',
-           catalogNumber: data.catalogNumber || '',
-           description: data.description || '',
-           price: data.price ? parseFloat(data.price) : 0,
-           categoryId,
-           isActive: !!data.isActive,
-           isFeatured: !!data.isFeatured,
-           images: data.images || [],
-         })
-       });
-      const result = await res.json();
-      
-      // YENİ: Response-u yoxla
-      if (!res.ok) {
-        console.error('Ошибка backend:', result);
-        alert(`Товар не может быть обновлен! ${result.message || 'Произошла ошибка.'}`);
-        setSaving(false);
-        return;
-      }
-      
-      product = result.data || result.product || result;
-      console.log('UPDATED PRODUCT RESPONSE:', product); // Debug üçün əlavə olundu
-      
-      // YENİ: product undefined olarsa error throw et
-      if (!product) {
-        console.error('Backend-dən product gəlmədi:', result);
-        alert('Товар не может быть обновлен! Ошибка backend.');
-        setSaving(false);
-        return;
-      }
-      
-      // YENİ: category obyektini düzəlt
-      setProducts(p => p.map(pr => pr.id === product.id ? {
-        ...product,
-        category: typeof product.category === 'object'
-          ? product.category
-          : { name: data.category }
-      } : pr));
-    } else {
-      // Əlavə et
-      const requestData = {
-        ...data,
-        artikul: data.artikul || '',
-        catalogNumber: data.catalogNumber || '',
-        description: data.description || '',
-        price: data.price ? parseFloat(data.price) : 0,
-        categoryId,
-        isActive: !!data.isActive,
-        isFeatured: !!data.isFeatured,
-        images: data.images || [],
-      };
-      
-      console.log('Sending data to backend:', JSON.stringify(requestData, null, 2));
-      
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
-      });
-      
-      console.log('Response status:', res.status);
-      console.log('Response headers:', Object.fromEntries(res.headers.entries()));
-      
-      const result = await res.json();
-      console.log('Response body:', JSON.stringify(result, null, 2));
-      
-      // YENİ: Response-u yoxla
-      if (!res.ok) {
-        console.error('Ошибка backend:', result);
-        alert(`Товар не может быть добавлен! ${result.error || result.message || 'Произошла ошибка.'}`);
-        setSaving(false);
-        return;
-      }
-      
-      product = result.data || result.product || result;
-      
-      // YENİ: product undefined olarsa error throw et
-      if (!product) {
-        console.error('Backend-dən product gəlmədi:', result);
-        alert('Товар не может быть добавлен! Ошибка backend.');
-        setSaving(false);
-        return;
-      }
-      
-      // YENİ: category obyektini düzəlt
-      setProducts(p => [
-        {
-          ...product,
-          category: typeof product.category === 'object'
-            ? product.category
-            : { name: data.category }
-        },
-        ...p
-      ]);
-    }
-    setShowForm(false);
-    setEditProduct(null);
-    setSaving(false);
-  };
-
-  if (loading) return <div>Загрузка...</div>;
-  if (error) return <div style={{color:'red'}}>Ошибка: {error}</div>;
+  if (!isAuthenticated || !user?.isAdmin) {
+    return null;
+  }
 
   return (
-    <div>
-      <h2>Məhsullar <span style={{fontWeight:'normal',fontSize:'16px'}}>({totalProducts} ədəd)</span></h2>
-      <button onClick={handleAdd} style={{marginBottom:12,padding:'8px 18px',background:'#0af',color:'#fff',border:'none',borderRadius:4,fontWeight:'bold'}}>{t('add_product', '+ Məhsul əlavə et')}</button>
-      <div style={{display:'flex',gap:'16px',marginBottom:'16px',flexWrap:'wrap',alignItems:'center'}}>
-        <input
-          type="text"
-          placeholder={t('search_placeholder', 'Axtarış... (ad, artikul, kataloq nömrəsi, təsvir)')}
-          value={search}
-          onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-          style={{padding:'8px',borderRadius:'4px',border:'1px solid #333',minWidth:'220px'}}
-        />
-        <select
-          value={categoryFilter}
-          onChange={e => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
-          style={{padding:'8px',borderRadius:'4px',border:'1px solid #333',background:'#232b3b',color:'#fff'}}
-        >
-                          <option value="">{t('all_categories', 'Все категории')}</option>
-          {Array.from(new Set(flattenCategoryNames(categories))).map((cat, idx) => (
-            <option key={cat + '-' + idx} value={cat}>{cat}</option>
-          ))}
-        </select>
-        <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:'8px'}}>
-          <span>{t('products_per_page', 'Bir səhifədə:')}</span>
-          <select
-            value={pageSize}
-            onChange={e => {
-              const val = e.target.value === '-1' ? -1 : parseInt(e.target.value, 10);
-              setPageSize(val);
-              setCurrentPage(1);
-            }}
-            style={{padding:'8px',borderRadius:'4px',border:'1px solid #333',background:'#232b3b',color:'#fff'}}
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={30}>30</option>
-            <option value={40}>40</option>
-            <option value={50}>50</option>
-            <option value={-1}>{t('all_products', 'Hamısı')}</option>
-          </select>
-          <div style={{display:'flex',gap:'8px',alignItems:'center',marginLeft:'24px'}}>
-            <button disabled={currentPage===1} onClick={()=>setCurrentPage(p=>p-1)} style={{padding:'6px 12px'}}>{t('previous', 'Əvvəlki')}</button>
-            <span>{t('page', 'Səhifə')} {currentPage} / {totalPages}</span>
-            <button disabled={currentPage===totalPages} onClick={()=>setCurrentPage(p=>p+1)} style={{padding:'6px 12px'}}>{t('next', 'Növbəti')}</button>
+    <div className="min-h-screen bg-white pt-24">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Məhsullar ({products.length} ədəd)</h1>
+          <p className="text-gray-600">Məhsulların idarə edilməsi</p>
+        </div>
+
+        {/* Action Bar */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center">
+              <FaPlus className="mr-2" />
+              + Məhsul əlavə et
+            </button>
+            
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Axtarış... (ad, artikul, kataloq №)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-80"
+              />
+            </div>
+
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            >
+              {categories.map(category => (
+                <option key={category} value={category}>
+                  {category === 'all' ? 'Все категории' : category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">Bir səhifədə:</span>
+            <select className="px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>20</option>
+              <option>50</option>
+              <option>100</option>
+            </select>
           </div>
         </div>
+
+        {/* Products Table */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Şəkil
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Kateqoriya
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Artikul
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Kataloq №
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Təsvir
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Qiymət
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Aktiv
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ana səhifədə
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Əməliyyatlar
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="h-10 w-10 rounded-lg object-cover"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.category || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.artikul}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.catalogNumber || '-'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900 max-w-xs truncate">
+                        {product.description}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {product.price} ₽
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={product.isActive}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={product.isFeatured}
+                        className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 transition"
+                          title="Redaktə"
+                        >
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-900 transition"
+                          title="Sil"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Əvvəlki
+              </button>
+              <span className="text-sm text-gray-700">
+                Səhifə {currentPage}/{totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Növbəti
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-      <table style={{width:'100%',background:'#1a2233',color:'#fff',borderCollapse:'collapse'}}>
-        <thead>
-          <tr>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('image', 'Şəkil')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('id', 'ID')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('name', 'Ad')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('category', 'Kateqoriya')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('artikul', 'Artikul')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('catalog_number', 'Kataloq №')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('description', 'Təsvir')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('price', 'Qiymət')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('active', 'Aktiv')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('show_on_home', 'Ana səhifədə')}</th>
-            <th style={{border:'1px solid #333',padding:'8px'}}>{t('actions', 'Əməliyyatlar')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedProducts.map(product => {
-            // YENİ: product undefined olarsa skip et
-            if (!product) return null;
-            return (
-            <tr key={product.id}>
-              <td style={{border:'1px solid #333',padding:'8px',textAlign:'center'}}>
-                {product.images && product.images.length > 0 && product.images[0] ? (
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
-                    onError={(e) => {
-                      console.error('Product image failed to load:', product.images?.[0]);
-                      e.currentTarget.src = '/placeholder.png';
-                    }}
-                    onLoad={(e) => {
-                      console.log('Product image loaded successfully:', product.images?.[0]);
-                    }}
-                  />
-                ) : (
-                  <img
-                    src="/placeholder.png"
-                    alt="placeholder"
-                    style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
-                  />
-                )}
-              </td>
-              <td style={{border:'1px solid #333',padding:'8px'}}>{formatId(product.id)}</td>
-              <td style={{border:'1px solid #333',padding:'8px'}}>{product.name}</td>
-              <td style={{border:'1px solid #333',padding:'8px'}}>{product.category?.name || '-'}</td>
-              <td style={{border:'1px solid #333',padding:'8px'}}>{product.artikul || '-'}</td>
-              <td style={{border:'1px solid #333',padding:'8px'}}>{product.catalogNumber || '-'}</td>
-              <td style={{border:'1px solid #333',padding:'8px'}}>{product.description || '-'}</td>
-              <td style={{border:'1px solid #333',padding:'8px'}}>{product.price}</td>
-              <td style={{border:'1px solid #333',padding:'8px',textAlign:'center'}}>
-                <input type="checkbox" checked={!!product.isActive} onChange={async e => {
-                  setSaving(true);
-                  const res = await fetch(`/api/products/${product.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ isActive: e.target.checked })
-                  });
-                  const updated = await res.json();
-                  setProducts(p => p.map(pr => pr.id === product.id ? updated : pr));
-                  setSaving(false);
-                }} style={{width:18,height:18,cursor:'pointer',accentColor:'#0af'}} />
-              </td>
-              <td style={{border:'1px solid #333',padding:'8px',textAlign:'center'}}>
-                <input type="checkbox" checked={!!product.isFeatured} onChange={async e => {
-                  setSaving(true);
-                  const res = await fetch(`/api/products/${product.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ isFeatured: e.target.checked })
-                  });
-                  const updated = await res.json();
-                  setProducts(p => p.map(pr => pr.id === product.id ? updated : pr));
-                  setSaving(false);
-                }} style={{width:18,height:18,cursor:'pointer',accentColor:'#ffb300'}} />
-              </td>
-              <td style={{border:'1px solid #333',padding:'8px',textAlign:'center'}}>
-                <button onClick={() => handleEdit(product)} style={{marginRight:4,padding:'2px 8px',fontSize:'13px',background:'#232b3b',color:'#fff',border:'1px solid #0af',borderRadius:4,cursor:'pointer',transition:'0.2s',display:'inline-block'}}>{t('edit', 'Redaktə')}</button>
-                <button onClick={() => handleDelete(product.id)} style={{padding:'2px 8px',fontSize:'13px',background:'#f44',color:'#fff',border:'none',borderRadius:4,cursor:'pointer',transition:'0.2s',display:'inline-block'}}>{t('delete', 'Sil')}</button>
-              </td>
-            </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {showForm && (
-        <ProductForm
-          initial={editProduct || undefined}
-          categories={categories}
-          onSave={handleSave}
-          onClose={() => { setShowForm(false); setEditProduct(null); }}
-        />
-      )}
-      {saving && <div style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.2)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center'}}><div style={{background:'#232b3b',padding:32,borderRadius:8,color:'#fff'}}>{t('saving', 'Yadda saxlanılır...')}</div></div>}
     </div>
   );
 } 

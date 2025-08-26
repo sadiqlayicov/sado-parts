@@ -9,7 +9,7 @@ export default function Footer() {
   const { t } = useTranslation();
   const [contactInfo, setContactInfo] = useState({
     phone: '+994 12 345 67 89',
-    email: 'info@sado-parts.az',
+    email: 'info@bilal-parts.ru',
     address: 'Bakı şəhəri, Yasamal rayonu'
   });
   
@@ -28,7 +28,7 @@ export default function Footer() {
           const settings = JSON.parse(cachedSettings);
           setContactInfo({
             phone: settings.contactPhone || '+994 12 345 67 89',
-            email: settings.contactEmail || 'info@sado-parts.az',
+            email: settings.contactEmail || 'info@bilal-parts.ru',
             address: settings.address || 'Bakı şəhəri, Yasamal rayonu'
           });
           
@@ -47,7 +47,7 @@ export default function Footer() {
           
           setContactInfo({
             phone: settings.contactPhone || '+994 12 345 67 89',
-            email: settings.contactEmail || 'info@sado-parts.az',
+            email: settings.contactEmail || 'info@bilal-parts.ru',
             address: settings.address || 'Bakı şəhəri, Yasamal rayonu'
           });
           
@@ -96,68 +96,68 @@ export default function Footer() {
   }, [contactInfo.phone, contactInfo.email, contactInfo.address, siteInfo.siteName, siteInfo.siteDescription]);
 
   return (
-    <footer className="bg-[#0A0A1A] text-[#F0F0F0]">
+    <footer className="bg-gray-50 text-gray-800 border-t border-gray-200">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                     {/* Company Information */}
-           <div className="space-y-4">
-             <h3 className="text-2xl font-bold text-white">{siteInfo.siteName}</h3>
-             <p className="text-sm leading-relaxed">
-               {siteInfo.siteDescription}
-             </p>
-            
+          {/* Company Information */}
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold text-gray-900">{siteInfo.siteName}</h3>
+            <p className="text-sm leading-relaxed text-gray-600">
+              {siteInfo.siteDescription}
+            </p>
+           
             {/* Contact Information */}
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
-                <FaPhone className="text-gray-400 w-4 h-4" />
-                <span className="text-sm">{contactInfo.phone}</span>
+                <FaPhone className="text-gray-500 w-4 h-4" />
+                <span className="text-sm text-gray-700">{contactInfo.phone}</span>
               </div>
               <div className="flex items-center space-x-3">
-                <FaEnvelope className="text-gray-400 w-4 h-4" />
-                <span className="text-sm">{contactInfo.email}</span>
+                <FaEnvelope className="text-gray-500 w-4 h-4" />
+                <span className="text-sm text-gray-700">{contactInfo.email}</span>
               </div>
               <div className="flex items-center space-x-3">
-                <FaMapMarkerAlt className="text-gray-400 w-4 h-4" />
-                <span className="text-sm">{contactInfo.address}</span>
+                <FaMapMarkerAlt className="text-gray-500 w-4 h-4" />
+                <span className="text-sm text-gray-700">{contactInfo.address}</span>
               </div>
             </div>
 
             {/* Social Media */}
             <div className="flex space-x-3 pt-2">
-              <a href="#" className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-500 transition">
-                <FaFacebook className="text-white w-5 h-5" />
+              <a href="#" className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-300 transition">
+                <FaFacebook className="text-gray-600 w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-500 transition">
-                <FaInstagram className="text-white w-5 h-5" />
+              <a href="#" className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-300 transition">
+                <FaInstagram className="text-gray-600 w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-500 transition">
-                <FaLinkedin className="text-white w-5 h-5" />
+              <a href="#" className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-300 transition">
+                <FaLinkedin className="text-gray-600 w-5 h-5" />
               </a>
             </div>
           </div>
 
           {/* About Company */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-white">О Компании</h4>
+            <h4 className="text-lg font-semibold text-gray-900">О Компании</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/about" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/about" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   О нас
                 </Link>
               </li>
               <li>
-                <Link href="/team" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/team" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Komandamız
                 </Link>
               </li>
               <li>
-                <Link href="/career" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/career" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Karyera
                 </Link>
               </li>
               <li>
-                <Link href="/news" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/news" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Xəbərlər
                 </Link>
               </li>
@@ -166,25 +166,25 @@ export default function Footer() {
 
           {/* Services */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-white">Услуги</h4>
+            <h4 className="text-lg font-semibold text-gray-900">Услуги</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/catalog" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/catalog" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Forklift Satışı
                 </Link>
               </li>
               <li>
-                <Link href="/rental" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/rental" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Forklift İcarəsi
                 </Link>
               </li>
               <li>
-                <Link href="/service" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/service" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Texniki Xidmət
                 </Link>
               </li>
               <li>
-                <Link href="/parts" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/parts" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Ehtiyat Hissələri
                 </Link>
               </li>
@@ -193,25 +193,25 @@ export default function Footer() {
 
           {/* Support */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-white">Dəstək</h4>
+            <h4 className="text-lg font-semibold text-gray-900">Dəstək</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/support" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/support" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Dəstək Mərkəzi
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/faq" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Sıkça Verilən Suallar
                 </Link>
               </li>
               <li>
-                <Link href="/technical-support" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/technical-support" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Texniki Dəstək
                 </Link>
               </li>
               <li>
-                <Link href="/warranty" className="text-sm hover:text-cyan-400 transition">
+                <Link href="/warranty" className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Zəmanət
                 </Link>
               </li>
@@ -221,22 +221,22 @@ export default function Footer() {
       </div>
 
       {/* Newsletter & Legal Section */}
-      <div className="border-t border-gray-700">
+      <div className="border-t border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Newsletter */}
             <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-white">Xəbər Bülleteni</h4>
-              <p className="text-sm text-gray-400">
+              <h4 className="text-lg font-semibold text-gray-900">Xəbər Bülleteni</h4>
+              <p className="text-sm text-gray-600">
                 Yeni məhsul və xidmətlərimiz haqqında ilk siz xəbər alın
               </p>
               <div className="flex">
                 <input
                   type="email"
                   placeholder="Email ünvanınızı daxil edin"
-                  className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-l-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400"
+                  className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-l-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
-                <button className="px-4 py-3 bg-gray-600 hover:bg-gray-500 rounded-r-lg transition">
+                <button className="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-r-lg transition">
                   <FaPaperPlane className="text-white w-5 h-5" />
                 </button>
               </div>
@@ -244,17 +244,17 @@ export default function Footer() {
 
             {/* Copyright & Legal */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-600">
                 © 2024 Bilal-Parts. Все права защищены.
               </p>
               <div className="flex flex-wrap gap-4 text-sm">
-                <Link href="/privacy" className="text-gray-400 hover:text-cyan-400 transition">
+                <Link href="/privacy" className="text-gray-600 hover:text-blue-600 transition">
                   Məxfilik Siyasəti
                 </Link>
-                <Link href="/terms" className="text-gray-400 hover:text-cyan-400 transition">
+                <Link href="/terms" className="text-gray-600 hover:text-blue-600 transition">
                   İstifadə Şərtləri
                 </Link>
-                <Link href="/cookies" className="text-gray-400 hover:text-cyan-400 transition">
+                <Link href="/cookies" className="text-gray-600 hover:text-blue-600 transition">
                   Cookies
                 </Link>
               </div>
@@ -265,8 +265,8 @@ export default function Footer() {
 
       {/* Help Button */}
       <div className="fixed bottom-6 right-6">
-        <button className="w-12 h-12 bg-[#0A0A1A] border border-gray-600 rounded-full flex items-center justify-center hover:bg-gray-800 transition shadow-lg">
-          <FaQuestion className="text-white w-5 h-5" />
+        <button className="w-12 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition shadow-lg">
+          <FaQuestion className="text-gray-600 w-5 h-5" />
         </button>
       </div>
     </footer>
