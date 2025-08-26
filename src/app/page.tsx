@@ -138,26 +138,38 @@ export default function HomePage() {
         
         if (cachedCategories && categoriesCacheTime && (now - parseInt(categoriesCacheTime)) < 30 * 60 * 1000) { // 30 minutes cache
           const categoriesData = JSON.parse(cachedCategories);
+          console.log('Using cached categories:', categoriesData.length);
           setCategories(categoriesData);
         } else {
+          console.log('Fetching categories from API...');
           const categoriesRes = await fetch('/api/categories');
+          console.log('Categories API response status:', categoriesRes.status);
+          
           if (categoriesRes.ok) {
             const categoriesData = await categoriesRes.json();
+            console.log('Categories API response:', categoriesData);
+            
             // Check if response has success and data properties (new API format)
             if (categoriesData.success && Array.isArray(categoriesData.data)) {
+              console.log('Setting categories from data property:', categoriesData.data.length);
               setCategories(categoriesData.data);
               // Cache categories for 30 minutes
               localStorage.setItem('cachedCategories', JSON.stringify(categoriesData.data));
               localStorage.setItem('categoriesCacheTime', now.toString());
             } else if (Array.isArray(categoriesData)) {
               // Fallback for old API format
+              console.log('Setting categories from direct array:', categoriesData.length);
               setCategories(categoriesData);
               // Cache categories for 30 minutes
               localStorage.setItem('cachedCategories', JSON.stringify(categoriesData));
               localStorage.setItem('categoriesCacheTime', now.toString());
             } else {
+              console.log('No valid categories data found');
               setCategories([]);
             }
+          } else {
+            console.error('Categories API failed:', categoriesRes.status);
+            setCategories([]);
           }
         }
         
