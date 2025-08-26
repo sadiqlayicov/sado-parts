@@ -80,12 +80,19 @@ export default function ProductPage() {
 
         // Fetch similar products after we have the product data
         try {
+          console.log('Fetching similar products for product ID:', productId);
           const similarResponse = await fetch(`/api/products/similar/${productId}`);
+          console.log('Similar products response status:', similarResponse.status);
+          
           if (similarResponse.ok) {
             const similarData = await similarResponse.json();
+            console.log('Similar products data:', similarData);
             if (similarData.success && similarData.products) {
               setSimilarProducts(similarData.products);
             }
+          } else {
+            const errorData = await similarResponse.json();
+            console.error('Similar products API error:', errorData);
           }
         } catch (similarError) {
           console.error('Error fetching similar products:', similarError);

@@ -22,6 +22,8 @@ export async function GET(
     const { id } = await params;
     const productId = id;
     
+    console.log('Similar products API called with product ID:', productId);
+    
     if (!productId) {
       return NextResponse.json(
         { error: 'Product ID is required' },
@@ -32,11 +34,23 @@ export async function GET(
     client = await pool.connect();
 
     // First, get the current product to find its category
-    const currentProductResult = await client.query(`
-      SELECT categoryId, name, artikul, "catalogNumber"
-      FROM products 
-      WHERE id = $1
-    `, [productId]);
+    // Handle both UUID and custom ID formats
+    let currentProductResult;
+    try {
+      currentProductResult = await client.query(`
+        SELECT categoryId, name, artikul, "catalogNumber"
+        FROM products 
+        WHERE id = $1
+      `, [productId]);
+    } catch (queryError) {
+      console.error('Error querying product with ID:', productId, queryError);
+      // Try with text comparison if UUID fails
+      currentProductResult = await client.query(`
+        SELECT categoryId, name, artikul, "catalogNumber"
+        FROM products 
+        WHERE id::text = $1
+      `, [productId]);
+    }
 
     if (currentProductResult.rows.length === 0) {
       console.log('Product not found for ID:', productId);
@@ -47,7 +61,12 @@ export async function GET(
     }
 
     const currentProduct = currentProductResult.rows[0];
-    console.log('Current product categoryId:', currentProduct.categoryId);
+    console.log('Current product found:', {
+      id: productId,
+      categoryId: currentProduct.categoryId,
+      name: currentProduct.name,
+      artikul: currentProduct.artikul
+    });
     
     // If no category, return empty array
     if (!currentProduct.categoryId) {
@@ -58,27 +77,54 @@ export async function GET(
     }
     
     // Get similar products from the same category, excluding the current product
-    const similarProductsResult = await client.query(`
-      SELECT 
-        p.id,
-        p.name,
-        p.price,
-        p."salePrice",
-        p.artikul,
-        p."catalogNumber",
-        p.stock,
-        p."isActive",
-        p.images,
-        p."categoryId",
-        c.name as category_name
-      FROM products p
-      LEFT JOIN categories c ON p."categoryId" = c.id
-      WHERE p."categoryId" = $1 
-        AND p."isActive" = true 
-        AND p.id != $2
-      ORDER BY p."createdAt" DESC
-      LIMIT 8
-    `, [currentProduct.categoryId, productId]);
+    let similarProductsResult;
+    try {
+      similarProductsResult = await client.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.price,
+          p."salePrice",
+          p.artikul,
+          p."catalogNumber",
+          p.stock,
+          p."isActive",
+          p.images,
+          p."categoryId",
+          c.name as category_name
+        FROM products p
+        LEFT JOIN categories c ON p."categoryId" = c.id
+        WHERE p."categoryId" = $1 
+          AND p."isActive" = true 
+          AND p.id::text != $2
+        ORDER BY p."createdAt" DESC
+        LIMIT 8
+      `, [currentProduct.categoryId, productId]);
+    } catch (similarQueryError) {
+      console.error('Error querying similar products:', similarQueryError);
+      // Try alternative approach if the first query fails
+      similarProductsResult = await client.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.price,
+          p."salePrice",
+          p.artikul,
+          p."catalogNumber",
+          p.stock,
+          p."isActive",
+          p.images,
+          p."categoryId",
+          c.name as category_name
+        FROM products p
+        LEFT JOIN categories c ON p."categoryId" = c.id
+        WHERE p."categoryId" = $1 
+          AND p."isActive" = true 
+          AND p.id != $2
+        ORDER BY p."createdAt" DESC
+        LIMIT 8
+      `, [currentProduct.categoryId, productId]);
+    }
 
     const similarProducts = similarProductsResult.rows;
     console.log('Similar products found:', similarProducts.length);
@@ -117,7 +163,7 @@ export async function GET(
         LEFT JOIN categories c ON p."categoryId" = c.id
         WHERE (p.name ILIKE $1 OR p.artikul ILIKE $1 OR p."catalogNumber" ILIKE $1)
           AND p."isActive" = true 
-          AND p.id != $2
+          AND p.id::text != $2
           AND p."categoryId" != $3
         ORDER BY p."createdAt" DESC
         LIMIT $4
@@ -146,9 +192,14 @@ export async function GET(
     });
 
   } catch (error: any) {
-    console.error('Get similar products error:', error);
+    console.error('Get similar products error for product ID:', productId, error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch similar products' },
+      { error: 'Failed to fetch similar products', details: error.message },
       { status: 500 }
     );
   } finally {
