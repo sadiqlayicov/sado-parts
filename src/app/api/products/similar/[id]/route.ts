@@ -35,23 +35,12 @@ export async function GET(
     client = await pool.connect();
 
     // First, get the current product to find its category
-    // Handle both UUID and custom ID formats
-    let currentProductResult;
-    try {
-      currentProductResult = await client.query(`
-        SELECT categoryId, name, artikul, "catalogNumber"
-        FROM products 
-        WHERE id = $1
-      `, [productId]);
-    } catch (queryError) {
-      console.error('Error querying product with ID:', productId, queryError);
-      // Try with text comparison if UUID fails
-      currentProductResult = await client.query(`
-        SELECT categoryId, name, artikul, "catalogNumber"
-        FROM products 
-        WHERE id::text = $1
-      `, [productId]);
-    }
+    // Use text comparison for all ID formats
+    const currentProductResult = await client.query(`
+      SELECT "categoryId", name, artikul, "catalogNumber"
+      FROM products 
+      WHERE id::text = $1
+    `, [productId]);
 
     if (currentProductResult.rows.length === 0) {
       console.log('Product not found for ID:', productId);
@@ -78,54 +67,27 @@ export async function GET(
     }
     
     // Get similar products from the same category, excluding the current product
-    let similarProductsResult;
-    try {
-      similarProductsResult = await client.query(`
-        SELECT 
-          p.id,
-          p.name,
-          p.price,
-          p."salePrice",
-          p.artikul,
-          p."catalogNumber",
-          p.stock,
-          p."isActive",
-          p.images,
-          p."categoryId",
-          c.name as category_name
-        FROM products p
-        LEFT JOIN categories c ON p."categoryId" = c.id
-        WHERE p."categoryId" = $1 
-          AND p."isActive" = true 
-          AND p.id::text != $2
-        ORDER BY p."createdAt" DESC
-        LIMIT 8
-      `, [currentProduct.categoryId, productId]);
-    } catch (similarQueryError) {
-      console.error('Error querying similar products:', similarQueryError);
-      // Try alternative approach if the first query fails
-      similarProductsResult = await client.query(`
-        SELECT 
-          p.id,
-          p.name,
-          p.price,
-          p."salePrice",
-          p.artikul,
-          p."catalogNumber",
-          p.stock,
-          p."isActive",
-          p.images,
-          p."categoryId",
-          c.name as category_name
-        FROM products p
-        LEFT JOIN categories c ON p."categoryId" = c.id
-        WHERE p."categoryId" = $1 
-          AND p."isActive" = true 
-          AND p.id != $2
-        ORDER BY p."createdAt" DESC
-        LIMIT 8
-      `, [currentProduct.categoryId, productId]);
-    }
+    const similarProductsResult = await client.query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.price,
+        p."salePrice",
+        p.artikul,
+        p."catalogNumber",
+        p.stock,
+        p."isActive",
+        p.images,
+        p."categoryId",
+        c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p."categoryId" = c.id
+      WHERE p."categoryId" = $1 
+        AND p."isActive" = true 
+        AND p.id::text != $2
+      ORDER BY p."createdAt" DESC
+      LIMIT 8
+    `, [currentProduct.categoryId, productId]);
 
     const similarProducts = similarProductsResult.rows;
     console.log('Similar products found:', similarProducts.length);
