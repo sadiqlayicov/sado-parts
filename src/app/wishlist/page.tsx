@@ -55,7 +55,7 @@ function SimilarProducts({ products }: { products: any[] }) {
   return (
     <div className="space-y-4">
       {similarProducts.map((product: any) => (
-        <div key={product.id} className="bg-white rounded-lg p-3 flex items-center gap-3 border border-gray-200 hover:border-blue-300 transition">
+        <div key={product.id} className="bg-white rounded-lg p-3 flex items-center gap-3 border border-gray-200 hover:border-blue-300 transition shadow-sm">
           <Link href={`/product/${product.id}`} className="flex-1">
             <img 
               src={product.images?.[0] || '/placeholder.png'} 
@@ -70,7 +70,7 @@ function SimilarProducts({ products }: { products: any[] }) {
             <div className="text-xs text-gray-600 mb-1">
               {product.artikul || 'N/A'}
             </div>
-                         <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1">
               {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
                 <>
                   <span className="text-red-500 line-through text-xs">
@@ -173,11 +173,11 @@ export default function WishlistPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Wishlist */}
             <div className="lg:col-span-2">
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-lg">
                 <h2 className="text-xl font-semibold mb-6 text-gray-900">Мои избранные товары ({products.length})</h2>
                 <div className="space-y-4">
                   {products.map((product: any) => (
-                    <div key={product.id} className="bg-white rounded-lg p-4 flex items-center gap-4 relative group border border-gray-200 hover:border-blue-300 transition">
+                    <div key={product.id} className="bg-gray-50 rounded-lg p-4 flex items-center gap-4 relative group border border-gray-200 hover:border-blue-300 transition">
                       <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" />
                       <img 
                         src={product.images?.[0] || '/placeholder.png'} 
@@ -189,25 +189,25 @@ export default function WishlistPage() {
                         <div className="text-sm text-gray-600 mb-1">
                           Артикул: {product.artikul || 'N/A'} | Каталог: {product.catalogNumber || 'N/A'}
                         </div>
-                                                 <div className="flex items-center gap-2">
-                           {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
-                             <>
-                               <span className="text-red-500 line-through text-sm">
-                                 {product.price?.toLocaleString('ru-RU')} ₽
-                               </span>
-                               <span className="text-blue-600 font-bold text-lg">
-                                 {calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽
-                               </span>
-                               <span className="text-red-500 text-sm">
-                                 -{user.discountPercentage}%
-                               </span>
-                             </>
-                           ) : (
-                             <span className="text-blue-600 font-bold text-lg">
-                               {product.price?.toLocaleString('ru-RU')} ₽
-                             </span>
-                           )}
-                         </div>
+                                                <div className="flex items-center gap-2">
+                          {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
+                            <>
+                              <span className="text-red-500 line-through text-sm">
+                                {product.price?.toLocaleString('ru-RU')} ₽
+                              </span>
+                              <span className="text-blue-600 font-bold text-lg">
+                                {calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽
+                              </span>
+                              <span className="text-red-500 text-sm">
+                                -{user.discountPercentage}%
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-blue-600 font-bold text-lg">
+                              {product.price?.toLocaleString('ru-RU')} ₽
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex gap-2 z-20">
                         <button
@@ -231,7 +231,7 @@ export default function WishlistPage() {
 
             {/* Similar Products Sidebar */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-lg">
                 <h2 className="text-xl font-semibold mb-6 text-gray-900">Похожие товары</h2>
                 <SimilarProducts products={products} />
               </div>

@@ -216,7 +216,7 @@ function CatalogPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Фильтры */}
           <div className="lg:col-span-1">
-            <div className="bg-gray-50 rounded-xl p-6 shadow-lg border border-gray-200">
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
               <h2 className="text-xl font-bold mb-4 text-gray-900">Фильтры</h2>
               
               {/* Поиск */}
@@ -384,7 +384,7 @@ function CatalogPage() {
                     </button>
                     <button
                       onClick={e => { e.stopPropagation(); e.preventDefault(); handleWishlist(product.id); }}
-                      className={`px-3 py-1 rounded-lg text-white font-semibold text-center transition text-xs ${wishlist.includes(product.id) ? 'bg-red-500' : 'bg-gray-300 hover:bg-red-500'}`}
+                      className={`px-3 py-1 rounded-lg text-white font-semibold text-center transition text-xs ${wishlist.includes(product.id) ? 'bg-red-500' : 'bg-gray-500 hover:bg-red-500'}`}
                       title={wishlist.includes(product.id) ? 'Удалить из избранного' : 'Добавить в избранное'}
                     >
                       ♥
@@ -406,7 +406,7 @@ function CatalogPage() {
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 rounded-lg text-white font-semibold transition"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-lg text-white font-semibold transition"
                 >
                   ←
                 </button>
@@ -417,8 +417,8 @@ function CatalogPage() {
                     onClick={() => setCurrentPage(page)}
                     className={`px-4 py-2 rounded-lg font-semibold transition ${
                       currentPage === page 
-                        ? 'bg-cyan-500 text-white' 
-                        : 'bg-[#1e293b] text-white hover:bg-cyan-600'
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-blue-600 hover:text-white'
                     }`}
                   >
                     {page}
@@ -428,7 +428,7 @@ function CatalogPage() {
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 rounded-lg text-white font-semibold transition"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-lg text-white font-semibold transition"
                 >
                   →
                 </button>

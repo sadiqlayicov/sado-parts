@@ -181,8 +181,6 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-
-
   // Top satılanlar üçün orderItems-ları yığ
   useEffect(() => {
     let isMounted = true;
@@ -357,43 +355,33 @@ export default function HomePage() {
     .slice(0, 5);
 
   function ProductCard({ product, onAddToCart, onToggleWishlist, isWishlisted }: any) {
-    // Debug: Log product price info
-    console.log('ProductCard render:', {
-      name: product.name,
-      price: product.price,
-      salePrice: product.salePrice,
-      isAuthenticated,
-      isApproved,
-      userDiscount: user?.discountPercentage
-    });
-    
     return (
-      <div className="bg-[#1e293b] rounded-lg p-3 hover:bg-cyan-900 transition-all duration-300 hover:scale-105 flex flex-col h-96 cursor-pointer group relative">
+      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col h-96 cursor-pointer group relative border border-gray-200">
         <Link href={`/product/${product.id}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
-        <div className="w-full h-32 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
+        <div className="w-full h-32 bg-gradient-to-br from-blue-500 to-blue-600 rounded-t-lg mb-3 flex items-center justify-center overflow-hidden flex-shrink-0">
           {product.images && product.images.length > 0 && product.images[0] ? (
             <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
           ) : null}
           <span className="text-white font-bold text-sm" style={{ display: product.images && product.images.length > 0 && product.images[0] ? 'none' : 'flex' }}>{product.brand || product.name}</span>
         </div>
-        <div className="flex-1 flex flex-col justify-between min-h-0">
+        <div className="flex-1 flex flex-col justify-between min-h-0 p-4">
           <div className="min-h-0 flex-1 flex flex-col">
-            <div className="font-semibold text-base mb-3 text-center leading-tight overflow-hidden" style={{ minHeight: '2.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.name}</div>
-                                <div className="text-center mb-4">
-                      {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
-                        <div>
-                                  <div className="text-gray-400 line-through text-sm">{product.price?.toLocaleString('ru-RU')} ₽</div>
-        <div className="text-cyan-400 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽</div>
-                        </div>
-                      ) : (
-                        <div className="text-cyan-400 font-bold text-lg">{product.price?.toLocaleString('ru-RU')} ₽</div>
-                      )}
-                    </div>
-            <div className="text-xs text-gray-400 text-center space-y-1 mb-6">
+            <div className="font-semibold text-base mb-3 text-center leading-tight overflow-hidden text-gray-900" style={{ minHeight: '2.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.name}</div>
+            <div className="text-center mb-4">
+              {isAuthenticated && isApproved && user && user.discountPercentage > 0 ? (
+                <div>
+                  <div className="text-gray-500 line-through text-sm">{product.price?.toLocaleString('ru-RU')} ₽</div>
+                  <div className="text-blue-600 font-bold text-lg">{calculateDiscountedPrice(product.price, product.salePrice)?.toFixed(2)} ₽</div>
+                </div>
+              ) : (
+                <div className="text-blue-600 font-bold text-lg">{product.price?.toLocaleString('ru-RU')} ₽</div>
+              )}
+            </div>
+            <div className="text-xs text-gray-600 text-center space-y-1 mb-6">
               <div className="truncate">{product.category?.name || '-'}</div>
-              <div className="truncate">Artikul: {product.artikul || product.sku || '-'}</div>
+              <div className="truncate">Артикул: {product.artikul || product.sku || '-'}</div>
               {product.salesCount && (
-                <div className="truncate">{t('sales_count')}: {product.salesCount}</div>
+                <div className="truncate">Продано: {product.salesCount}</div>
               )}
             </div>
           </div>
@@ -402,18 +390,17 @@ export default function HomePage() {
               onClick={e => { 
                 e.stopPropagation(); 
                 e.preventDefault(); 
-                // Use product.id directly for database lookup, fallback to name-based mapping
                 const productId = product.id || product.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
                 onAddToCart(productId, 1); 
               }}
-              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded text-white text-xs font-semibold text-center transition"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs font-semibold text-center transition"
             >
-              Add to Cart
+              В корзину
             </button>
             <button
               onClick={e => { e.stopPropagation(); e.preventDefault(); onToggleWishlist(product.id); }}
-              className={`px-4 py-2 rounded text-white text-xs transition ${isWishlisted ? 'bg-red-500' : 'bg-white/10 hover:bg-red-500'}`}
-              title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+              className={`px-4 py-2 rounded text-white text-xs transition ${isWishlisted ? 'bg-red-500' : 'bg-gray-500 hover:bg-red-500'}`}
+              title={isWishlisted ? 'Удалить из избранного' : 'Добавить в избранное'}
             >
               ♥
             </button>
@@ -437,34 +424,55 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-white text-gray-800">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <section className="text-center mb-16">
-          <h1 className="text-5xl lg:text-6xl font-bold mb-6 text-gray-900">
-            {siteName}
-          </h1>
-          <p className="text-xl mb-8 text-gray-600">
-            Запчасти для вилочных погрузчиков в Москве
-          </p>
-          <p className="text-lg mb-8 text-gray-500">
-            Интернет-магазин премиум-класса
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link 
-              href="/catalog" 
-              className="px-8 py-4 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold text-xl transition text-white"
-            >
-              Перейти в каталог
-            </Link>
-            <Link 
-              href="/contacts" 
-              className="px-8 py-4 rounded-lg border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold text-xl transition"
-            >
-              Связаться с нами
-            </Link>
+      {/* Hero Banner Section */}
+      <section className="relative h-96 lg:h-[500px] bg-gradient-to-r from-blue-600 to-blue-800 overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 bg-black/40 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-blue-700/80 z-20"></div>
+        
+        {/* Banner Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/banner-forklift-real.jpg" 
+            alt="Forklift Parts" 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+        
+        {/* Content Overlay */}
+        <div className="relative z-30 h-full flex items-center justify-center text-center text-white px-4">
+          <div className="max-w-4xl">
+            <h1 className="text-4xl lg:text-6xl font-bold mb-6 drop-shadow-lg">
+              {siteName}
+            </h1>
+            <p className="text-xl lg:text-2xl mb-4 drop-shadow-md">
+              Запчасти для вилочных погрузчиков в Москве
+            </p>
+            <p className="text-lg lg:text-xl mb-8 text-blue-100 drop-shadow-md">
+              Интернет-магазин премиум-класса
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <Link 
+                href="/catalog" 
+                className="px-8 py-4 rounded-lg bg-white text-blue-600 hover:bg-gray-100 font-semibold text-xl transition shadow-lg"
+              >
+                Перейти в каталог
+              </Link>
+              <Link 
+                href="/contacts" 
+                className="px-8 py-4 rounded-lg border-2 border-white text-white hover:bg-white hover:text-blue-600 font-semibold text-xl transition"
+              >
+                Связаться с нами
+              </Link>
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
 
+      <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Categories Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Категории товаров</h2>
@@ -473,7 +481,7 @@ export default function HomePage() {
               <Link 
                 key={category.id} 
                 href={`/catalog?category=${category.id}`}
-                className="bg-gray-50 rounded-lg p-6 text-center hover:bg-blue-50 transition group border border-gray-200 hover:border-blue-300"
+                className="bg-white rounded-lg p-6 text-center hover:bg-blue-50 transition group border border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md"
               >
                 <div className="text-4xl mb-4 group-hover:scale-110 transition">
                   {category.name === 'Engine Parts' ? '🔧' :
@@ -495,12 +503,12 @@ export default function HomePage() {
         {/* Top Sellers Section */}
         {topSellers.length > 0 && (
           <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-8 text-center">Топ продаж</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Топ продаж</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {getTopSellersProducts().map((product) => {
                 const translatedProduct = translateProductData(product);
                 return (
-                  <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
+                  <div key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition border border-gray-200">
                     <Link href={`/product/${product.id}`} className="block">
                       <div className="relative mb-4">
                         {translatedProduct.images && translatedProduct.images.length > 0 ? (
@@ -509,10 +517,10 @@ export default function HomePage() {
                             alt={translatedProduct.name}
                             width={200}
                             height={200}
-                            className="w-full h-48 object-cover rounded-lg cursor-pointer"
+                            className="w-full h-48 object-cover rounded-t-lg cursor-pointer"
                           />
                         ) : (
-                          <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center cursor-pointer">
+                          <div className="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center cursor-pointer">
                             <span className="text-4xl">📦</span>
                           </div>
                         )}
@@ -524,42 +532,46 @@ export default function HomePage() {
                           className={`absolute top-2 right-2 p-2 rounded-full ${
                             wishlist.includes(product.id) 
                               ? 'bg-red-500 text-white' 
-                              : 'bg-white/20 text-white hover:bg-white/30'
+                              : 'bg-white/80 text-gray-700 hover:bg-red-500 hover:text-white'
                           } transition`}
                         >
                           {wishlist.includes(product.id) ? '❤️' : '🤍'}
                         </button>
                       </div>
-                      <h3 className="text-lg font-semibold mb-2 cursor-pointer hover:text-cyan-300 transition">{translatedProduct.name}</h3>
-                      <p className="text-sm text-gray-400 mb-2">Артикул: {translatedProduct.sku}</p>
-                      <div className="flex justify-between items-center mb-4">
-                        <div>
-                          {isApproved && user && user.discountPercentage > 0 ? (
-                            <div>
-                              <span className="line-through text-gray-400 text-sm">
+                      <div className="p-4">
+                        <h3 className="text-lg font-semibold mb-2 cursor-pointer hover:text-blue-600 transition text-gray-900">{translatedProduct.name}</h3>
+                        <p className="text-sm text-gray-600 mb-2">Артикул: {translatedProduct.sku}</p>
+                        <div className="flex justify-between items-center mb-4">
+                          <div>
+                            {isApproved && user && user.discountPercentage > 0 ? (
+                              <div>
+                                <span className="line-through text-gray-500 text-sm">
+                                  {translatedProduct.price.toLocaleString()} ₽
+                                </span>
+                                <span className="text-blue-600 ml-2 font-semibold">
+                                  {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xl font-bold text-blue-600">
                                 {translatedProduct.price.toLocaleString()} ₽
                               </span>
-                              <span className="text-green-400 ml-2 font-semibold">
-                                {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-xl font-bold">
-                              {translatedProduct.price.toLocaleString()} ₽
-                            </span>
-                          )}
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            Продано: {topSellers.find(s => s.productId === product.id)?.salesCount || 0}
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-400">
-                          Продано: {topSellers.find(s => s.productId === product.id)?.salesCount || 0}
-                        </span>
                       </div>
                     </Link>
-                    <button
-                      onClick={() => handleAddToCart(translatedProduct)}
-                      className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
-                    >
-                      Добавить в корзину
-                    </button>
+                    <div className="p-4 pt-0">
+                      <button
+                        onClick={() => handleAddToCart(translatedProduct)}
+                        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white transition"
+                      >
+                        Добавить в корзину
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -570,10 +582,10 @@ export default function HomePage() {
         {/* Latest Products Section */}
         <section className="mb-16">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Новые поступления</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Новые поступления</h2>
             <button
               onClick={() => setShowAllLatestProducts(!showAllLatestProducts)}
-              className="text-cyan-400 hover:text-cyan-300 transition"
+              className="text-blue-600 hover:text-blue-700 transition font-semibold"
             >
               {showAllLatestProducts ? 'Показать меньше' : 'Показать все'}
             </button>
@@ -582,7 +594,7 @@ export default function HomePage() {
             {getLatestProducts().map((product) => {
               const translatedProduct = translateProductData(product);
               return (
-                <div key={product.id} className="bg-white/10 rounded-lg p-6 hover:bg-white/20 transition">
+                <div key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition border border-gray-200">
                   <Link href={`/product/${product.id}`} className="block">
                     <div className="relative mb-4">
                       {translatedProduct.images && translatedProduct.images.length > 0 ? (
@@ -591,10 +603,10 @@ export default function HomePage() {
                           alt={translatedProduct.name}
                           width={200}
                           height={200}
-                          className="w-full h-48 object-cover rounded-lg cursor-pointer"
+                          className="w-full h-48 object-cover rounded-t-lg cursor-pointer"
                         />
                       ) : (
-                        <div className="w-full h-48 bg-gray-600 rounded-lg flex items-center justify-center cursor-pointer">
+                        <div className="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center cursor-pointer">
                           <span className="text-4xl">📦</span>
                         </div>
                       )}
@@ -606,37 +618,41 @@ export default function HomePage() {
                         className={`absolute top-2 right-2 p-2 rounded-full ${
                           wishlist.includes(product.id) 
                             ? 'bg-red-500 text-white' 
-                            : 'bg-white/20 text-white hover:bg-white/30'
+                            : 'bg-white/80 text-gray-700 hover:bg-red-500 hover:text-white'
                         } transition`}
                       >
                         {wishlist.includes(product.id) ? '❤️' : '🤍'}
                       </button>
                     </div>
-                    <h3 className="text-lg font-semibold mb-2 cursor-pointer hover:text-cyan-300 transition">{translatedProduct.name}</h3>
-                    <p className="text-sm text-gray-400 mb-2">Артикул: {translatedProduct.sku}</p>
-                    <div className="mb-4">
-                      {isApproved && user && user.discountPercentage > 0 ? (
-                        <div>
-                          <span className="line-through text-gray-400 text-sm">
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold mb-2 cursor-pointer hover:text-blue-600 transition text-gray-900">{translatedProduct.name}</h3>
+                      <p className="text-sm text-gray-600 mb-2">Артикул: {translatedProduct.sku}</p>
+                      <div className="mb-4">
+                        {isApproved && user && user.discountPercentage > 0 ? (
+                          <div>
+                            <span className="line-through text-gray-500 text-sm">
+                              {translatedProduct.price.toLocaleString()} ₽
+                            </span>
+                            <span className="text-blue-600 ml-2 font-semibold">
+                              {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xl font-bold text-blue-600">
                             {translatedProduct.price.toLocaleString()} ₽
                           </span>
-                          <span className="text-green-400 ml-2 font-semibold">
-                            {calculateDiscountedPrice(translatedProduct.price, null).toLocaleString()} ₽
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xl font-bold">
-                          {translatedProduct.price.toLocaleString()} ₽
-                        </span>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </Link>
-                  <button
-                    onClick={() => handleAddToCart(translatedProduct)}
-                    className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-semibold transition"
-                  >
-                    Добавить в корзину
-                  </button>
+                  <div className="p-4 pt-0">
+                    <button
+                      onClick={() => handleAddToCart(translatedProduct)}
+                      className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white transition"
+                    >
+                      Добавить в корзину
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -645,22 +661,22 @@ export default function HomePage() {
 
         {/* Features Section */}
         <section className="mb-16">
-          <h2 className="text-3xl font-bold mb-8 text-center">Почему выбирают нас</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Почему выбирают нас</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
+            <div className="text-center bg-white p-6 rounded-lg shadow-md border border-gray-200">
               <div className="text-4xl mb-4">🚚</div>
-              <h3 className="text-xl font-semibold mb-2">Быстрая доставка</h3>
-              <p className="text-gray-400">Доставка по Москве в течение 24 часов</p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Быстрая доставка</h3>
+              <p className="text-gray-600">Доставка по Москве в течение 24 часов</p>
             </div>
-            <div className="text-center">
+            <div className="text-center bg-white p-6 rounded-lg shadow-md border border-gray-200">
               <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-xl font-semibold mb-2">Гарантия качества</h3>
-              <p className="text-gray-400">Все товары с гарантией производителя</p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Гарантия качества</h3>
+              <p className="text-gray-600">Все товары с гарантией производителя</p>
             </div>
-            <div className="text-center">
+            <div className="text-center bg-white p-6 rounded-lg shadow-md border border-gray-200">
               <div className="text-4xl mb-4">💰</div>
-              <h3 className="text-xl font-semibold mb-2">Лучшие цены</h3>
-              <p className="text-gray-400">Конкурентные цены на все товары</p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Лучшие цены</h3>
+              <p className="text-gray-600">Конкурентные цены на все товары</p>
             </div>
           </div>
         </section>
