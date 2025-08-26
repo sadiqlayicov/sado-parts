@@ -25,6 +25,7 @@ export default function Header() {
   const categoriesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const brandsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [wishlist, setWishlist] = useState<any[]>([]);
+  const [wishlistProducts, setWishlistProducts] = useState<any[]>([]);
   const [showWishlist, setShowWishlist] = useState(false);
 
   // Search functionality
@@ -54,6 +55,43 @@ export default function Header() {
       window.removeEventListener('wishlistChanged', updateWishlist);
     };
   }, []);
+
+  // Fetch wishlist products when wishlist changes
+  useEffect(() => {
+    const fetchWishlistProducts = async () => {
+      if (wishlist.length === 0) {
+        setWishlistProducts([]);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/products/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: wishlist }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && Array.isArray(data.products)) {
+            setWishlistProducts(data.products);
+          } else {
+            setWishlistProducts([]);
+          }
+        } else {
+          console.error('Failed to fetch wishlist products');
+          setWishlistProducts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching wishlist products:', error);
+        setWishlistProducts([]);
+      }
+    };
+
+    fetchWishlistProducts();
+  }, [wishlist]);
 
   // Load site settings with caching
   useEffect(() => {
@@ -688,15 +726,42 @@ export default function Header() {
               <div className="text-gray-500 text-sm">Избранное пусто</div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {wishlist.slice(0, 5).map((item) => (
-                  <div key={item} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
-                    <div className="w-8 h-8 bg-gray-300 rounded"></div>
-                    <div className="flex-1 text-sm">
-                      <div className="text-gray-900">Товар {item}</div>
-                      <div className="text-gray-500">ID: {item}</div>
+                {wishlistProducts.slice(0, 5).map((product) => (
+                  <div key={product.id} className="flex items-center space-x-3 p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
+                    <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                      {product.images && product.images.length > 0 ? (
+                        <img 
+                          src={product.images[0]} 
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder.png';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                          <span className="text-gray-500 text-xs">No img</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 text-sm min-w-0">
+                      <div className="text-gray-900 font-medium truncate">{product.name}</div>
+                      <div className="text-gray-500 text-xs">
+                        {product.artikul && `Артикул: ${product.artikul}`}
+                        {product.catalogNumber && product.artikul && ' • '}
+                        {product.catalogNumber && `Каталог: ${product.catalogNumber}`}
+                      </div>
+                      <div className="text-blue-600 font-semibold text-xs">
+                        {product.price} ₽
+                      </div>
                     </div>
                   </div>
                 ))}
+                {wishlistProducts.length === 0 && wishlist.length > 0 && (
+                  <div className="text-gray-500 text-sm text-center py-4">
+                    Загрузка товаров...
+                  </div>
+                )}
               </div>
             )}
             {wishlist.length > 0 && (

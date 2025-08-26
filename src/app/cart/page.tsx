@@ -75,171 +75,90 @@ export default function CartPage() {
   }, [isAuthenticated, router]);
 
   const handleUpdateQuantity = async (cartItemId: string, quantity: number) => {
-    if (!user?.id) return;
-    
-    try {
-      console.log('Updating quantity for cartItemId:', cartItemId, 'to quantity:', quantity);
-      await updateQuantity(cartItemId, quantity);
-      console.log('Quantity updated successfully');
-    } catch (error) {
-      console.error('Miqdar yeniləmə xətası:', error);
-    }
+    if (quantity < 1) return;
+    await updateQuantity(cartItemId, quantity);
   };
 
-  const handleRemoveFromCart = async (cartItemId: string) => {
-    if (!user?.id) return;
-    
-    try {
-      console.log('Removing cart item:', cartItemId);
-      await removeFromCart(cartItemId);
-      console.log('Cart item removed successfully');
-    } catch (error) {
-      console.error('Məhsul silmə xətası:', error);
-    }
+  const handleRemoveItem = async (cartItemId: string) => {
+    await removeFromCart(cartItemId);
   };
 
   const handleClearCart = async () => {
-    if (!user?.id) return;
-    
-    if (!confirm('Səbəti tamamilə təmizləmək istədiyinizə əminsiniz?')) {
-      return;
-    }
-    
-    try {
-      console.log('Clearing cart for user:', user.id);
-      const response = await fetch('/api/cart/clear', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user.id }),
-      });
-      
-      if (response.ok) {
-        console.log('Cart cleared successfully');
-        await refreshCart(); // Səbəti yenilə
-        alert('Səbət uğurla təmizləndi');
-      } else {
-        console.error('Failed to clear cart');
-        alert('Səbəti təmizləmə zamanı xəta baş verdi');
-      }
-    } catch (error) {
-      console.error('Səbət təmizləmə xətası:', error);
-      alert('Səbəti təmizləmə zamanı xəta baş verdi');
+    if (window.confirm('Вы уверены, что хотите очистить корзину?')) {
+      await clearCart();
     }
   };
 
   const handleCheckout = async () => {
-    if (!user?.id || cartItems.length === 0) {
-      alert('Данные корзины не найдены');
+    if (cartItems.length === 0) {
+      alert('Корзина пуста');
       return;
     }
-    
-    console.log('Starting checkout process...');
-    console.log('User ID:', user.id);
-    console.log('Cart items count:', cartItems.length);
-    console.log('Cart items:', cartItems);
-    
-    // Check if cart items have required data
-    const validCartItems = cartItems.filter(item => 
-      item.id && item.productId && item.name && item.price && item.quantity
-    );
-    
-    console.log('Valid cart items:', validCartItems);
-    
-    if (validCartItems.length === 0) {
-      alert('В корзине нет корректных данных о товарах');
-      return;
-    }
-    
+
     setCheckoutLoading(true);
-    
     try {
-      // Generate order number
-      const orderNumber = `SADO-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-      
-      // Calculate total amount
-      const totalAmount = isApproved && user && user.discountPercentage > 0 
-        ? totalSalePrice 
-        : totalPrice;
-      
-      // Transform cart items to order items format
-      const items = validCartItems.map(item => {
-        const translatedItem = translateProductData(item);
-        let itemPrice = item.price;
-        
-        // Apply discount if user is approved and has discount
-        if (isApproved && user && user.discountPercentage > 0) {
-          itemPrice = item.price * (1 - user.discountPercentage / 100);
-          itemPrice = Math.floor(itemPrice * 100) / 100; // Round to 2 decimal places
-        }
-        
-        const itemTotalPrice = itemPrice * item.quantity;
-        
-        return {
-          productId: item.productId,
-          name: translatedItem.name,
-          sku: item.sku,
-          categoryName: translatedItem.categoryName,
-          quantity: item.quantity,
-          price: itemPrice,
-          totalPrice: itemTotalPrice
-        };
-      });
-      
-      // Sifariş yarat
-      const requestBody = {
-        userId: user.id,
-        items: items,
-        totalAmount: totalAmount,
-        notes: 'Заказ создан из корзины',
-        orderNumber: orderNumber
-      };
-      
-      console.log('Sending order request with body:', requestBody);
-      
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: cartItems.map(item => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            totalPrice: item.totalPrice
+          })),
+          totalAmount: totalSalePrice,
+          currency: 'RUB'
+        }),
       });
-      
-      console.log('Order response status:', response.status);
-      
-      const data = await response.json();
-      console.log('Order response data:', data);
-      
-      if (data.success) {
-        // Sifariş uğurla yaradıldı
-        console.log('Order created successfully:', data.order);
-        setCheckoutLoading(false);
-        
-        // Səbəti təmizləmə - yalnız sifariş tamamlandıqdan sonra
-        // Səbəti təmizləmirik, çünki istifadəçi "Alış-verişə davam et" düyməsini basa bilər
-        // Səbət yalnız sifariş tamamlandıqdan sonra təmizlənəcək
-        
-        // Hesab-faktura səhifəsinə yönləndir
-        router.push(`/invoice?orderId=${data.order.id}`);
-        
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          await clearCart();
+          router.push(`/payment/${result.orderId}`);
+        } else {
+          alert('Ошибка при создании заказа: ' + result.message);
+        }
       } else {
-        console.error('Order creation failed:', data.error);
-        throw new Error(data.error || 'Ошибка создания заказа');
+        alert('Ошибка при создании заказа');
       }
-      
     } catch (error) {
-      console.error('Ошибка заказа:', error);
+      console.error('Checkout error:', error);
+      alert('Ошибка при оформлении заказа');
+    } finally {
       setCheckoutLoading(false);
-      alert('Произошла ошибка при создании заказа. Попробуйте еще раз.');
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-white text-gray-800 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Требуется авторизация</h1>
+            <p className="text-gray-600 mb-6">Для просмотра корзины необходимо войти в систему</p>
+            <Link
+              href="/login"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition"
+            >
+              Войти в систему
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-4 md:p-8">
+      <main className="min-h-screen bg-white text-gray-800 p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 neon-text">Корзина</h1>
-          <div className="bg-white/10 rounded-xl p-8 text-center shadow-lg">
-            <div className="text-2xl">Загрузка...</div>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Загрузка корзины...</p>
           </div>
         </div>
       </main>
@@ -248,17 +167,21 @@ export default function CartPage() {
 
   if (cartItems.length === 0) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
+      <main className="min-h-screen bg-white text-gray-800 p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8 neon-text">Корзина</h1>
+          <h1 className="text-4xl font-bold mb-8 text-gray-900">Корзина</h1>
           
-          <div className="bg-white/10 rounded-xl p-8 text-center shadow-lg">
-            <div className="text-6xl mb-4">🛒</div>
-            <h2 className="text-2xl font-semibold mb-4">Корзина пуста</h2>
-            <p className="text-lg mb-6">Добавьте товары из каталога для оформления заказа</p>
-            <Link 
-              href="/catalog" 
-              className="px-8 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-lg transition"
+          <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 text-center">
+            <div className="text-gray-400 mb-6">
+              <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Корзина пуста</h2>
+            <p className="text-gray-600 mb-8">Добавьте товары в корзину для оформления заказа</p>
+            <Link
+              href="/catalog"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition"
             >
               Перейти в каталог
             </Link>
@@ -269,74 +192,81 @@ export default function CartPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] text-white p-8">
+    <main className="min-h-screen bg-white text-gray-800 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8 neon-text">Корзина</h1>
+        <h1 className="text-4xl font-bold mb-8 text-gray-900">Корзина</h1>
         
-        <div className="bg-white/10 rounded-xl p-4 md:p-6 shadow-lg">
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-gray-200">
           {/* Məhsullar siyahısı */}
           <div className="space-y-4 mb-6">
             {cartItems.map((item) => {
               const translatedItem = translateProductData(item);
               return (
-                <div key={item.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 md:p-4 bg-white/5 rounded-lg">
+                <div key={item.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 md:p-4 bg-gray-50 rounded-lg border border-gray-100">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base md:text-lg font-semibold break-words">{translatedItem.name}</h3>
-                    <p className="text-xs md:text-sm text-gray-300">Артикул: {translatedItem.artikul || translatedItem.sku}</p>
+                    <h3 className="text-base md:text-lg font-semibold break-words text-gray-900">{translatedItem.name}</h3>
+                    <p className="text-xs md:text-sm text-gray-600">Артикул: {translatedItem.artikul || translatedItem.sku}</p>
                     {translatedItem.catalogNumber && (
-                      <p className="text-xs md:text-sm text-gray-300">Каталожный №: {translatedItem.catalogNumber}</p>
+                      <p className="text-xs md:text-sm text-gray-600">Каталожный №: {translatedItem.catalogNumber}</p>
                     )}
-                    <p className="text-xs md:text-sm text-gray-300">
+                    <p className="text-xs md:text-sm text-gray-600">
                       Цена: {isApproved && user && user.discountPercentage > 0 ? (
                         <span>
                           <span className="line-through text-gray-400">{translatedItem.price.toLocaleString()}</span>
-                          <span className="text-green-400 ml-2">{calculateDiscountedPrice(translatedItem.price, null).toLocaleString()}</span>
+                          <span className="text-green-600 ml-2 font-semibold">{calculateDiscountedPrice(translatedItem.price, null).toLocaleString()}</span>
                         </span>
                       ) : (
-                        translatedItem.price.toLocaleString()
+                        <span className="font-semibold">{translatedItem.price.toLocaleString()}</span>
                       )} ₽
                     </p>
-                    <p className="text-xs md:text-sm text-gray-300">Категория: {translatedItem.categoryName}</p>
+                    <p className="text-xs md:text-sm text-gray-600">Категория: {translatedItem.categoryName}</p>
                   </div>
                 
-                  <div className="flex items-center md:items-end gap-3 md:gap-4">
-                    <div className="flex items-center gap-2">
-                      <button 
+                  <div className="flex items-center gap-3">
+                    {/* Quantity controls */}
+                    <div className="flex items-center border border-gray-300 rounded-lg">
+                      <button
                         onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                        className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition"
                         disabled={item.quantity <= 1}
-                        className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition text-lg md:text-base"
                       >
                         -
                       </button>
-                      <span className="w-10 md:w-12 text-center text-base md:text-sm">{item.quantity}</span>
-                      <button 
+                      <span className="px-3 py-1 text-gray-900 font-medium min-w-[2rem] text-center">
+                        {item.quantity}
+                      </span>
+                      <button
                         onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                        disabled={item.quantity >= item.stock}
-                        className="w-8 h-8 rounded bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center transition text-lg md:text-base"
+                        className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition"
                       >
                         +
                       </button>
                     </div>
                     
-                    <div className="text-right min-w-[90px]">
-                      <div className="text-base md:text-lg font-semibold">
-                        {isApproved && user && user.discountPercentage > 0 ? 
-                          (calculateDiscountedPrice(item.price, null) * item.quantity).toLocaleString() : 
-                          item.totalPrice.toLocaleString()
-                        } ₽
+                    {/* Total price for this item */}
+                    <div className="text-right min-w-[80px]">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {isApproved && user && user.discountPercentage > 0 ? (
+                          <span>
+                            <span className="line-through text-gray-400 text-sm">{translatedItem.totalPrice.toLocaleString()}</span>
+                            <br />
+                            <span className="text-green-600">{calculateDiscountedPrice(translatedItem.totalPrice, null).toLocaleString()}</span>
+                          </span>
+                        ) : (
+                          translatedItem.totalPrice.toLocaleString()
+                        )} ₽
                       </div>
-                      {isApproved && user && user.discountPercentage > 0 && (
-                        <div className="text-xs md:text-sm text-green-400">
-                          {item.totalPrice - (calculateDiscountedPrice(item.price, null) * item.quantity)} ₽ экономия
-                        </div>
-                      )}
                     </div>
                     
-                    <button 
-                      onClick={() => handleRemoveFromCart(item.id)}
-                      className="text-red-400 hover:text-red-600 transition text-lg md:text-base"
+                    {/* Remove button */}
+                    <button
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="text-red-500 hover:text-red-700 transition p-1"
+                      title="Удалить из корзины"
                     >
-                      ✕
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -344,55 +274,50 @@ export default function CartPage() {
             })}
           </div>
           
-          {/* Ümumi */}
-          <div className="border-t border-white/20 pt-4 md:pt-6 mb-6">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-base md:text-lg">
-                <span>Товары: {cartItemsCount}</span>
-                <span>Итого: {totalPrice.toLocaleString()} ₽</span>
+          {/* Order summary */}
+          <div className="border-t border-gray-200 pt-6 mb-6">
+            <div className="flex justify-between items-center text-lg">
+              <span className="text-gray-700">Товары: {cartItemsCount}</span>
+              <span className="text-gray-700">Итого: {totalPrice.toLocaleString()} ₽</span>
+            </div>
+            {isApproved && user && user.discountPercentage > 0 && (
+              <div className="flex justify-between items-center text-sm text-green-600 mt-2">
+                <span>Скидка ({user.discountPercentage}%):</span>
+                <span>-{savings.toLocaleString()} ₽</span>
               </div>
-              {isApproved && user && user.discountPercentage > 0 && (
-                <div className="flex justify-between items-center text-green-400 text-sm md:text-base">
-                  <span>Экономия:</span>
-                  <span>-{savings.toLocaleString()} ₽</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center text-lg md:text-xl font-bold border-t border-white/20 pt-2">
-                <span>К оплате:</span>
-                <span>{isApproved && user && user.discountPercentage > 0 ? totalSalePrice.toLocaleString() : totalPrice.toLocaleString()} ₽</span>
-              </div>
+            )}
+            <div className="flex justify-between items-center text-xl font-bold text-gray-900 mt-2 pt-2 border-t border-gray-200">
+              <span>К оплате:</span>
+              <span>{totalSalePrice.toLocaleString()} ₽</span>
             </div>
           </div>
           
-          {/* Düymələr */}
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-            <Link 
-              href="/catalog" 
-              className="px-5 md:px-6 py-3 rounded-lg bg-white/10 hover:bg-cyan-600 font-semibold text-center transition"
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/catalog"
+              className="flex-1 sm:flex-none bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition text-center"
             >
               Продолжить покупки
             </Link>
-            
-            <Link 
-              href="/profile" 
-              className="px-5 md:px-6 py-3 rounded-lg bg-white/10 hover:bg-cyan-600 font-semibold text-center transition"
+            <Link
+              href="/profile"
+              className="flex-1 sm:flex-none bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition text-center"
             >
               Мой профиль
             </Link>
-            
-            <button 
+            <button
               onClick={handleClearCart}
-              className="px-5 md:px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 font-semibold text-center transition"
+              className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition"
             >
               Очистить корзину
             </button>
-            
-            <button 
+            <button
               onClick={handleCheckout}
               disabled={checkoutLoading}
-              className="px-6 md:px-8 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 font-semibold text-base md:text-lg transition disabled:opacity-50 flex-1"
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg transition"
             >
-              {checkoutLoading ? 'Создание заказа...' : 'Оформить заказ и получить счет'}
+              {checkoutLoading ? 'Обработка...' : 'Оформить заказ и получить счет'}
             </button>
           </div>
         </div>
