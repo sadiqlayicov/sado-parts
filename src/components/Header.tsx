@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from "react";
 import { useCart } from "./CartProvider";
 import { useAuth } from "./AuthProvider";
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from './LanguageSwitcher';
 import { useRouter } from 'next/navigation';
 
 export default function Header() {
@@ -275,67 +274,6 @@ export default function Header() {
 
   return (
     <header className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
-      {/* Top Bar */}
-      <div className="bg-gray-100 py-2">
-        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="flex items-center space-x-6">
-            <span className="text-gray-600">
-              <i className="fas fa-phone mr-2"></i>
-              +994 50 123 45 67
-            </span>
-            <span className="text-gray-600">
-              <i className="fas fa-envelope mr-2"></i>
-              info@bilal-parts.az
-            </span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <LanguageSwitcher />
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="text-blue-600 hover:text-blue-800 transition"
-                  >
-                    Админ панель
-                  </Link>
-                )}
-                <span className="text-gray-600">
-                  {user?.name || user?.email}
-                </span>
-                <Link
-                  href="/profile"
-                  className="text-blue-600 hover:text-blue-800 transition"
-                >
-                  Профиль
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-red-600 hover:text-red-800 transition"
-                >
-                  Выйти
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link
-                  href="/login"
-                  className="text-blue-600 hover:text-blue-800 transition"
-                >
-                  Войти
-                </Link>
-                <Link
-                  href="/register"
-                  className="text-blue-600 hover:text-blue-800 transition"
-                >
-                  Регистрация
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Main Header */}
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
@@ -572,6 +510,64 @@ export default function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
+          </div>
+        </div>
+
+        {/* User Info Bar */}
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center space-x-6 text-sm">
+            <span className="text-gray-600">
+              <i className="fas fa-phone mr-2"></i>
+              +994 50 123 45 67
+            </span>
+            <span className="text-gray-600">
+              <i className="fas fa-envelope mr-2"></i>
+              info@bilal-parts.az
+            </span>
+          </div>
+          <div className="flex items-center space-x-4">
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="text-blue-600 hover:text-blue-800 transition text-sm"
+                  >
+                    Админ панель
+                  </Link>
+                )}
+                <span className="text-gray-600 text-sm">
+                  {user?.name || user?.email}
+                </span>
+                <Link
+                  href="/profile"
+                  className="text-blue-600 hover:text-blue-800 transition text-sm"
+                >
+                  Профиль
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-red-600 hover:text-red-800 transition text-sm"
+                >
+                  Выйти
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link
+                  href="/login"
+                  className="text-blue-600 hover:text-blue-800 transition text-sm"
+                >
+                  Войти
+                </Link>
+                <Link
+                  href="/register"
+                  className="text-blue-600 hover:text-blue-800 transition text-sm"
+                >
+                  Регистрация
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
