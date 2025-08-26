@@ -6,7 +6,6 @@ import { CartProvider } from "../components/CartProvider";
 import { AuthProvider } from "../components/AuthProvider";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,7 +49,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="google-site-verification" content="" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <LanguageSwitcher />
         <AuthProvider>
           <CartProvider>
             <Header />
