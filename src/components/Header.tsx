@@ -14,6 +14,7 @@ export default function Header() {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [siteName, setSiteName] = useState('');
+  const [siteLogo, setSiteLogo] = useState<string | null>(null);
   
   const [showCategories, setShowCategories] = useState(false);
   const [showBrands, setShowBrands] = useState(false);
@@ -40,6 +41,16 @@ export default function Header() {
 
   // Mobile menu state
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  // Load site logo from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedLogo = localStorage.getItem('siteLogo');
+      if (storedLogo) {
+        setSiteLogo(storedLogo);
+      }
+    }
+  }, []);
 
   // LocalStorage dəyişəndə və ya başqa tabda dəyişiklik olduqda wishlist-i yenilə
   useEffect(() => {
@@ -344,9 +355,17 @@ export default function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">B</span>
-            </div>
+            {siteLogo ? (
+              <img 
+                src={siteLogo} 
+                alt="Site Logo" 
+                className="w-12 h-12 object-contain"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">B</span>
+              </div>
+            )}
             <div>
               <div className="text-xl font-bold text-gray-900">{siteName}</div>
               <div className="text-sm text-gray-600">Запчасти для погрузчиков</div>

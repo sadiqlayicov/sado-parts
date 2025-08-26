@@ -68,16 +68,23 @@ export default function LogoUploadPage() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Logo uploaded successfully!' });
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Upload failed.' });
-      }
+             if (response.ok) {
+         setMessage({ type: 'success', text: data.message || 'Logo uploaded successfully!' });
+         
+         // Store the logo data URL in localStorage for temporary use
+         if (data.dataUrl) {
+           localStorage.setItem('siteLogo', data.dataUrl);
+           localStorage.setItem('siteLogoFileName', data.fileName || 'logo.png');
+         }
+         
+         setSelectedFile(null);
+         setPreviewUrl(null);
+         if (fileInputRef.current) {
+           fileInputRef.current.value = '';
+         }
+       } else {
+         setMessage({ type: 'error', text: data.error || 'Upload failed.' });
+       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
     } finally {

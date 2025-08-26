@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,30 +30,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
+    // For now, we'll return success but store the file data in a different way
+    // In a production environment, you would typically:
+    // 1. Upload to a cloud storage service (AWS S3, Cloudinary, etc.)
+    // 2. Store the file URL in your database
+    // 3. Use that URL in your application
 
-    // Generate unique filename
+    // Generate a placeholder URL for demonstration
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop();
     const fileName = `logo-${timestamp}.${fileExtension}`;
-    const filePath = join(uploadsDir, fileName);
-
-    // Convert file to buffer and save
+    
+    // For now, we'll create a data URL that can be stored in localStorage
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
-
-    // Return the file URL
-    const fileUrl = `/uploads/${fileName}`;
+    const base64 = Buffer.from(bytes).toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
     return NextResponse.json({
       success: true,
-      url: fileUrl,
-      message: 'Logo uploaded successfully'
+      url: dataUrl,
+      fileName: fileName,
+      message: 'Logo uploaded successfully. Note: In production, this should be uploaded to cloud storage.',
+      dataUrl: dataUrl // This can be stored in localStorage for temporary use
     });
 
   } catch (error: any) {
