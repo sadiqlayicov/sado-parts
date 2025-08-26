@@ -102,10 +102,10 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated || !isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Доступ запрещен</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Доступ запрещен</h1>
+          <p className="text-gray-600 mb-4">
             У вас нет прав для доступа к административной панели
           </p>
           <a href="/login" className="text-blue-500 hover:text-blue-600">Войти в систему</a>
@@ -360,327 +360,327 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Cart Items Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Активные корзины пользователей</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Всего пользователей с товарами в корзине: {cartItems.length}
-          </p>
-        </div>
-        <div className="p-6">
-          {loadingCart ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Загрузка корзин...</p>
-            </div>
-          ) : cartItems.length === 0 ? (
-            <div className="text-center py-8">
-              <FaShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">Нет активных корзин</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {cartItems.map((userCart) => (
-                <div key={userCart.userId} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">
-                        {userCart.userName}
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {userCart.userEmail}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        Всего товаров: {userCart.totalItems}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Общая сумма: {userCart.totalSalePrice.toLocaleString()} ₽
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {userCart.items.map((item: any) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          {item.images && item.images[0] && (
-                            <img 
-                              src={item.images[0]} 
-                              alt={item.productName}
-                              className="w-12 h-12 object-cover rounded-lg"
-                            />
-                          )}
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {item.productName}
-                            </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {item.categoryName} • SKU: {item.sku}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {item.quantity} шт.
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {item.salePrice.toLocaleString()} ₽
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+             {/* Cart Items Section */}
+       <div className="bg-white rounded-lg shadow">
+         <div className="px-6 py-4 border-b border-gray-200">
+           <h3 className="text-lg font-medium text-gray-900">Активные корзины пользователей</h3>
+           <p className="text-sm text-gray-600">
+             Всего пользователей с товарами в корзине: {cartItems.length}
+           </p>
+         </div>
+         <div className="p-6">
+           {loadingCart ? (
+             <div className="text-center py-8">
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+               <p className="text-gray-600 mt-2">Загрузка корзин...</p>
+             </div>
+           ) : cartItems.length === 0 ? (
+             <div className="text-center py-8">
+               <FaShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+               <p className="text-gray-600">Нет активных корзин</p>
+             </div>
+           ) : (
+             <div className="space-y-6">
+               {cartItems.map((userCart) => (
+                 <div key={userCart.userId} className="border border-gray-200 rounded-lg p-4">
+                   <div className="flex items-center justify-between mb-4">
+                     <div>
+                       <h4 className="font-medium text-gray-900">
+                         {userCart.userName}
+                       </h4>
+                       <p className="text-sm text-gray-600">
+                         {userCart.userEmail}
+                       </p>
+                     </div>
+                     <div className="text-right">
+                       <p className="text-sm font-medium text-gray-900">
+                         Всего товаров: {userCart.totalItems}
+                       </p>
+                       <p className="text-sm text-gray-600">
+                         Общая сумма: {userCart.totalSalePrice.toLocaleString()} ₽
+                       </p>
+                     </div>
+                   </div>
+                   
+                   <div className="space-y-3">
+                     {userCart.items.map((item: any) => (
+                       <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                         <div className="flex items-center space-x-3">
+                           {item.images && item.images[0] && (
+                             <img 
+                               src={item.images[0]} 
+                               alt={item.productName}
+                               className="w-12 h-12 object-cover rounded-lg"
+                             />
+                           )}
+                           <div>
+                             <p className="font-medium text-gray-900">
+                               {item.productName}
+                             </p>
+                             <p className="text-sm text-gray-600">
+                               {item.categoryName} • SKU: {item.sku}
+                             </p>
+                           </div>
+                         </div>
+                         <div className="text-right">
+                           <p className="text-sm font-medium text-gray-900">
+                             {item.quantity} шт.
+                           </p>
+                           <p className="text-sm text-gray-600">
+                             {item.salePrice.toLocaleString()} ₽
+                           </p>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
+         </div>
+       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Быстрые действия</h3>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button
-              onClick={handleCreateOrder}
-              className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-            >
-              <FaShoppingCart className="h-6 w-6 text-blue-600 mr-3" />
-              <div className="text-left">
-                <h4 className="font-medium text-gray-900 dark:text-white">Создать заказ</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Новый заказ</p>
-              </div>
-            </button>
+             {/* Quick Actions */}
+       <div className="bg-white rounded-lg shadow">
+         <div className="px-6 py-4 border-b border-gray-200">
+           <h3 className="text-lg font-medium text-gray-900">Быстрые действия</h3>
+         </div>
+         <div className="p-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+             <button
+               onClick={handleCreateOrder}
+               className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+             >
+               <FaShoppingCart className="h-6 w-6 text-blue-600 mr-3" />
+               <div className="text-left">
+                 <h4 className="font-medium text-gray-900">Создать заказ</h4>
+                 <p className="text-sm text-gray-600">Новый заказ</p>
+               </div>
+             </button>
 
-            <button
-              onClick={handleAddProduct}
-              className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-            >
-              <FaBox className="h-6 w-6 text-green-600 mr-3" />
-              <div className="text-left">
-                <h4 className="font-medium text-gray-900 dark:text-white">Добавить товар</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Новый товар</p>
-              </div>
-            </button>
+             <button
+               onClick={handleAddProduct}
+               className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+             >
+               <FaBox className="h-6 w-6 text-green-600 mr-3" />
+               <div className="text-left">
+                 <h4 className="font-medium text-gray-900">Добавить товар</h4>
+                 <p className="text-sm text-gray-600">Новый товар</p>
+               </div>
+             </button>
 
-            <button
-              onClick={handleUserManagement}
-              className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-            >
-              <FaUsers className="h-6 w-6 text-purple-600 mr-3" />
-              <div className="text-left">
-                <h4 className="font-medium text-gray-900 dark:text-white">Управление пользователями</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Пользователи</p>
-              </div>
-            </button>
+             <button
+               onClick={handleUserManagement}
+               className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+             >
+               <FaUsers className="h-6 w-6 text-purple-600 mr-3" />
+               <div className="text-left">
+                 <h4 className="font-medium text-gray-900">Управление пользователями</h4>
+                 <p className="text-sm text-gray-600">Пользователи</p>
+               </div>
+             </button>
 
-            <button
-              onClick={handleNavigateToAnalytics}
-              className="flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-            >
-              <FaChartLine className="h-6 w-6 text-yellow-600 mr-3" />
-              <div className="text-left">
-                <h4 className="font-medium text-gray-900 dark:text-white">Аналитика</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Отчеты</p>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
+             <button
+               onClick={handleNavigateToAnalytics}
+               className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+             >
+               <FaChartLine className="h-6 w-6 text-yellow-600 mr-3" />
+               <div className="text-left">
+                 <h4 className="font-medium text-gray-900">Аналитика</h4>
+                 <p className="text-sm text-gray-600">Отчеты</p>
+               </div>
+             </button>
+           </div>
+         </div>
+       </div>
 
-      {/* Create Order Modal */}
-      {showCreateOrderModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Создать новый заказ</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Клиент
-                </label>
-                <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
-                  <option>Выберите клиента</option>
-                  <option>Иван Петров</option>
-                  <option>Мария Сидорова</option>
-                  <option>Алексей Козлов</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Товары
-                </label>
-                <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
-                  <option>Выберите товары</option>
-                  <option>Поршень двигателя</option>
-                  <option>Масляный фильтр</option>
-                  <option>Тормозные колодки</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Способ доставки
-                </label>
-                <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
-                  <option>Курьерская доставка</option>
-                  <option>Самовывоз</option>
-                  <option>Почта России</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => setShowCreateOrderModal(false)}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-              >
-                Создать заказ
-              </button>
-              <button
-                onClick={() => setShowCreateOrderModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition"
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+             {/* Create Order Modal */}
+       {showCreateOrderModal && (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+           <div className="bg-white rounded-lg p-6 w-full max-w-md">
+             <h3 className="text-lg font-medium text-gray-900 mb-4">Создать новый заказ</h3>
+             
+             <div className="space-y-4">
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Клиент
+                 </label>
+                 <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                   <option>Выберите клиента</option>
+                   <option>Иван Петров</option>
+                   <option>Мария Сидорова</option>
+                   <option>Алексей Козлов</option>
+                 </select>
+               </div>
+               
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Товары
+                 </label>
+                 <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                   <option>Выберите товары</option>
+                   <option>Поршень двигателя</option>
+                   <option>Масляный фильтр</option>
+                   <option>Тормозные колодки</option>
+                 </select>
+               </div>
+               
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Способ доставки
+                 </label>
+                 <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                   <option>Курьерская доставка</option>
+                   <option>Самовывоз</option>
+                   <option>Почта России</option>
+                 </select>
+               </div>
+             </div>
+             
+             <div className="flex space-x-3 mt-6">
+               <button
+                 onClick={() => setShowCreateOrderModal(false)}
+                 className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+               >
+                 Создать заказ
+               </button>
+               <button
+                 onClick={() => setShowCreateOrderModal(false)}
+                 className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+               >
+                 Отмена
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
 
-      {/* Add Product Modal */}
-      {showAddProductModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Добавить новый товар</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Название товара
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Введите название"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Категория
-                </label>
-                <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
-                  <option>Выберите категорию</option>
-                  <option>Двигатель</option>
-                  <option>Тормозная система</option>
-                  <option>Электрика</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Цена
-                </label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="0"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Количество на складе
-                </label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => setShowAddProductModal(false)}
-                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-              >
-                Добавить товар
-              </button>
-              <button
-                onClick={() => setShowAddProductModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition"
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+             {/* Add Product Modal */}
+       {showAddProductModal && (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+           <div className="bg-white rounded-lg p-6 w-full max-w-md">
+             <h3 className="text-lg font-medium text-gray-900 mb-4">Добавить новый товар</h3>
+             
+             <div className="space-y-4">
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Название товара
+                 </label>
+                 <input
+                   type="text"
+                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="Введите название"
+                 />
+               </div>
+               
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Категория
+                 </label>
+                 <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                   <option>Выберите категорию</option>
+                   <option>Двигатель</option>
+                   <option>Тормозная система</option>
+                   <option>Электрика</option>
+                 </select>
+               </div>
+               
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Цена
+                 </label>
+                 <input
+                   type="number"
+                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="0"
+                 />
+               </div>
+               
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Количество на складе
+                 </label>
+                 <input
+                   type="number"
+                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="0"
+                 />
+               </div>
+             </div>
+             
+             <div className="flex space-x-3 mt-6">
+               <button
+                 onClick={() => setShowAddProductModal(false)}
+                 className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+               >
+                 Добавить товар
+               </button>
+               <button
+                 onClick={() => setShowAddProductModal(false)}
+                 className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+               >
+                 Отмена
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
 
-      {/* User Management Modal */}
-      {showUserManagementModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Управление пользователями</h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Иван Петров</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">ivan@example.com</p>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded">
-                    <FaCheckCircle className="h-4 w-4" />
-                  </button>
-                  <button className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
-                    <FaTimesCircle className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Мария Сидорова</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">maria@example.com</p>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded">
-                    <FaCheckCircle className="h-4 w-4" />
-                  </button>
-                  <button className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
-                    <FaTimesCircle className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => router.push('/admin/users')}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-              >
-                Перейти к управлению
-              </button>
-              <button
-                onClick={() => setShowUserManagementModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition"
-              >
-                Закрыть
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+       {/* User Management Modal */}
+       {showUserManagementModal && (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+           <div className="bg-white rounded-lg p-6 w-full max-w-md">
+             <h3 className="text-lg font-medium text-gray-900 mb-4">Управление пользователями</h3>
+             
+             <div className="space-y-4">
+               <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                 <div>
+                   <p className="font-medium text-gray-900">Иван Петров</p>
+                   <p className="text-sm text-gray-600">ivan@example.com</p>
+                 </div>
+                 <div className="flex space-x-2">
+                   <button className="p-1 text-green-600 hover:bg-green-50 rounded">
+                     <FaCheckCircle className="h-4 w-4" />
+                   </button>
+                   <button className="p-1 text-red-600 hover:bg-red-50 rounded">
+                     <FaTimesCircle className="h-4 w-4" />
+                   </button>
+                 </div>
+               </div>
+               
+               <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                 <div>
+                   <p className="font-medium text-gray-900">Мария Сидорова</p>
+                   <p className="text-sm text-gray-600">maria@example.com</p>
+                 </div>
+                 <div className="flex space-x-2">
+                   <button className="p-1 text-green-600 hover:bg-green-50 rounded">
+                     <FaCheckCircle className="h-4 w-4" />
+                   </button>
+                   <button className="p-1 text-red-600 hover:bg-red-50 rounded">
+                     <FaTimesCircle className="h-4 w-4" />
+                   </button>
+                 </div>
+               </div>
+             </div>
+             
+             <div className="flex space-x-3 mt-6">
+               <button
+                 onClick={() => router.push('/admin/users')}
+                 className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+               >
+                 Перейти к управлению
+               </button>
+               <button
+                 onClick={() => setShowUserManagementModal(false)}
+                 className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+               >
+                 Закрыть
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 } 
