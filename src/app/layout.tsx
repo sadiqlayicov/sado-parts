@@ -53,7 +53,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <AuthProvider>
           <CartProvider>
             <Header />
-            <div className="pt-24">{children}</div>
+            <div className="pt-16">{children}</div>
             <Footer />
           </CartProvider>
         </AuthProvider>

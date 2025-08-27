@@ -377,7 +377,7 @@ export default function Header() {
           <nav className="hidden lg:flex items-center space-x-8 flex-1 justify-center">
             <Link
               href="/"
-              className="text-gray-900 hover:text-blue-600 transition font-bold text-base font-sans"
+              className="text-gray-900 hover:text-blue-600 transition font-extrabold text-base font-sans"
             >
               Главная
             </Link>
@@ -395,7 +395,7 @@ export default function Header() {
               }}
             >
               <button
-                className="text-gray-900 hover:text-blue-600 transition font-bold flex items-center text-base font-sans"
+                className="text-gray-900 hover:text-blue-600 transition font-extrabold flex items-center text-base font-sans"
                 onClick={() => router.push('/catalog')}
               >
                 Каталог
@@ -427,7 +427,7 @@ export default function Header() {
                 brandsTimeoutRef.current = setTimeout(() => setShowBrands(false), 200);
               }}
             >
-              <button className="text-gray-900 hover:text-blue-600 transition font-bold flex items-center text-base font-sans">
+              <button className="text-gray-900 hover:text-blue-600 transition font-extrabold flex items-center text-base font-sans">
                 Бренды
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -460,13 +460,13 @@ export default function Header() {
 
             <Link
               href="/blog"
-              className="text-gray-900 hover:text-blue-600 transition font-bold text-base font-sans"
+              className="text-gray-900 hover:text-blue-600 transition font-extrabold text-base font-sans"
             >
               Блог
             </Link>
             <Link
               href="/contacts"
-              className="text-gray-900 hover:text-blue-600 transition font-bold text-base font-sans"
+              className="text-gray-900 hover:text-blue-600 transition font-extrabold text-base font-sans"
             >
               Контакты
             </Link>
