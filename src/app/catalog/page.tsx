@@ -81,7 +81,11 @@ function CatalogPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const productsRes = await fetch('/api/products');
+        // Get category from URL params
+        const cat = searchParams.get("category");
+        const url = cat ? `/api/products?categoryId=${cat}` : '/api/products';
+        
+        const productsRes = await fetch(url);
         const productsData = await productsRes.json();
         // Check if response has success and data properties (new API format)
         if (productsData.success && Array.isArray(productsData.data)) {

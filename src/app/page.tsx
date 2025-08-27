@@ -488,10 +488,15 @@ export default function HomePage() {
         {/* Categories Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Категории товаров</h2>
-          {categories.length === 0 ? (
+          {loading ? (
             <div className="text-center text-gray-500 py-8">
               <div className="text-4xl mb-4">📦</div>
               <p>Категории загружаются...</p>
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              <div className="text-4xl mb-4">📦</div>
+              <p>Категории не найдены</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
