@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -15,21 +13,21 @@ export default function NotFound() {
         </div>
         
         <div className="space-y-4">
-          <Link
+          <a
             href="/"
             className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition"
           >
             Вернуться на главную
-          </Link>
+          </a>
           
           <div className="text-sm text-gray-500">
-            <Link href="/catalog" className="text-blue-600 hover:text-blue-800">
+            <a href="/catalog" className="text-blue-600 hover:text-blue-800">
               Перейти в каталог
-            </Link>
+            </a>
             {' • '}
-            <Link href="/contacts" className="text-blue-600 hover:text-blue-800">
+            <a href="/contacts" className="text-blue-600 hover:text-blue-800">
               Связаться с нами
-            </Link>
+            </a>
           </div>
         </div>
       </div>

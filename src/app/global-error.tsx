@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-
 export default function GlobalError({
   error,
   reset,
@@ -33,9 +31,9 @@ export default function GlobalError({
               </button>
               
               <div className="text-sm text-gray-500">
-                <Link href="/" className="text-blue-600 hover:text-blue-800">
+                <a href="/" className="text-blue-600 hover:text-blue-800">
                   Вернуться на главную
-                </Link>
+                </a>
               </div>
             </div>
           </div>
