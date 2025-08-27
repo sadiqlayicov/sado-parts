@@ -348,7 +348,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
+    <header className="bg-white text-gray-800 shadow-md sticky top-0 z-50 font-sans">
       {/* Main Header */}
       <div className="w-full px-2 py-2">
         <div className="flex items-center justify-between">
@@ -367,8 +367,8 @@ export default function Header() {
                 </div>
               )}
               <div className="hidden sm:block">
-                <div className="text-lg font-bold text-gray-900 tracking-wide">BILAL-PARTS</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">Запчасти для погрузчиков</div>
+                <div className="text-lg font-bold text-gray-900 tracking-wide font-sans">BILAL-PARTS</div>
+                <div className="text-sm text-gray-600 font-medium mt-1 font-sans">Запчасти для погрузчиков</div>
               </div>
             </Link>
           </div>
@@ -377,7 +377,7 @@ export default function Header() {
           <nav className="hidden lg:flex items-center space-x-8 flex-1 justify-center">
             <Link
               href="/"
-              className="text-gray-900 hover:text-blue-600 transition font-bold text-sm"
+              className="text-gray-900 hover:text-blue-600 transition font-semibold text-sm font-sans"
             >
               Главная
             </Link>
@@ -395,7 +395,7 @@ export default function Header() {
               }}
             >
               <button
-                className="text-gray-900 hover:text-blue-600 transition font-bold flex items-center text-sm"
+                className="text-gray-900 hover:text-blue-600 transition font-semibold flex items-center text-sm font-sans"
                 onClick={() => router.push('/catalog')}
               >
                 Каталог
@@ -406,11 +406,11 @@ export default function Header() {
               {showCategories && (
                 <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                   {loading ? (
-                    <div className="px-4 py-2 text-sm text-gray-500">Загрузка...</div>
+                    <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
                     renderCategoriesForHeader(categories, 0)
                   ) : (
-                    <div className="px-4 py-2 text-sm text-gray-500">Категории не найдены</div>
+                    <div className="px-4 py-2 text-sm text-gray-500 font-sans">Категории не найдены</div>
                   )}
                 </div>
               )}
@@ -427,7 +427,7 @@ export default function Header() {
                 brandsTimeoutRef.current = setTimeout(() => setShowBrands(false), 200);
               }}
             >
-              <button className="text-gray-900 hover:text-blue-600 transition font-bold flex items-center text-sm">
+              <button className="text-gray-900 hover:text-blue-600 transition font-semibold flex items-center text-sm font-sans">
                 Бренды
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -448,7 +448,7 @@ export default function Header() {
                     <Link
                       key={brand}
                       href={{ pathname: '/catalog', query: { brand: brand } }}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition font-sans"
                       onClick={() => setShowBrands(false)}
                     >
                       {brand}
@@ -460,20 +460,20 @@ export default function Header() {
 
             <Link
               href="/blog"
-              className="text-gray-900 hover:text-blue-600 transition font-bold text-sm"
+              className="text-gray-900 hover:text-blue-600 transition font-semibold text-sm font-sans"
             >
               Блог
             </Link>
             <Link
               href="/contacts"
-              className="text-gray-900 hover:text-blue-600 transition font-bold text-sm"
+              className="text-gray-900 hover:text-blue-600 transition font-semibold text-sm font-sans"
             >
               Контакты
             </Link>
           </nav>
 
           {/* Search Bar - Center Right */}
-          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-8 mr-4">
+          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-12 mr-4">
             <div className="relative w-full" ref={searchRef}>
               <input
                 ref={searchInputRef}
@@ -488,7 +488,7 @@ export default function Header() {
                     setShowSearchResults(false);
                   }
                 }}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-sm"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-sm font-sans"
               />
               <button
                 onClick={() => {
@@ -508,7 +508,7 @@ export default function Header() {
               {showSearchResults && searchResults.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50">
                   <div className="p-4">
-                    <div className="text-sm text-gray-500 mb-3">Найдено товаров: {searchResults.length}</div>
+                    <div className="text-sm text-gray-500 mb-3 font-sans">Найдено товаров: {searchResults.length}</div>
                     {searchResults.map((product) => (
                       <div
                         key={product.id}
@@ -529,20 +529,20 @@ export default function Header() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">{product.name}</h4>
+                          <h4 className="text-sm font-medium text-gray-900 truncate font-sans">{product.name}</h4>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {product.artikul && (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-sans">
                                 Арт: {product.artikul}
                               </span>
                             )}
                             {product.catalogNumber && (
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-sans">
                                 Кат: {product.catalogNumber}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 mt-1 font-sans">
                             {product.price?.toLocaleString('ru-RU')} ₽
                           </p>
                         </div>
