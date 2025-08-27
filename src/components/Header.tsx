@@ -350,31 +350,31 @@ export default function Header() {
   return (
     <header className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="w-full px-2 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo and Company Name - Far Left */}
-          <div className="flex items-center space-x-3 flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-3">
+          {/* Logo and Company Name - Very Far Left */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            <Link href="/" className="flex items-center space-x-2">
               {siteLogo ? (
                 <img 
                   src={siteLogo} 
                   alt="Site Logo" 
-                  className="w-14 h-14 object-contain"
+                  className="w-12 h-12 object-contain"
                 />
               ) : (
-                <div className="w-14 h-14 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">B</span>
+                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">B</span>
                 </div>
               )}
               <div className="hidden sm:block">
-                <div className="text-lg font-bold text-gray-900">BILAL-PARTS</div>
+                <div className="text-base font-bold text-gray-900">BILAL-PARTS</div>
                 <div className="text-xs text-gray-600">Запчасти для погрузчиков</div>
               </div>
             </Link>
           </div>
 
           {/* Navigation - Center */}
-          <nav className="hidden lg:flex items-center space-x-10 flex-1 justify-center">
+          <nav className="hidden lg:flex items-center space-x-8 flex-1 justify-center">
             <Link
               href="/"
               className="text-gray-700 hover:text-blue-600 transition font-medium text-sm"
@@ -473,7 +473,7 @@ export default function Header() {
           </nav>
 
           {/* Search Bar - Center Right */}
-          <div className="hidden lg:flex items-center flex-1 justify-center max-w-lg ml-8">
+          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-4">
             <div className="relative w-full" ref={searchRef}>
               <input
                 ref={searchInputRef}
@@ -555,7 +555,7 @@ export default function Header() {
           </div>
 
           {/* User Actions - Right Side */}
-          <div className="flex items-center space-x-6 flex-shrink-0">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             {/* Cart */}
             <Link
               href="/cart"
@@ -587,7 +587,7 @@ export default function Header() {
             </button>
 
             {/* User Authentication Links */}
-            <div className="hidden lg:flex items-center space-x-4 ml-4">
+            <div className="hidden lg:flex items-center space-x-3 ml-3">
               {isAuthenticated ? (
                 <>
                   {isAdmin && (
