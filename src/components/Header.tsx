@@ -353,7 +353,7 @@ export default function Header() {
       <div className="w-full px-2 py-4">
         <div className="flex items-center justify-between">
           {/* Logo and Company Name - Very Far Left */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
+          <div className="flex items-center space-x-4 flex-shrink-0 ml-4">
             <Link href="/" className="flex items-center space-x-4">
               {siteLogo ? (
                 <img 
@@ -473,7 +473,7 @@ export default function Header() {
           </nav>
 
           {/* Search Bar - Center Right */}
-          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-4">
+          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-4 mr-4">
             <div className="relative w-full" ref={searchRef}>
               <input
                 ref={searchInputRef}
