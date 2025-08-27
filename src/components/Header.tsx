@@ -377,7 +377,7 @@ export default function Header() {
           <nav className="hidden lg:flex items-center space-x-8 flex-1 justify-center">
             <Link
               href="/"
-              className="text-gray-900 hover:text-blue-600 transition font-semibold text-sm font-sans"
+              className="text-gray-900 hover:text-blue-600 transition font-semibold text-base font-sans"
             >
               Главная
             </Link>
@@ -395,7 +395,7 @@ export default function Header() {
               }}
             >
               <button
-                className="text-gray-900 hover:text-blue-600 transition font-semibold flex items-center text-sm font-sans"
+                className="text-gray-900 hover:text-blue-600 transition font-semibold flex items-center text-base font-sans"
                 onClick={() => router.push('/catalog')}
               >
                 Каталог
@@ -427,7 +427,7 @@ export default function Header() {
                 brandsTimeoutRef.current = setTimeout(() => setShowBrands(false), 200);
               }}
             >
-              <button className="text-gray-900 hover:text-blue-600 transition font-semibold flex items-center text-sm font-sans">
+              <button className="text-gray-900 hover:text-blue-600 transition font-semibold flex items-center text-base font-sans">
                 Бренды
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -460,20 +460,20 @@ export default function Header() {
 
             <Link
               href="/blog"
-              className="text-gray-900 hover:text-blue-600 transition font-semibold text-sm font-sans"
+              className="text-gray-900 hover:text-blue-600 transition font-semibold text-base font-sans"
             >
               Блог
             </Link>
             <Link
               href="/contacts"
-              className="text-gray-900 hover:text-blue-600 transition font-semibold text-sm font-sans"
+              className="text-gray-900 hover:text-blue-600 transition font-semibold text-base font-sans"
             >
               Контакты
             </Link>
           </nav>
 
           {/* Search Bar - Center Right */}
-          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-12 mr-4">
+          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-16 mr-4">
             <div className="relative w-full" ref={searchRef}>
               <input
                 ref={searchInputRef}
@@ -586,47 +586,59 @@ export default function Header() {
               )}
             </button>
 
-            {/* User Authentication Links */}
+            {/* User Authentication Icons */}
             <div className="hidden lg:flex items-center space-x-3 ml-3">
               {isAuthenticated ? (
                 <>
                   {isAdmin && (
                     <Link
                       href="/admin"
-                      className="text-blue-600 hover:text-blue-800 transition text-xs font-medium"
+                      className="p-2 text-blue-600 hover:text-blue-800 transition"
+                      title="Админ панель"
                     >
-                      Админ
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
                     </Link>
                   )}
-                  <span className="text-gray-600 text-xs">
-                    {user?.name || user?.email}
-                  </span>
                   <Link
                     href="/profile"
-                    className="text-blue-600 hover:text-blue-800 transition text-xs font-medium"
+                    className="p-2 text-blue-600 hover:text-blue-800 transition"
+                    title="Профиль"
                   >
-                    Профиль
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="text-red-600 hover:text-red-800 transition text-xs font-medium"
+                    className="p-2 text-red-600 hover:text-red-800 transition"
+                    title="Выйти"
                   >
-                    Выйти
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                   </button>
                 </>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="text-blue-600 hover:text-blue-800 transition text-xs font-medium"
+                    className="p-2 text-blue-600 hover:text-blue-800 transition"
+                    title="Войти"
                   >
-                    Войти
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
                   </Link>
                   <Link
                     href="/register"
-                    className="text-blue-600 hover:text-blue-800 transition text-xs font-medium"
+                    className="p-2 text-blue-600 hover:text-blue-800 transition"
+                    title="Регистрация"
                   >
-                    Регистрация
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
                   </Link>
                 </>
               )}
