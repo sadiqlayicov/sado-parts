@@ -173,28 +173,14 @@ function ProfilePageContent() {
     <div className="min-h-screen bg-white pt-24">
       <div className="max-w-6xl mx-auto px-6 py-8 overflow-x-hidden">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between gap-3 flex-wrap">
+        <div className="mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Профиль пользователя</h1>
             <p className="text-gray-600 text-sm md:text-base">Ваши заказы и платежи</p>
           </div>
-          <div className="hidden sm:flex gap-2">
-            <button
-              onClick={() => router.push('/catalog')}
-              className="py-2 px-4 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-            >
-              Каталог
-            </button>
-            <button
-              onClick={() => logout()}
-              className="py-2 px-4 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition"
-            >
-              Выйти
-            </button>
-          </div>
         </div>
 
-        {/* Tabs + Mobile Actions */}
+        {/* Tabs */}
         <div className="flex flex-wrap items-center gap-3 mb-8">
           <div className="flex flex-1 sm:flex-none space-x-1 bg-gray-100 rounded-lg p-1">
             <button
@@ -226,22 +212,6 @@ function ProfilePageContent() {
               }`}
             >
               Адреса ({addresses.length})
-            </button>
-          </div>
-
-          {/* Mobile Actions */}
-          <div className="flex sm:hidden gap-2">
-            <button
-              onClick={() => router.push('/catalog')}
-              className="py-2 px-3 rounded-lg bg-blue-600 text-white text-sm font-semibold"
-            >
-              Каталог
-            </button>
-            <button
-              onClick={() => logout()}
-              className="py-2 px-3 rounded-lg bg-red-600 text-white text-sm font-semibold"
-            >
-              Выйти
             </button>
           </div>
         </div>
