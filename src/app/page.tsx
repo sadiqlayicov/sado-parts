@@ -163,10 +163,61 @@ export default function HomePage() {
               // Cache categories for 30 minutes
               localStorage.setItem('cachedCategories', JSON.stringify(categoriesData));
               localStorage.setItem('categoriesCacheTime', now.toString());
-            } else {
-              console.log('No valid categories data found');
-              setCategories([]);
+                    } else {
+          console.log('No valid categories data found, using fallback categories');
+          // Fallback categories for testing
+          const fallbackCategories = [
+            {
+              id: 'cat_1',
+              name: 'Engine Parts',
+              description: 'Engine components and parts',
+              children: []
+            },
+            {
+              id: 'cat_2', 
+              name: 'Transmission',
+              description: 'Transmission systems',
+              children: []
+            },
+            {
+              id: 'cat_3',
+              name: 'Hydraulic Systems',
+              description: 'Hydraulic components',
+              children: []
+            },
+            {
+              id: 'cat_4',
+              name: 'Electrical',
+              description: 'Electrical components',
+              children: []
+            },
+            {
+              id: 'cat_5',
+              name: 'Brake System',
+              description: 'Brake components',
+              children: []
+            },
+            {
+              id: 'cat_6',
+              name: 'Tires & Wheels',
+              description: 'Tires and wheel components',
+              children: []
+            },
+            {
+              id: 'cat_7',
+              name: 'Filters',
+              description: 'Air and oil filters',
+              children: []
+            },
+            {
+              id: 'cat_8',
+              name: 'Lubricants',
+              description: 'Lubrication products',
+              children: []
             }
+          ];
+          setCategories(fallbackCategories);
+        }
           } else {
             console.error('Categories API failed:', categoriesRes.status);
             setCategories([]);
