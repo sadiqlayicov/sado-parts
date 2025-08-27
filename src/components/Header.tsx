@@ -204,18 +204,31 @@ export default function Header() {
     "Hydraulic", "Transmission", "Brake", "Electrical", "Steering"
   ];
 
-  // Recursive function to render categories with hierarchy for header
-  const renderCategoriesForHeader = (cats: any[], level: number): React.ReactElement[] => {
-    return cats.map((category) => (
+  // Function to render categories in grid format for header
+  const renderCategoriesForHeader = (cats: any[]): React.ReactElement[] => {
+    const allCategories: any[] = [];
+    
+    // Flatten categories and subcategories into a single array
+    const flattenCategories = (categories: any[], level: number = 0) => {
+      categories.forEach(category => {
+        allCategories.push({ ...category, level });
+        if (category.children && category.children.length > 0) {
+          flattenCategories(category.children, level + 1);
+        }
+      });
+    };
+    
+    flattenCategories(cats);
+    
+    return allCategories.map((category) => (
       <div key={category.id} className="inline-block">
         <Link
           href={`/catalog?category=${category.id}`}
-          className={`block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition font-sans whitespace-nowrap ${level > 0 ? 'pl-' + (level * 4 + 3) : ''}`}
+          className={`block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition font-sans whitespace-nowrap ${category.level > 0 ? 'pl-' + (category.level * 4 + 3) : ''}`}
           onClick={() => setShowCategories(false)}
         >
-          {level > 0 && '└─ '}{category.name}
+          {category.level > 0 && '└─ '}{category.name}
         </Link>
-        {category.children && category.children.length > 0 && renderCategoriesForHeader(category.children, level + 1)}
       </div>
     ));
   };
@@ -409,7 +422,7 @@ export default function Header() {
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
                     <div className="flex flex-wrap gap-1 px-2">
-                      {renderCategoriesForHeader(categories, 0)}
+                      {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Категории не найдены</div>
