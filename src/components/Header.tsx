@@ -353,22 +353,22 @@ export default function Header() {
       <div className="w-full px-2 py-4">
         <div className="flex items-center justify-between">
           {/* Logo and Company Name - Very Far Left */}
-          <div className="flex items-center space-x-3 flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4 flex-shrink-0">
+            <Link href="/" className="flex items-center space-x-4">
               {siteLogo ? (
                 <img 
                   src={siteLogo} 
                   alt="Site Logo" 
-                  className="w-16 h-16 object-contain"
+                  className="w-[22px] h-[22px] object-contain"
                 />
               ) : (
-                <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">B</span>
+                <div className="w-[22px] h-[22px] bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">B</span>
                 </div>
               )}
               <div className="hidden sm:block">
-                <div className="text-xl font-bold text-gray-900">BILAL-PARTS</div>
-                <div className="text-sm text-gray-600">Запчасти для погрузчиков</div>
+                <div className="text-2xl font-bold text-gray-900 tracking-wide">BILAL-PARTS</div>
+                <div className="text-sm text-gray-600 font-medium mt-1">Запчасти для погрузчиков</div>
               </div>
             </Link>
           </div>
