@@ -6,7 +6,7 @@ import { CartProvider } from "../components/CartProvider";
 import { AuthProvider } from "../components/AuthProvider";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import "../lib/i18n"; // i18n konfiqurasiyasını import et
+// import "../lib/i18n"; // i18n konfiqurasiyasını import et
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
