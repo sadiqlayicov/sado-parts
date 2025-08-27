@@ -207,10 +207,10 @@ export default function Header() {
   // Recursive function to render categories with hierarchy for header
   const renderCategoriesForHeader = (cats: any[], level: number): React.ReactElement[] => {
     return cats.map((category) => (
-      <div key={category.id}>
+      <div key={category.id} className="inline-block">
         <Link
           href={`/catalog?category=${category.id}`}
-          className={`block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition ${level > 0 ? 'pl-' + (level * 4 + 4) : ''}`}
+          className={`block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition font-sans whitespace-nowrap ${level > 0 ? 'pl-' + (level * 4 + 3) : ''}`}
           onClick={() => setShowCategories(false)}
         >
           {level > 0 && '└─ '}{category.name}
@@ -404,11 +404,13 @@ export default function Header() {
                 </svg>
               </button>
               {showCategories && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                <div className="absolute top-full left-0 mt-2 w-auto max-w-4xl bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    renderCategoriesForHeader(categories, 0)
+                    <div className="flex flex-wrap gap-1 px-2">
+                      {renderCategoriesForHeader(categories, 0)}
+                    </div>
                   ) : (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Категории не найдены</div>
                   )}
