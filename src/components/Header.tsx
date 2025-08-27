@@ -350,7 +350,7 @@ export default function Header() {
   return (
     <header className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
       {/* Main Header */}
-      <div className="w-full px-2 py-4">
+      <div className="w-full px-2 py-2">
         <div className="flex items-center justify-between">
           {/* Logo and Company Name - Very Far Left */}
           <div className="flex items-center space-x-4 flex-shrink-0 ml-4">
@@ -377,7 +377,7 @@ export default function Header() {
           <nav className="hidden lg:flex items-center space-x-8 flex-1 justify-center">
             <Link
               href="/"
-              className="text-gray-700 hover:text-blue-600 transition font-medium text-sm"
+              className="text-gray-900 hover:text-blue-600 transition font-bold text-sm"
             >
               Главная
             </Link>
@@ -395,7 +395,7 @@ export default function Header() {
               }}
             >
               <button
-                className="text-gray-700 hover:text-blue-600 transition font-medium flex items-center text-sm"
+                className="text-gray-900 hover:text-blue-600 transition font-bold flex items-center text-sm"
                 onClick={() => router.push('/catalog')}
               >
                 Каталог
@@ -427,7 +427,7 @@ export default function Header() {
                 brandsTimeoutRef.current = setTimeout(() => setShowBrands(false), 200);
               }}
             >
-              <button className="text-gray-700 hover:text-blue-600 transition font-medium flex items-center text-sm">
+              <button className="text-gray-900 hover:text-blue-600 transition font-bold flex items-center text-sm">
                 Бренды
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -460,20 +460,20 @@ export default function Header() {
 
             <Link
               href="/blog"
-              className="text-gray-700 hover:text-blue-600 transition font-medium text-sm"
+              className="text-gray-900 hover:text-blue-600 transition font-bold text-sm"
             >
               Блог
             </Link>
             <Link
               href="/contacts"
-              className="text-gray-700 hover:text-blue-600 transition font-medium text-sm"
+              className="text-gray-900 hover:text-blue-600 transition font-bold text-sm"
             >
               Контакты
             </Link>
           </nav>
 
           {/* Search Bar - Center Right */}
-          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-4 mr-4">
+          <div className="hidden lg:flex items-center flex-1 justify-center max-w-md ml-8 mr-4">
             <div className="relative w-full" ref={searchRef}>
               <input
                 ref={searchInputRef}
