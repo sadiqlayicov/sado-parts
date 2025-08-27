@@ -359,11 +359,11 @@ export default function Header() {
                 <img 
                   src={siteLogo} 
                   alt="Site Logo" 
-                  className="w-12 h-12 object-contain"
+                  className="w-16 h-16 object-contain"
                 />
               ) : (
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">B</span>
+                <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">B</span>
                 </div>
               )}
               <div className="hidden sm:block">
