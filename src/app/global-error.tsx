@@ -8,7 +8,11 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html>
+    <html lang="ru">
+      <head>
+        <title>Ошибка | Sado-Parts</title>
+        <meta name="description" content="Произошла ошибка" />
+      </head>
       <body>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
           <div className="max-w-md w-full text-center">
