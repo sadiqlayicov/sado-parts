@@ -225,21 +225,21 @@ export default function Header() {
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
-      if (name.includes('engine')) return '⚙️';
+      if (name.includes('engine')) return '🔧';
       if (name.includes('transmission') || name.includes('transmissiya')) return '⚙️';
-      if (name.includes('brake') || name.includes('əyləc')) return '⭕';
+      if (name.includes('brake') || name.includes('əyləc')) return '🛑';
       if (name.includes('hydraulic') || name.includes('hidravlika')) return '💧';
       if (name.includes('electrical') || name.includes('elektrik')) return '⚡';
-      if (name.includes('tire') || name.includes('wheel')) return '⭕';
+      if (name.includes('tire') || name.includes('wheel')) return '🛞';
       if (name.includes('filter')) return '🔍';
-      if (name.includes('body')) return '⬜';
+      if (name.includes('body')) return '🚗';
       if (name.includes('cooling')) return '❄️';
-      if (name.includes('steering')) return '⭕';
-      if (name.includes('chassis')) return '⬜';
+      if (name.includes('steering')) return '🎡';
+      if (name.includes('chassis')) return '🏗️';
       if (name.includes('mast')) return '📏';
       if (name.includes('drive')) return '🔗';
       if (name.includes('dizel')) return '🔥';
-      if (name.includes('forklift')) return '⬜';
+      if (name.includes('forklift')) return '🚛';
       return '📦';
     };
 
@@ -249,15 +249,15 @@ export default function Header() {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center',
-        padding: '8px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        backgroundColor: '#ffffff',
-        width: '85px',
-        height: '65px',
+        padding: '10px',
+        border: '1px solid #e5e7eb',
+        borderRadius: '6px',
+        backgroundColor: '#f9fafb',
+        width: '90px',
+        height: '70px',
         flexShrink: 0,
         cursor: 'pointer',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+        transition: 'all 0.2s ease'
       }}>
         <Link
           href={`/catalog?category=${category.id}`}
@@ -278,7 +278,7 @@ export default function Header() {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = '#f3f4f6';
-            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.transform = 'scale(1.02)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
@@ -286,11 +286,11 @@ export default function Header() {
           }}
           onClick={() => setShowCategories(false)}
         >
-          <div style={{ fontSize: '16px', marginBottom: '4px', color: '#6b7280' }}>
+          <div style={{ fontSize: '18px', marginBottom: '6px', color: '#374151' }}>
             {getCategoryIcon(category.name)}
           </div>
-          <div style={{ fontSize: '10px', lineHeight: '1.1', fontWeight: '400' }}>
-            {category.name.length > 10 ? category.name.substring(0, 10) + '...' : category.name}
+          <div style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500', color: '#374151' }}>
+            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
           </div>
         </Link>
       </div>
