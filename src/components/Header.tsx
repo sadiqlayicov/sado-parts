@@ -206,67 +206,68 @@ export default function Header() {
 
   // Function to render categories in grid format for header
   const renderCategoriesForHeader = (cats: any[]): React.ReactElement[] => {
-    return cats.map((category) => (
-      <div key={category.id} style={{ width: '100%', position: 'relative' }}>
+    // Filter out subcategories, only show main categories
+    const mainCategories = cats.filter(category => !category.parentId);
+    
+    const getCategoryIcon = (categoryName: string) => {
+      const name = categoryName.toLowerCase();
+      if (name.includes('engine')) return '🔧';
+      if (name.includes('transmission') || name.includes('transmissiya')) return '⚙️';
+      if (name.includes('brake') || name.includes('əyləc')) return '🛑';
+      if (name.includes('hydraulic') || name.includes('hidravlika')) return '💧';
+      if (name.includes('electrical') || name.includes('elektrik')) return '⚡';
+      if (name.includes('tire') || name.includes('wheel')) return '🛞';
+      if (name.includes('filter')) return '🔍';
+      if (name.includes('body')) return '🚗';
+      if (name.includes('cooling')) return '❄️';
+      if (name.includes('steering')) return '🎡';
+      if (name.includes('chassis')) return '🏗️';
+      if (name.includes('mast')) return '📏';
+      if (name.includes('drive')) return '🔗';
+      return '📦';
+    };
+
+    return mainCategories.map((category) => (
+      <div key={category.id} style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        minWidth: '80px',
+        padding: '8px'
+      }}>
         <Link
           href={`/catalog?category=${category.id}`}
           style={{
-            display: 'block',
-            padding: '8px 12px',
-            fontSize: '14px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '8px',
+            fontSize: '12px',
             color: '#374151',
             textDecoration: 'none',
-            borderRadius: '4px',
-            transition: 'background-color 0.2s',
+            borderRadius: '8px',
+            transition: 'all 0.2s',
             textAlign: 'center',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            minWidth: '60px'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f3f4f6';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
           onClick={() => setShowCategories(false)}
         >
-          {category.name}
-        </Link>
-        {category.children && category.children.length > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '0',
-              left: '100%',
-              backgroundColor: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-              padding: '8px',
-              minWidth: '200px',
-              zIndex: 60,
-              display: 'none'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.display = 'block'}
-            onMouseLeave={(e) => e.currentTarget.style.display = 'none'}
-          >
-            {category.children.map((child: any) => (
-              <Link
-                key={child.id}
-                href={`/catalog?category=${child.id}`}
-                style={{
-                  display: 'block',
-                  padding: '6px 12px',
-                  fontSize: '13px',
-                  color: '#374151',
-                  textDecoration: 'none',
-                  borderRadius: '4px',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                onClick={() => setShowCategories(false)}
-              >
-                {child.name}
-              </Link>
-            ))}
+          <div style={{ fontSize: '24px', marginBottom: '4px' }}>
+            {getCategoryIcon(category.name)}
           </div>
-        )}
+          <div style={{ fontSize: '11px', lineHeight: '1.2' }}>
+            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
+          </div>
+        </Link>
       </div>
     ));
   };
@@ -459,7 +460,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', padding: '12px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', padding: '16px', justifyContent: 'center' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
