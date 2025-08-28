@@ -254,38 +254,34 @@ export default function Header() {
         key={category.id}
         href={`/catalog?category=${category.id}`}
         style={{
-          display: 'flex',
+          display: 'inline-flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: '12px 16px',
+          padding: '8px 12px',
           fontSize: '12px',
           color: '#374151',
           textDecoration: 'none',
-          borderRadius: '6px',
-          transition: 'all 0.2s',
+          marginRight: '12px',
           textAlign: 'center',
           whiteSpace: 'nowrap',
-          marginRight: '8px',
-          backgroundColor: '#f9fafb',
-          border: '1px solid #e5e7eb',
-          minWidth: '80px'
+          minWidth: '70px'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#f3f4f6';
-          e.currentTarget.style.transform = 'scale(1.02)';
+          e.currentTarget.style.color = '#1f2937';
+          e.currentTarget.style.fontWeight = '600';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#f9fafb';
-          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.color = '#374151';
+          e.currentTarget.style.fontWeight = '400';
         }}
         onClick={() => setShowCategories(false)}
       >
-        <div style={{ fontSize: '18px', marginBottom: '6px', color: '#374151' }}>
+        <span style={{ fontSize: '16px', marginBottom: '4px' }}>
           {getCategoryIcon(category.name)}
-        </div>
-        <div style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500', color: '#374151' }}>
-          {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
-        </div>
+        </span>
+        <span style={{ fontSize: '10px', lineHeight: '1.1' }}>
+          {category.name.length > 10 ? category.name.substring(0, 10) + '...' : category.name}
+        </span>
       </Link>
     ));
   };
