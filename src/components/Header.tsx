@@ -212,8 +212,16 @@ export default function Header() {
       !category.name.toLowerCase().includes('test') && 
       category.name && 
       category.name.trim() !== '' && 
-      category.name.length > 0
+      category.name.length > 0 &&
+      category.name !== 'undefined' &&
+      category.name !== 'null' &&
+      category.name !== '' &&
+      category.name !== ' ' &&
+      category.name !== '  '
     );
+    
+    // Debug: log filtered categories
+    console.log('Filtered categories:', mainCategories.map(c => ({ id: c.id, name: c.name })));
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
