@@ -211,8 +211,8 @@ export default function Header() {
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
-      if (name.includes('engine')) return '🔧';
-      if (name.includes('transmission') || name.includes('transmissiya')) return '⚙️';
+      if (name.includes('engine')) return '⚙️';
+      if (name.includes('transmission') || name.includes('transmissiya')) return '🔧';
       if (name.includes('brake') || name.includes('əyləc')) return '🛑';
       if (name.includes('hydraulic') || name.includes('hidravlika')) return '💧';
       if (name.includes('electrical') || name.includes('elektrik')) return '⚡';
@@ -224,6 +224,7 @@ export default function Header() {
       if (name.includes('chassis')) return '🏗️';
       if (name.includes('mast')) return '📏';
       if (name.includes('drive')) return '🔗';
+      if (name.includes('dizel')) return '🔥';
       return '📦';
     };
 
@@ -232,8 +233,8 @@ export default function Header() {
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
-        minWidth: '120px',
-        padding: '16px 8px',
+        minWidth: '100px',
+        padding: '12px 6px',
         borderRight: index < mainCategories.length - 1 ? '1px solid #e5e7eb' : 'none',
         backgroundColor: '#f9fafb'
       }}>
@@ -243,15 +244,15 @@ export default function Header() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '12px',
-            fontSize: '12px',
+            padding: '8px',
+            fontSize: '11px',
             color: '#374151',
             textDecoration: 'none',
-            borderRadius: '8px',
+            borderRadius: '6px',
             transition: 'all 0.2s',
             textAlign: 'center',
             whiteSpace: 'nowrap',
-            minWidth: '80px',
+            minWidth: '70px',
             backgroundColor: 'white',
             border: '1px solid #e5e7eb'
           }}
@@ -267,11 +268,11 @@ export default function Header() {
           }}
           onClick={() => setShowCategories(false)}
         >
-          <div style={{ fontSize: '28px', marginBottom: '8px' }}>
+          <div style={{ fontSize: '24px', marginBottom: '6px' }}>
             {getCategoryIcon(category.name)}
           </div>
-          <div style={{ fontSize: '12px', lineHeight: '1.3', fontWeight: '500' }}>
-            {category.name.length > 15 ? category.name.substring(0, 15) + '...' : category.name}
+          <div style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500' }}>
+            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
           </div>
         </Link>
       </div>
@@ -466,7 +467,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'flex', gap: '0', padding: '0', justifyContent: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: '0', padding: '0', justifyContent: 'flex-start', flexWrap: 'wrap' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
