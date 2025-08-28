@@ -238,7 +238,9 @@ export default function Header() {
         padding: '8px',
         border: '1px solid #e5e7eb',
         borderRadius: '6px',
-        backgroundColor: '#f9fafb'
+        backgroundColor: '#f9fafb',
+        minWidth: '80px',
+        flexShrink: 0
       }}>
         <Link
           href={`/catalog?category=${category.id}`}
@@ -465,7 +467,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', padding: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', gap: '8px', padding: '8px', overflowX: 'auto' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
