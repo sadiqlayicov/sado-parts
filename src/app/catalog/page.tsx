@@ -120,22 +120,42 @@ function CatalogPage() {
     fetchData();
   }, [searchParams]);
 
+  // Update filter states when URL params change
   useEffect(() => {
     const cat = searchParams.get("category");
-    if (cat) setFilter(cat);
+    if (cat) {
+      setFilter(cat);
+    } else {
+      setFilter(""); // Reset filter when no category in URL
+    }
+    
     const brand = searchParams.get("brand");
-    if (brand) setBrandFilter(brand);
+    if (brand) {
+      setBrandFilter(brand);
+    } else {
+      setBrandFilter(""); // Reset brand filter
+    }
+    
     const search = searchParams.get("search");
-    if (search) setSearchQuery(search);
+    if (search) {
+      setSearchQuery(search);
+    } else {
+      setSearchQuery(""); // Reset search query
+    }
   }, [searchParams]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product: any) => {
-      const matchesCategory = !filter || product.category?.id === filter || product.category?.name === filter;
+      // Category filtering - check by ID first, then by name
+      const matchesCategory = !filter || 
+        product.categoryId === filter || 
+        product.category?.id === filter || 
+        product.category?.name === filter;
+      
       const matchesBrand = !brandFilter || product.brand === brandFilter;
       const matchesSearch = !searchQuery || 
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.desc && product.desc.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
       let matchesPrice = true;
       if (priceFilter) {
