@@ -460,7 +460,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', padding: '16px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '16px', padding: '16px', justifyContent: 'flex-start', overflowX: 'auto' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
