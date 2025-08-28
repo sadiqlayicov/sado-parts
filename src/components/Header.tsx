@@ -218,7 +218,7 @@ export default function Header() {
       category.name !== '' &&
       category.name !== ' ' &&
       category.name !== '  ' &&
-      category.name !== 'Body Parts' && // Temporary filter to test
+
       category.id && 
       category.id !== null &&
       category.id !== undefined
@@ -250,56 +250,43 @@ export default function Header() {
     };
 
     return mainCategories.map((category, index) => (
-      <div key={category.id} style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        padding: '10px',
-        border: '1px solid #e5e7eb',
-        borderRadius: '6px',
-        backgroundColor: '#f9fafb',
-        width: '90px',
-        height: '70px',
-        flexShrink: 0,
-        cursor: 'pointer',
-        transition: 'all 0.2s ease'
-      }}>
-        <Link
-          href={`/catalog?category=${category.id}`}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '4px',
-            fontSize: '10px',
-            color: '#374151',
-            textDecoration: 'none',
-            borderRadius: '4px',
-            transition: 'all 0.2s',
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            width: '100%',
-            height: '100%'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f3f4f6';
-            e.currentTarget.style.transform = 'scale(1.02)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-          onClick={() => setShowCategories(false)}
-        >
-          <div style={{ fontSize: '18px', marginBottom: '6px', color: '#374151' }}>
-            {getCategoryIcon(category.name)}
-          </div>
-          <div style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500', color: '#374151' }}>
-            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
-          </div>
-        </Link>
-      </div>
+      <Link
+        key={category.id}
+        href={`/catalog?category=${category.id}`}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '12px 16px',
+          fontSize: '12px',
+          color: '#374151',
+          textDecoration: 'none',
+          borderRadius: '6px',
+          transition: 'all 0.2s',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+          marginRight: '8px',
+          backgroundColor: '#f9fafb',
+          border: '1px solid #e5e7eb',
+          minWidth: '80px'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#f3f4f6';
+          e.currentTarget.style.transform = 'scale(1.02)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '#f9fafb';
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+        onClick={() => setShowCategories(false)}
+      >
+        <div style={{ fontSize: '18px', marginBottom: '6px', color: '#374151' }}>
+          {getCategoryIcon(category.name)}
+        </div>
+        <div style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500', color: '#374151' }}>
+          {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
+        </div>
+      </Link>
     ));
   };
 
