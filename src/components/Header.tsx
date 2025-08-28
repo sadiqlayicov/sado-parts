@@ -482,7 +482,7 @@ export default function Header() {
                 </svg>
               </button>
               {showCategories && (
-                <div className="absolute top-full left-0 mt-4 z-50" style={{ marginLeft: '-180px' }}>
+                <div className="absolute top-full left-0 mt-4 z-50" style={{ marginLeft: '-240px' }}>
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (

@@ -81,6 +81,7 @@ function CatalogPage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        setLoading(true);
         // Get category from URL params
         const cat = searchParams.get("category");
         const url = cat ? `/api/products?categoryId=${cat}` : '/api/products';
@@ -117,7 +118,7 @@ function CatalogPage() {
       }
     }
     fetchData();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     const cat = searchParams.get("category");
