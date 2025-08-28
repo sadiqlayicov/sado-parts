@@ -239,7 +239,8 @@ export default function Header() {
         border: '1px solid #e5e7eb',
         borderRadius: '6px',
         backgroundColor: '#f9fafb',
-        minWidth: '70px',
+        width: '80px',
+        height: '60px',
         flexShrink: 0,
         cursor: 'pointer'
       }}>
@@ -257,7 +258,8 @@ export default function Header() {
             transition: 'all 0.2s',
             textAlign: 'center',
             whiteSpace: 'nowrap',
-            minWidth: '50px'
+            width: '100%',
+            height: '100%'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = '#f3f4f6';
@@ -468,7 +470,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'row', gap: '4px', padding: '8px', justifyContent: 'flex-start', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', gap: '4px', padding: '8px', justifyContent: 'flex-start', alignItems: 'center', marginLeft: '-20px' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
