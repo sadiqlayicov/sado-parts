@@ -207,7 +207,13 @@ export default function Header() {
   // Function to render categories in grid format for header
   const renderCategoriesForHeader = (cats: any[]): React.ReactElement[] => {
     // Filter out subcategories, only show main categories
-    const mainCategories = cats.filter(category => !category.parentId && !category.name.toLowerCase().includes('test'));
+    const mainCategories = cats.filter(category => 
+      !category.parentId && 
+      !category.name.toLowerCase().includes('test') && 
+      category.name && 
+      category.name.trim() !== '' && 
+      category.name.length > 0
+    );
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
@@ -470,7 +476,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'row', gap: '4px', padding: '8px', justifyContent: 'flex-start', alignItems: 'center', marginLeft: '-20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', gap: '4px', padding: '8px', justifyContent: 'flex-start', alignItems: 'center', marginLeft: '-60px' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
