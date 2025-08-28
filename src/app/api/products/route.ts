@@ -72,19 +72,26 @@ export async function GET(request: NextRequest) {
     let paramCount = 1;
     
     if (categoryId) {
-      // Include products in the requested category and all its subcategories
-      // Build a recursive CTE to collect descendant category IDs
-      query = `
+      // First, get all subcategory IDs for the given category
+      const subcategoriesQuery = `
         WITH RECURSIVE cat_tree AS (
-          -- Base case: the selected category
-          SELECT id, name, "parentId", 0 as level FROM categories WHERE id = $${paramCount}
+          SELECT id FROM categories WHERE id = $1
           UNION ALL
-          -- Recursive case: all subcategories
-          SELECT c.id, c.name, c."parentId", ct.level + 1 
-          FROM categories c
+          SELECT c.id FROM categories c
           INNER JOIN cat_tree ct ON c."parentId" = ct.id
           WHERE c."isActive" = true
         )
+        SELECT id FROM cat_tree
+      `;
+      
+      const subcategoriesResult = await client.query(subcategoriesQuery, [categoryId]);
+      const categoryIds = subcategoriesResult.rows.map(row => row.id);
+      
+      console.log('Category IDs to search:', categoryIds);
+      
+      // Build the main query with the collected category IDs
+      const placeholders = categoryIds.map((_, index) => `$${index + 2}`).join(',');
+      query = `
         SELECT 
           p.id,
           p.name,
@@ -105,45 +112,23 @@ export async function GET(request: NextRequest) {
           c.description as category_description
         FROM products p
         LEFT JOIN categories c ON p."categoryId" = c.id
-        WHERE p."isActive" = true AND p."categoryId" IN (SELECT id FROM cat_tree)
+        WHERE p."isActive" = true AND p."categoryId" IN (${placeholders})
       `;
-      queryParams.push(categoryId);
-      paramCount++;
       
-      // Debug: Log the category tree
-      const debugQuery = `
-        WITH RECURSIVE cat_tree AS (
-          SELECT id, name, "parentId", 0 as level FROM categories WHERE id = $1
-          UNION ALL
-          SELECT c.id, c.name, c."parentId", ct.level + 1 
-          FROM categories c
-          INNER JOIN cat_tree ct ON c."parentId" = ct.id
-          WHERE c."isActive" = true
-        )
-        SELECT * FROM cat_tree ORDER BY level, name
-      `;
-      const debugResult = await client.query(debugQuery, [categoryId]);
-      console.log('Category tree for ID', categoryId, ':', debugResult.rows);
+      queryParams.push(...categoryIds);
       
-      // Debug: Log products count by category
-      const productsByCategoryQuery = `
-        WITH RECURSIVE cat_tree AS (
-          SELECT id, name, "parentId", 0 as level FROM categories WHERE id = $1
-          UNION ALL
-          SELECT c.id, c.name, c."parentId", ct.level + 1 
-          FROM categories c
-          INNER JOIN cat_tree ct ON c."parentId" = ct.id
-          WHERE c."isActive" = true
-        )
-        SELECT c.name as category_name, COUNT(p.id) as product_count
-        FROM cat_tree ct
-        LEFT JOIN categories c ON ct.id = c.id
-        LEFT JOIN products p ON c.id = p."categoryId" AND p."isActive" = true
-        GROUP BY c.name, ct.level
-        ORDER BY ct.level, c.name
-      `;
-      const productsByCategoryResult = await client.query(productsByCategoryQuery, [categoryId]);
-      console.log('Products by category for ID', categoryId, ':', productsByCategoryResult.rows);
+      // Debug: Log products by category
+      for (const catId of categoryIds) {
+        const catNameQuery = 'SELECT name FROM categories WHERE id = $1';
+        const catNameResult = await client.query(catNameQuery, [catId]);
+        const catName = catNameResult.rows[0]?.name || 'Unknown';
+        
+        const productCountQuery = 'SELECT COUNT(*) as count FROM products WHERE "categoryId" = $1 AND "isActive" = true';
+        const productCountResult = await client.query(productCountQuery, [catId]);
+        const productCount = productCountResult.rows[0]?.count || 0;
+        
+        console.log(`Category "${catName}" (ID: ${catId}): ${productCount} products`);
+      }
     }
     
     query += ` ORDER BY p."createdAt" DESC`;
