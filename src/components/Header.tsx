@@ -206,22 +206,8 @@ export default function Header() {
 
   // Function to render categories in grid format for header
   const renderCategoriesForHeader = (cats: any[]): React.ReactElement[] => {
-    const allCategories: any[] = [];
-    
-    // Flatten categories and subcategories into a single array
-    const flattenCategories = (categories: any[], level: number = 0) => {
-      categories.forEach(category => {
-        allCategories.push({ ...category, level });
-        if (category.children && category.children.length > 0) {
-          flattenCategories(category.children, level + 1);
-        }
-      });
-    };
-    
-    flattenCategories(cats);
-    
-    return allCategories.map((category) => (
-      <div key={category.id} style={{ width: '100%' }}>
+    return cats.map((category) => (
+      <div key={category.id} style={{ width: '100%', position: 'relative' }}>
         <Link
           href={`/catalog?category=${category.id}`}
           style={{
@@ -241,6 +227,46 @@ export default function Header() {
         >
           {category.name}
         </Link>
+        {category.children && category.children.length > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '0',
+              left: '100%',
+              backgroundColor: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+              padding: '8px',
+              minWidth: '200px',
+              zIndex: 60,
+              display: 'none'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.display = 'block'}
+            onMouseLeave={(e) => e.currentTarget.style.display = 'none'}
+          >
+            {category.children.map((child: any) => (
+              <Link
+                key={child.id}
+                href={`/catalog?category=${child.id}`}
+                style={{
+                  display: 'block',
+                  padding: '6px 12px',
+                  fontSize: '13px',
+                  color: '#374151',
+                  textDecoration: 'none',
+                  borderRadius: '4px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                onClick={() => setShowCategories(false)}
+              >
+                {child.name}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     ));
   };
