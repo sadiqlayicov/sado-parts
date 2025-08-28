@@ -231,58 +231,70 @@ export default function Header() {
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
-      if (name.includes('engine')) return '🔧';
+      if (name.includes('engine')) return '⚙️';
       if (name.includes('transmission') || name.includes('transmissiya')) return '⚙️';
-      if (name.includes('brake') || name.includes('əyləc')) return '🛑';
+      if (name.includes('brake') || name.includes('əyləc')) return '⭕';
       if (name.includes('hydraulic') || name.includes('hidravlika')) return '💧';
       if (name.includes('electrical') || name.includes('elektrik')) return '⚡';
-      if (name.includes('tire') || name.includes('wheel')) return '🛞';
+      if (name.includes('tire') || name.includes('wheel')) return '⭕';
       if (name.includes('filter')) return '🔍';
-      if (name.includes('body')) return '🚗';
+      if (name.includes('body')) return '⬜';
       if (name.includes('cooling')) return '❄️';
-      if (name.includes('steering')) return '🎡';
-      if (name.includes('chassis')) return '🏗️';
+      if (name.includes('steering')) return '⭕';
+      if (name.includes('chassis')) return '⬜';
       if (name.includes('mast')) return '📏';
       if (name.includes('drive')) return '🔗';
       if (name.includes('dizel')) return '🔥';
-      if (name.includes('forklift')) return '🚛';
+      if (name.includes('forklift')) return '⬜';
       return '📦';
     };
 
     return mainCategories.map((category, index) => (
-      <Link
-        key={category.id}
-        href={`/catalog?category=${category.id}`}
-        style={{
-          display: 'inline-flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '8px 12px',
-          fontSize: '12px',
-          color: '#374151',
-          textDecoration: 'none',
-          marginRight: '12px',
-          textAlign: 'center',
-          whiteSpace: 'nowrap',
-          minWidth: '70px'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = '#1f2937';
-          e.currentTarget.style.fontWeight = '600';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = '#374151';
-          e.currentTarget.style.fontWeight = '400';
-        }}
-        onClick={() => setShowCategories(false)}
-      >
-        <span style={{ fontSize: '16px', marginBottom: '4px' }}>
-          {getCategoryIcon(category.name)}
-        </span>
-        <span style={{ fontSize: '10px', lineHeight: '1.1' }}>
-          {category.name.length > 10 ? category.name.substring(0, 10) + '...' : category.name}
-        </span>
-      </Link>
+      <div key={category.id} style={{ display: 'flex', alignItems: 'center' }}>
+        <Link
+          href={`/catalog?category=${category.id}`}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '12px 16px',
+            fontSize: '12px',
+            color: '#374151',
+            textDecoration: 'none',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+            minWidth: '80px',
+            backgroundColor: '#f8f9fa',
+            border: '1px solid #e9ecef',
+            borderRadius: '6px',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#e9ecef';
+            e.currentTarget.style.borderColor = '#dee2e6';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#f8f9fa';
+            e.currentTarget.style.borderColor = '#e9ecef';
+          }}
+          onClick={() => setShowCategories(false)}
+        >
+          <span style={{ fontSize: '18px', marginBottom: '6px', color: '#6c757d' }}>
+            {getCategoryIcon(category.name)}
+          </span>
+          <span style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500', color: '#495057' }}>
+            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
+          </span>
+        </Link>
+        {index < mainCategories.length - 1 && (
+          <div style={{ 
+            width: '1px', 
+            height: '40px', 
+            backgroundColor: '#dee2e6', 
+            margin: '0 8px' 
+          }} />
+        )}
+      </div>
     ));
   };
 
