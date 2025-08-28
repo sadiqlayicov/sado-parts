@@ -227,13 +227,15 @@ export default function Header() {
       return '📦';
     };
 
-    return mainCategories.map((category) => (
+    return mainCategories.map((category, index) => (
       <div key={category.id} style={{ 
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
-        minWidth: '80px',
-        padding: '8px'
+        minWidth: '120px',
+        padding: '16px 8px',
+        borderRight: index < mainCategories.length - 1 ? '1px solid #e5e7eb' : 'none',
+        backgroundColor: '#f9fafb'
       }}>
         <Link
           href={`/catalog?category=${category.id}`}
@@ -241,7 +243,7 @@ export default function Header() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '8px',
+            padding: '12px',
             fontSize: '12px',
             color: '#374151',
             textDecoration: 'none',
@@ -249,23 +251,27 @@ export default function Header() {
             transition: 'all 0.2s',
             textAlign: 'center',
             whiteSpace: 'nowrap',
-            minWidth: '60px'
+            minWidth: '80px',
+            backgroundColor: 'white',
+            border: '1px solid #e5e7eb'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = '#f3f4f6';
-            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.transform = 'scale(1.02)';
+            e.currentTarget.style.borderColor = '#3b82f6';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.backgroundColor = 'white';
             e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.borderColor = '#e5e7eb';
           }}
           onClick={() => setShowCategories(false)}
         >
-          <div style={{ fontSize: '24px', marginBottom: '4px' }}>
+          <div style={{ fontSize: '28px', marginBottom: '8px' }}>
             {getCategoryIcon(category.name)}
           </div>
-          <div style={{ fontSize: '11px', lineHeight: '1.2' }}>
-            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
+          <div style={{ fontSize: '12px', lineHeight: '1.3', fontWeight: '500' }}>
+            {category.name.length > 15 ? category.name.substring(0, 15) + '...' : category.name}
           </div>
         </Link>
       </div>
@@ -456,11 +462,11 @@ export default function Header() {
                 </svg>
               </button>
               {showCategories && (
-                <div className="absolute top-full left-0 mt-2 w-auto max-w-6xl bg-white rounded-lg shadow-xl border border-gray-200 py-3 z-50">
+                <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-lg shadow-xl border border-gray-200 py-3 z-50">
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'flex', gap: '16px', padding: '16px', justifyContent: 'flex-start', overflowX: 'auto' }}>
+                    <div style={{ display: 'flex', gap: '0', padding: '0', justifyContent: 'flex-start' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
