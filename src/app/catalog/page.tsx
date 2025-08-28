@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
 import { Suspense } from "react";
 import { useCart } from '../../components/CartProvider';
@@ -17,17 +17,12 @@ export default function CatalogPageWrapper() {
 
 function CatalogPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { isApproved, isAdmin, calculateDiscountedPrice, getDiscountPercentage } = useAuth();
   const { addToCart } = useCart();
+  
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [filter, setFilter] = useState("");
-  const [brandFilter, setBrandFilter] = useState("");
-  const [priceFilter, setPriceFilter] = useState("");
-  const [stockFilter, setStockFilter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [perPage, setPerPage] = useState(50);
-  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
@@ -36,6 +31,115 @@ function CatalogPage() {
     return [];
   });
 
+  // Filter states
+  const [filter, setFilter] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
+  const [priceFilter, setPriceFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [perPage, setPerPage] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Update URL when filters change
+  const updateURL = (newFilters: any) => {
+    const params = new URLSearchParams();
+    if (newFilters.category) params.set('category', newFilters.category);
+    if (newFilters.brand) params.set('brand', newFilters.brand);
+    if (newFilters.search) params.set('search', newFilters.search);
+    
+    const newURL = params.toString() ? `?${params.toString()}` : '/catalog';
+    router.push(newURL, { scroll: false });
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (type: string, value: string) => {
+    switch (type) {
+      case 'category':
+        setFilter(value);
+        updateURL({ category: value, brand: brandFilter, search: searchQuery });
+        break;
+      case 'brand':
+        setBrandFilter(value);
+        updateURL({ category: filter, brand: value, search: searchQuery });
+        break;
+      case 'search':
+        setSearchQuery(value);
+        updateURL({ category: filter, brand: brandFilter, search: value });
+        break;
+    }
+    setCurrentPage(1);
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilter("");
+    setBrandFilter("");
+    setPriceFilter("");
+    setStockFilter("");
+    setSearchQuery("");
+    setCurrentPage(1);
+    router.push('/catalog', { scroll: false });
+  };
+
+  // Fetch data
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        
+        // Get category from URL params
+        const cat = searchParams.get("category");
+        const url = cat ? `/api/products?categoryId=${cat}` : '/api/products';
+        
+        const [productsRes, categoriesRes] = await Promise.all([
+          fetch(url),
+          fetch('/api/categories')
+        ]);
+
+        const productsData = await productsRes.json();
+        const categoriesData = await categoriesRes.json();
+
+        // Set products
+        if (productsData.success && Array.isArray(productsData.data)) {
+          setProducts(productsData.data);
+        } else if (Array.isArray(productsData)) {
+          setProducts(productsData);
+        } else {
+          setProducts([]);
+        }
+
+        // Set categories
+        if (categoriesData.success && Array.isArray(categoriesData.data)) {
+          setCategories(categoriesData.data);
+        } else if (Array.isArray(categoriesData)) {
+          setCategories(categoriesData);
+        } else {
+          setCategories([]);
+        }
+
+      } catch (error) {
+        console.error('Ошибка получения данных:', error);
+        setProducts([]);
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [searchParams]);
+
+  // Update filter states from URL params
+  useEffect(() => {
+    const cat = searchParams.get("category");
+    const brand = searchParams.get("brand");
+    const search = searchParams.get("search");
+
+    setFilter(cat || "");
+    setBrandFilter(brand || "");
+    setSearchQuery(search || "");
+  }, [searchParams]);
+
+  // Wishlist management
   useEffect(() => {
     function updateWishlist() {
       if (typeof window !== 'undefined') {
@@ -45,7 +149,7 @@ function CatalogPage() {
     }
     window.addEventListener('storage', updateWishlist);
     window.addEventListener('wishlistChanged', updateWishlist);
-    updateWishlist(); // İlk renderdə bir dəfə çağır
+    updateWishlist();
     return () => {
       window.removeEventListener('storage', updateWishlist);
       window.removeEventListener('wishlistChanged', updateWishlist);
@@ -68,7 +172,7 @@ function CatalogPage() {
     });
   };
 
-  // Recursive function to render categories with hierarchy for select
+  // Render categories for select
   const renderCategoriesForSelect = (cats: any[], level: number): React.ReactElement[] => {
     return cats.flatMap((cat) => [
       <option key={cat.id} value={cat.id}>
@@ -78,72 +182,7 @@ function CatalogPage() {
     ]);
   };
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        // Get category from URL params
-        const cat = searchParams.get("category");
-        const url = cat ? `/api/products?categoryId=${cat}` : '/api/products';
-        
-        const productsRes = await fetch(url);
-        const productsData = await productsRes.json();
-        // Check if response has success and data properties (new API format)
-        if (productsData.success && Array.isArray(productsData.data)) {
-          setProducts(productsData.data);
-        } else if (Array.isArray(productsData)) {
-          // Fallback for old API format
-          setProducts(productsData);
-        } else {
-          setProducts([]);
-        }
-
-        const categoriesRes = await fetch('/api/categories');
-        const categoriesData = await categoriesRes.json();
-        // Check if response has success and data properties (new API format)
-        if (categoriesData.success && Array.isArray(categoriesData.data)) {
-          setCategories(categoriesData.data); // hierarchical tree
-        } else if (Array.isArray(categoriesData)) {
-          // Fallback for old API format
-          setCategories(categoriesData);
-        } else {
-          setCategories([]);
-        }
-      } catch (error) {
-        console.error('Ошибка получения данных:', error);
-        setProducts([]);
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [searchParams]);
-
-  // Update filter states when URL params change
-  useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat) {
-      setFilter(cat);
-    } else {
-      setFilter(""); // Reset filter when no category in URL
-    }
-    
-    const brand = searchParams.get("brand");
-    if (brand) {
-      setBrandFilter(brand);
-    } else {
-      setBrandFilter(""); // Reset brand filter
-    }
-    
-    const search = searchParams.get("search");
-    if (search) {
-      setSearchQuery(search);
-    } else {
-      setSearchQuery(""); // Reset search query
-    }
-  }, [searchParams]);
-
+  // Filter products
   const filteredProducts = useMemo(() => {
     return products.filter((product: any) => {
       // Category filtering - check by ID first, then by name
@@ -153,10 +192,12 @@ function CatalogPage() {
         product.category?.name === filter;
       
       const matchesBrand = !brandFilter || product.brand === brandFilter;
+      
       const matchesSearch = !searchQuery || 
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+      
       let matchesPrice = true;
       if (priceFilter) {
         const [min, max] = priceFilter.split('-').map(Number);
@@ -166,6 +207,7 @@ function CatalogPage() {
           matchesPrice = product.price >= min;
         }
       }
+      
       let matchesStock = true;
       if (stockFilter) {
         const [min, max] = stockFilter.split('-').map(Number);
@@ -175,16 +217,19 @@ function CatalogPage() {
           matchesStock = product.stock >= min;
         }
       }
+      
       return matchesCategory && matchesBrand && matchesSearch && matchesPrice && matchesStock;
     });
   }, [products, filter, brandFilter, searchQuery, priceFilter, stockFilter]);
 
+  // Pagination
   const totalPages = Math.ceil(filteredProducts.length / perPage);
   const startIndex = (currentPage - 1) * perPage;
   const endIndex = startIndex + perPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
-  const brands = [...new Set(products.map((p: any) => p.brand))];
+  // Get unique brands
+  const brands = [...new Set(products.map((p: any) => p.brand).filter(Boolean))];
 
   if (loading) {
     return (
@@ -204,6 +249,7 @@ function CatalogPage() {
         <h1 className="text-4xl font-bold mb-8 text-gray-900">
           {searchQuery ? `Результаты поиска: "${searchQuery}"` : 'Каталог запчастей'}
         </h1>
+        
         {searchQuery && (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
             <p className="text-lg text-gray-700">
@@ -211,7 +257,7 @@ function CatalogPage() {
               {filteredProducts.length > 0 && (
                 <span className="ml-4">
                   <button 
-                    onClick={() => setSearchQuery('')}
+                    onClick={() => handleFilterChange('search', '')}
                     className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition"
                   >
                     Очистить поиск
@@ -251,7 +297,7 @@ function CatalogPage() {
                   type="text"
                   placeholder="Название, описание, артикул..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
                   className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 />
               </div>
@@ -261,10 +307,10 @@ function CatalogPage() {
                 <label className="block text-sm font-semibold mb-2 text-gray-700">Категория</label>
                 <select
                   value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
                   className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 >
-                  <option value="" key="all">Все категории</option>
+                  <option value="">Все категории</option>
                   {renderCategoriesForSelect(categories, 0)}
                 </select>
               </div>
@@ -274,12 +320,12 @@ function CatalogPage() {
                 <label className="block text-sm font-semibold mb-2 text-gray-700">Бренд</label>
                 <select
                   value={brandFilter}
-                  onChange={(e) => setBrandFilter(e.target.value)}
+                  onChange={(e) => handleFilterChange('brand', e.target.value)}
                   className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-blue-500 outline-none"
                 >
-                  <option value="" key="all">Все бренды</option>
+                  <option value="">Все бренды</option>
                   {brands.map((brand, idx) => (
-                    <option key={brand || idx} value={brand}>{brand || ""}</option>
+                    <option key={brand || idx} value={brand}>{brand}</option>
                   ))}
                 </select>
               </div>
@@ -338,14 +384,7 @@ function CatalogPage() {
 
               {/* Сброс фильтров */}
               <button
-                onClick={() => {
-                  setFilter("");
-                  setBrandFilter("");
-                  setPriceFilter("");
-                  setStockFilter("");
-                  setSearchQuery("");
-                  setCurrentPage(1);
-                }}
+                onClick={resetFilters}
                 className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-semibold transition"
               >
                 Сбросить фильтры
