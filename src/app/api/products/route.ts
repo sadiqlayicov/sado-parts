@@ -122,6 +122,34 @@ export async function GET(request: NextRequest) {
         
         console.log('Using simplified query for category:', categoryId);
         
+        // Debug: Check what subcategories exist for this category
+        const subcategoriesCheckQuery = `
+          SELECT id, name, "parentId" FROM categories 
+          WHERE "parentId" = $1 AND "isActive" = true
+        `;
+        const subcategoriesCheckResult = await client.query(subcategoriesCheckQuery, [categoryId]);
+        console.log('Subcategories found for category', categoryId, ':', subcategoriesCheckResult.rows);
+        
+        // Debug: Check products in main category
+        const mainCategoryProductsQuery = `
+          SELECT COUNT(*) as count FROM products 
+          WHERE "categoryId" = $1 AND "isActive" = true
+        `;
+        const mainCategoryProductsResult = await client.query(mainCategoryProductsQuery, [categoryId]);
+        console.log('Products in main category', categoryId, ':', mainCategoryProductsResult.rows[0].count);
+        
+        // Debug: Check products in subcategories
+        if (subcategoriesCheckResult.rows.length > 0) {
+          const subcategoryIds = subcategoriesCheckResult.rows.map(row => row.id);
+          const subcategoryProductsQuery = `
+            SELECT COUNT(*) as count FROM products 
+            WHERE "categoryId" = ANY($1) AND "isActive" = true
+          `;
+          const subcategoryProductsResult = await client.query(subcategoryProductsQuery, [subcategoryIds]);
+          console.log('Products in subcategories:', subcategoryProductsResult.rows[0].count);
+          console.log('Subcategory IDs:', subcategoryIds);
+        }
+        
       } catch (error) {
         console.error('Error in category filtering:', error);
         // Fallback to simple category filtering
