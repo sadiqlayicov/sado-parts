@@ -224,10 +224,7 @@ export default function Header() {
       category.id !== undefined
     );
     
-    // Debug: log filtered categories
-    console.log('All categories:', cats.map(c => ({ id: c.id, name: c.name, parentId: c.parentId })));
-    console.log('Filtered categories:', mainCategories.map(c => ({ id: c.id, name: c.name })));
-    console.log('Categories count:', mainCategories.length);
+
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
@@ -258,16 +255,16 @@ export default function Header() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              padding: '12px 16px',
+              padding: '16px 20px',
               fontSize: '12px',
               color: '#374151',
               textDecoration: 'none',
               textAlign: 'center',
               whiteSpace: 'nowrap',
-              minWidth: '85px',
+              minWidth: '100px',
               backgroundColor: '#f8f9fa',
               border: '1px solid #e9ecef',
-              borderRadius: '6px',
+              borderRadius: '8px',
               transition: 'all 0.2s ease'
             }}
           onMouseEnter={(e) => {
@@ -284,14 +281,14 @@ export default function Header() {
             src={getCategoryIcon(category.name)} 
             alt={category.name}
             style={{ 
-              width: '18px', 
-              height: '18px', 
-              marginBottom: '6px',
-              filter: 'brightness(0.7)'
+              width: '24px', 
+              height: '24px', 
+              marginBottom: '8px',
+              filter: 'brightness(0.4)'
             }}
           />
-          <span style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500', color: '#495057' }}>
-            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
+          <span style={{ fontSize: '12px', lineHeight: '1.3', fontWeight: '600', color: '#374151' }}>
+            {category.name.length > 14 ? category.name.substring(0, 14) + '...' : category.name}
           </span>
         </Link>
         {index < mainCategories.length - 1 && (
