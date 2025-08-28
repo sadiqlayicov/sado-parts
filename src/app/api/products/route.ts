@@ -73,6 +73,8 @@ export async function GET(request: NextRequest) {
     
     if (categoryId) {
       try {
+        console.log('Processing categoryId:', categoryId);
+        
         // First, check if the category exists
         const categoryExistsQuery = 'SELECT id, name FROM categories WHERE id = $1 AND "isActive" = true';
         const categoryExistsResult = await client.query(categoryExistsQuery, [categoryId]);
@@ -84,35 +86,7 @@ export async function GET(request: NextRequest) {
         
         console.log('Found category:', categoryExistsResult.rows[0]);
         
-        // First, get all subcategory IDs for the given category
-        const subcategoriesQuery = `
-          WITH RECURSIVE cat_tree AS (
-            SELECT id, name, "parentId", 0 as level 
-            FROM categories 
-            WHERE id = $1 AND "isActive" = true
-            UNION ALL
-            SELECT c.id, c.name, c."parentId", ct.level + 1 
-            FROM categories c
-            INNER JOIN cat_tree ct ON c."parentId" = ct.id
-            WHERE c."isActive" = true AND ct.level < 10
-          )
-          SELECT id, name, level FROM cat_tree
-        `;
-        
-        const subcategoriesResult = await client.query(subcategoriesQuery, [categoryId]);
-        const categoryIds = subcategoriesResult.rows.map(row => row.id);
-        
-        console.log('Category tree:', subcategoriesResult.rows);
-        console.log('Category IDs to search:', categoryIds);
-        
-        // If no categories found, return empty result
-        if (categoryIds.length === 0) {
-          console.log('No categories found for ID:', categoryId);
-          return successResponse([], '0 товаров найдено');
-        }
-        
-        // Build the main query with the collected category IDs
-        const placeholders = categoryIds.map((_, index) => `$${index + 2}`).join(',');
+        // Use a simpler approach - get products directly from the category and its subcategories
         query = `
           SELECT 
             p.id,
@@ -134,23 +108,20 @@ export async function GET(request: NextRequest) {
             c.description as category_description
           FROM products p
           LEFT JOIN categories c ON p."categoryId" = c.id
-          WHERE p."isActive" = true AND p."categoryId" IN (${placeholders})
+          WHERE p."isActive" = true 
+          AND (
+            p."categoryId" = $1 
+            OR p."categoryId" IN (
+              SELECT id FROM categories 
+              WHERE "parentId" = $1 AND "isActive" = true
+            )
+          )
         `;
         
-        queryParams.push(...categoryIds);
+        queryParams.push(categoryId);
         
-        // Debug: Log products by category
-        for (const catId of categoryIds) {
-          const catNameQuery = 'SELECT name FROM categories WHERE id = $1';
-          const catNameResult = await client.query(catNameQuery, [catId]);
-          const catName = catNameResult.rows[0]?.name || 'Unknown';
-          
-          const productCountQuery = 'SELECT COUNT(*) as count FROM products WHERE "categoryId" = $1 AND "isActive" = true';
-          const productCountResult = await client.query(productCountQuery, [catId]);
-          const productCount = productCountResult.rows[0]?.count || 0;
-          
-          console.log(`Category "${catName}" (ID: ${catId}): ${productCount} products`);
-        }
+        console.log('Using simplified query for category:', categoryId);
+        
       } catch (error) {
         console.error('Error in category filtering:', error);
         // Fallback to simple category filtering
