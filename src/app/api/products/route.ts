@@ -72,62 +72,97 @@ export async function GET(request: NextRequest) {
     let paramCount = 1;
     
     if (categoryId) {
-      // First, get all subcategory IDs for the given category
-      const subcategoriesQuery = `
-        WITH RECURSIVE cat_tree AS (
-          SELECT id FROM categories WHERE id = $1
-          UNION ALL
-          SELECT c.id FROM categories c
-          INNER JOIN cat_tree ct ON c."parentId" = ct.id
-          WHERE c."isActive" = true
-        )
-        SELECT id FROM cat_tree
-      `;
-      
-      const subcategoriesResult = await client.query(subcategoriesQuery, [categoryId]);
-      const categoryIds = subcategoriesResult.rows.map(row => row.id);
-      
-      console.log('Category IDs to search:', categoryIds);
-      
-      // Build the main query with the collected category IDs
-      const placeholders = categoryIds.map((_, index) => `$${index + 2}`).join(',');
-      query = `
-        SELECT 
-          p.id,
-          p.name,
-          p.description,
-          p.price,
-          p."salePrice",
-          p.sku,
-          p.stock,
-          p.images,
-          p."isActive",
-          p."isFeatured",
-          p.artikul,
-          p."catalogNumber",
-          p."createdAt",
-          p."updatedAt",
-          p."categoryId",
-          c.name as category_name,
-          c.description as category_description
-        FROM products p
-        LEFT JOIN categories c ON p."categoryId" = c.id
-        WHERE p."isActive" = true AND p."categoryId" IN (${placeholders})
-      `;
-      
-      queryParams.push(...categoryIds);
-      
-      // Debug: Log products by category
-      for (const catId of categoryIds) {
-        const catNameQuery = 'SELECT name FROM categories WHERE id = $1';
-        const catNameResult = await client.query(catNameQuery, [catId]);
-        const catName = catNameResult.rows[0]?.name || 'Unknown';
+      try {
+        // First, get all subcategory IDs for the given category
+        const subcategoriesQuery = `
+          WITH RECURSIVE cat_tree AS (
+            SELECT id FROM categories WHERE id = $1
+            UNION ALL
+            SELECT c.id FROM categories c
+            INNER JOIN cat_tree ct ON c."parentId" = ct.id
+            WHERE c."isActive" = true
+          )
+          SELECT id FROM cat_tree
+        `;
         
-        const productCountQuery = 'SELECT COUNT(*) as count FROM products WHERE "categoryId" = $1 AND "isActive" = true';
-        const productCountResult = await client.query(productCountQuery, [catId]);
-        const productCount = productCountResult.rows[0]?.count || 0;
+        const subcategoriesResult = await client.query(subcategoriesQuery, [categoryId]);
+        const categoryIds = subcategoriesResult.rows.map(row => row.id);
         
-        console.log(`Category "${catName}" (ID: ${catId}): ${productCount} products`);
+        console.log('Category IDs to search:', categoryIds);
+        
+        // If no categories found, return empty result
+        if (categoryIds.length === 0) {
+          console.log('No categories found for ID:', categoryId);
+          return successResponse([], '0 товаров найдено');
+        }
+        
+        // Build the main query with the collected category IDs
+        const placeholders = categoryIds.map((_, index) => `$${index + 2}`).join(',');
+        query = `
+          SELECT 
+            p.id,
+            p.name,
+            p.description,
+            p.price,
+            p."salePrice",
+            p.sku,
+            p.stock,
+            p.images,
+            p."isActive",
+            p."isFeatured",
+            p.artikul,
+            p."catalogNumber",
+            p."createdAt",
+            p."updatedAt",
+            p."categoryId",
+            c.name as category_name,
+            c.description as category_description
+          FROM products p
+          LEFT JOIN categories c ON p."categoryId" = c.id
+          WHERE p."isActive" = true AND p."categoryId" IN (${placeholders})
+        `;
+        
+        queryParams.push(...categoryIds);
+        
+        // Debug: Log products by category
+        for (const catId of categoryIds) {
+          const catNameQuery = 'SELECT name FROM categories WHERE id = $1';
+          const catNameResult = await client.query(catNameQuery, [catId]);
+          const catName = catNameResult.rows[0]?.name || 'Unknown';
+          
+          const productCountQuery = 'SELECT COUNT(*) as count FROM products WHERE "categoryId" = $1 AND "isActive" = true';
+          const productCountResult = await client.query(productCountQuery, [catId]);
+          const productCount = productCountResult.rows[0]?.count || 0;
+          
+          console.log(`Category "${catName}" (ID: ${catId}): ${productCount} products`);
+        }
+      } catch (error) {
+        console.error('Error in category filtering:', error);
+        // Fallback to simple category filtering
+        query = `
+          SELECT 
+            p.id,
+            p.name,
+            p.description,
+            p.price,
+            p."salePrice",
+            p.sku,
+            p.stock,
+            p.images,
+            p."isActive",
+            p."isFeatured",
+            p.artikul,
+            p."catalogNumber",
+            p."createdAt",
+            p."updatedAt",
+            p."categoryId",
+            c.name as category_name,
+            c.description as category_description
+          FROM products p
+          LEFT JOIN categories c ON p."categoryId" = c.id
+          WHERE p."isActive" = true AND p."categoryId" = $1
+        `;
+        queryParams.push(categoryId);
       }
     }
     
