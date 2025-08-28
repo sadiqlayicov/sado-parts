@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
 import { Suspense } from "react";
@@ -40,8 +40,8 @@ function CatalogPage() {
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Update URL when filters change
-  const updateURL = (newFilters: any) => {
+  // Memoized URL update function
+  const updateURL = useCallback((newFilters: any) => {
     const params = new URLSearchParams();
     if (newFilters.category) params.set('category', newFilters.category);
     if (newFilters.brand) params.set('brand', newFilters.brand);
@@ -49,10 +49,10 @@ function CatalogPage() {
     
     const newURL = params.toString() ? `?${params.toString()}` : '/catalog';
     router.push(newURL, { scroll: false });
-  };
+  }, [router]);
 
-  // Handle filter changes
-  const handleFilterChange = (type: string, value: string) => {
+  // Memoized filter change handler
+  const handleFilterChange = useCallback((type: string, value: string) => {
     switch (type) {
       case 'category':
         setFilter(value);
@@ -68,10 +68,10 @@ function CatalogPage() {
         break;
     }
     setCurrentPage(1);
-  };
+  }, [filter, brandFilter, searchQuery, updateURL]);
 
-  // Reset all filters
-  const resetFilters = () => {
+  // Memoized reset filters function
+  const resetFilters = useCallback(() => {
     setFilter("");
     setBrandFilter("");
     setPriceFilter("");
@@ -79,54 +79,67 @@ function CatalogPage() {
     setSearchQuery("");
     setCurrentPage(1);
     router.push('/catalog', { scroll: false });
-  };
+  }, [router]);
 
-  // Fetch data
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        
-        // Get category from URL params
-        const cat = searchParams.get("category");
-        const url = cat ? `/api/products?categoryId=${cat}` : '/api/products';
-        
-        const [productsRes, categoriesRes] = await Promise.all([
-          fetch(url),
-          fetch('/api/categories')
-        ]);
+  // Memoized fetch data function
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Get category from URL params
+      const cat = searchParams.get("category");
+      const url = cat ? `/api/products?categoryId=${cat}` : '/api/products';
+      
+      // Use Promise.all for parallel requests
+      const [productsRes, categoriesRes] = await Promise.all([
+        fetch(url, { 
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        }),
+        fetch('/api/categories', { 
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        })
+      ]);
 
-        const productsData = await productsRes.json();
-        const categoriesData = await categoriesRes.json();
+      const productsData = await productsRes.json();
+      const categoriesData = await categoriesRes.json();
 
-        // Set products
-        if (productsData.success && Array.isArray(productsData.data)) {
-          setProducts(productsData.data);
-        } else if (Array.isArray(productsData)) {
-          setProducts(productsData);
-        } else {
-          setProducts([]);
-        }
-
-        // Set categories
-        if (categoriesData.success && Array.isArray(categoriesData.data)) {
-          setCategories(categoriesData.data);
-        } else if (Array.isArray(categoriesData)) {
-          setCategories(categoriesData);
-        } else {
-          setCategories([]);
-        }
-
-      } catch (error) {
-        console.error('Ошибка получения данных:', error);
+      // Set products
+      if (productsData.success && Array.isArray(productsData.data)) {
+        setProducts(productsData.data);
+      } else if (Array.isArray(productsData)) {
+        setProducts(productsData);
+      } else {
         setProducts([]);
-        setCategories([]);
-      } finally {
-        setLoading(false);
       }
+
+      // Set categories
+      if (categoriesData.success && Array.isArray(categoriesData.data)) {
+        setCategories(categoriesData.data);
+      } else if (Array.isArray(categoriesData)) {
+        setCategories(categoriesData);
+      } else {
+        setCategories([]);
+      }
+
+    } catch (error) {
+      console.error('Ошибка получения данных:', error);
+      setProducts([]);
+      setCategories([]);
+    } finally {
+      setLoading(false);
     }
-    fetchData();
   }, [searchParams]);
+
+  // Fetch data effect
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Update filter states from URL params
   useEffect(() => {
@@ -139,24 +152,8 @@ function CatalogPage() {
     setSearchQuery(search || "");
   }, [searchParams]);
 
-  // Wishlist management
-  useEffect(() => {
-    function updateWishlist() {
-      if (typeof window !== 'undefined') {
-        const stored = JSON.parse(localStorage.getItem('wishlist') || '[]');
-        setWishlist(stored);
-      }
-    }
-    window.addEventListener('storage', updateWishlist);
-    window.addEventListener('wishlistChanged', updateWishlist);
-    updateWishlist();
-    return () => {
-      window.removeEventListener('storage', updateWishlist);
-      window.removeEventListener('wishlistChanged', updateWishlist);
-    };
-  }, []);
-
-  const handleWishlist = (id: string) => {
+  // Memoized wishlist management
+  const handleWishlist = useCallback((id: string) => {
     setWishlist(prev => {
       let updated;
       if (prev.includes(id)) {
@@ -170,19 +167,19 @@ function CatalogPage() {
       }
       return updated;
     });
-  };
+  }, []);
 
-  // Render categories for select
-  const renderCategoriesForSelect = (cats: any[], level: number): React.ReactElement[] => {
+  // Memoized render categories for select
+  const renderCategoriesForSelect = useCallback((cats: any[], level: number): React.ReactElement[] => {
     return cats.flatMap((cat) => [
       <option key={cat.id} value={cat.id}>
         {`${'—'.repeat(level)}${cat.name}`}
       </option>,
       ...(cat.children && cat.children.length > 0 ? renderCategoriesForSelect(cat.children, level + 1) : [])
     ]);
-  };
+  }, []);
 
-  // Filter products
+  // Memoized filtered products
   const filteredProducts = useMemo(() => {
     return products.filter((product: any) => {
       // Category filtering - check by ID first, then by name
@@ -222,14 +219,16 @@ function CatalogPage() {
     });
   }, [products, filter, brandFilter, searchQuery, priceFilter, stockFilter]);
 
-  // Pagination
+  // Memoized pagination
   const totalPages = Math.ceil(filteredProducts.length / perPage);
   const startIndex = (currentPage - 1) * perPage;
   const endIndex = startIndex + perPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
-  // Get unique brands
-  const brands = [...new Set(products.map((p: any) => p.brand).filter(Boolean))];
+  // Memoized unique brands
+  const brands = useMemo(() => {
+    return [...new Set(products.map((p: any) => p.brand).filter(Boolean))];
+  }, [products]);
 
   if (loading) {
     return (
