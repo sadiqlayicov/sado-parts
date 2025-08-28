@@ -251,24 +251,24 @@ export default function Header() {
 
     return mainCategories.map((category, index) => (
       <div key={category.id} style={{ display: 'flex', alignItems: 'center' }}>
-        <Link
-          href={`/catalog?category=${category.id}`}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '12px 16px',
-            fontSize: '12px',
-            color: '#374151',
-            textDecoration: 'none',
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            minWidth: '80px',
-            backgroundColor: '#f8f9fa',
-            border: '1px solid #e9ecef',
-            borderRadius: '6px',
-            transition: 'all 0.2s ease'
-          }}
+                  <Link
+            href={`/catalog?category=${category.id}`}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '16px 20px',
+              fontSize: '12px',
+              color: '#374151',
+              textDecoration: 'none',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+              minWidth: '100px',
+              backgroundColor: '#f8f9fa',
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              transition: 'all 0.2s ease'
+            }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = '#e9ecef';
             e.currentTarget.style.borderColor = '#dee2e6';
@@ -279,19 +279,19 @@ export default function Header() {
           }}
           onClick={() => setShowCategories(false)}
         >
-          <span style={{ fontSize: '18px', marginBottom: '6px', color: '#6c757d' }}>
+          <span style={{ fontSize: '22px', marginBottom: '8px', color: '#6c757d' }}>
             {getCategoryIcon(category.name)}
           </span>
-          <span style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500', color: '#495057' }}>
-            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
+          <span style={{ fontSize: '12px', lineHeight: '1.3', fontWeight: '500', color: '#495057' }}>
+            {category.name.length > 14 ? category.name.substring(0, 14) + '...' : category.name}
           </span>
         </Link>
         {index < mainCategories.length - 1 && (
           <div style={{ 
             width: '1px', 
-            height: '40px', 
+            height: '50px', 
             backgroundColor: '#dee2e6', 
-            margin: '0 8px' 
+            margin: '0 12px' 
           }} />
         )}
       </div>
@@ -486,7 +486,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'row', gap: '12px', padding: '20px', justifyContent: 'flex-start', alignItems: 'center', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', padding: '24px', justifyContent: 'flex-start', alignItems: 'center', backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
