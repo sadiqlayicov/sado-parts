@@ -76,9 +76,9 @@ export async function GET(request: NextRequest) {
       // Build a recursive CTE to collect descendant category IDs
       query = `
         WITH RECURSIVE cat_tree AS (
-          SELECT id FROM categories WHERE id = $${paramCount}
+          SELECT id, name, "parentId" FROM categories WHERE id = $${paramCount}
           UNION ALL
-          SELECT c.id FROM categories c
+          SELECT c.id, c.name, c."parentId" FROM categories c
           INNER JOIN cat_tree ct ON c."parentId" = ct.id
         )
         SELECT 
@@ -105,6 +105,19 @@ export async function GET(request: NextRequest) {
       `;
       queryParams.push(categoryId);
       paramCount++;
+      
+      // Debug: Log the category tree
+      const debugQuery = `
+        WITH RECURSIVE cat_tree AS (
+          SELECT id, name, "parentId" FROM categories WHERE id = $1
+          UNION ALL
+          SELECT c.id, c.name, c."parentId" FROM categories c
+          INNER JOIN cat_tree ct ON c."parentId" = ct.id
+        )
+        SELECT * FROM cat_tree
+      `;
+      const debugResult = await client.query(debugQuery, [categoryId]);
+      console.log('Category tree for ID', categoryId, ':', debugResult.rows);
     }
     
     query += ` ORDER BY p."createdAt" DESC`;
