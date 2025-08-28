@@ -217,11 +217,17 @@ export default function Header() {
       category.name !== 'null' &&
       category.name !== '' &&
       category.name !== ' ' &&
-      category.name !== '  '
+      category.name !== '  ' &&
+      category.name !== 'Body Parts' && // Temporary filter to test
+      category.id && 
+      category.id !== null &&
+      category.id !== undefined
     );
     
     // Debug: log filtered categories
+    console.log('All categories:', cats.map(c => ({ id: c.id, name: c.name, parentId: c.parentId })));
     console.log('Filtered categories:', mainCategories.map(c => ({ id: c.id, name: c.name })));
+    console.log('Categories count:', mainCategories.length);
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
