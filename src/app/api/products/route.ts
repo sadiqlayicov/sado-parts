@@ -76,10 +76,14 @@ export async function GET(request: NextRequest) {
       // Build a recursive CTE to collect descendant category IDs
       query = `
         WITH RECURSIVE cat_tree AS (
-          SELECT id, name, "parentId" FROM categories WHERE id = $${paramCount}
+          -- Base case: the selected category
+          SELECT id, name, "parentId", 0 as level FROM categories WHERE id = $${paramCount}
           UNION ALL
-          SELECT c.id, c.name, c."parentId" FROM categories c
+          -- Recursive case: all subcategories
+          SELECT c.id, c.name, c."parentId", ct.level + 1 
+          FROM categories c
           INNER JOIN cat_tree ct ON c."parentId" = ct.id
+          WHERE c."isActive" = true
         )
         SELECT 
           p.id,
@@ -109,15 +113,37 @@ export async function GET(request: NextRequest) {
       // Debug: Log the category tree
       const debugQuery = `
         WITH RECURSIVE cat_tree AS (
-          SELECT id, name, "parentId" FROM categories WHERE id = $1
+          SELECT id, name, "parentId", 0 as level FROM categories WHERE id = $1
           UNION ALL
-          SELECT c.id, c.name, c."parentId" FROM categories c
+          SELECT c.id, c.name, c."parentId", ct.level + 1 
+          FROM categories c
           INNER JOIN cat_tree ct ON c."parentId" = ct.id
+          WHERE c."isActive" = true
         )
-        SELECT * FROM cat_tree
+        SELECT * FROM cat_tree ORDER BY level, name
       `;
       const debugResult = await client.query(debugQuery, [categoryId]);
       console.log('Category tree for ID', categoryId, ':', debugResult.rows);
+      
+      // Debug: Log products count by category
+      const productsByCategoryQuery = `
+        WITH RECURSIVE cat_tree AS (
+          SELECT id, name, "parentId", 0 as level FROM categories WHERE id = $1
+          UNION ALL
+          SELECT c.id, c.name, c."parentId", ct.level + 1 
+          FROM categories c
+          INNER JOIN cat_tree ct ON c."parentId" = ct.id
+          WHERE c."isActive" = true
+        )
+        SELECT c.name as category_name, COUNT(p.id) as product_count
+        FROM cat_tree ct
+        LEFT JOIN categories c ON ct.id = c.id
+        LEFT JOIN products p ON c.id = p."categoryId" AND p."isActive" = true
+        GROUP BY c.name, ct.level
+        ORDER BY ct.level, c.name
+      `;
+      const productsByCategoryResult = await client.query(productsByCategoryQuery, [categoryId]);
+      console.log('Products by category for ID', categoryId, ':', productsByCategoryResult.rows);
     }
     
     query += ` ORDER BY p."createdAt" DESC`;
