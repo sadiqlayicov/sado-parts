@@ -73,21 +73,36 @@ export async function GET(request: NextRequest) {
     
     if (categoryId) {
       try {
+        // First, check if the category exists
+        const categoryExistsQuery = 'SELECT id, name FROM categories WHERE id = $1 AND "isActive" = true';
+        const categoryExistsResult = await client.query(categoryExistsQuery, [categoryId]);
+        
+        if (categoryExistsResult.rows.length === 0) {
+          console.log('Category not found or inactive:', categoryId);
+          return successResponse([], '0 товаров найдено');
+        }
+        
+        console.log('Found category:', categoryExistsResult.rows[0]);
+        
         // First, get all subcategory IDs for the given category
         const subcategoriesQuery = `
           WITH RECURSIVE cat_tree AS (
-            SELECT id FROM categories WHERE id = $1
+            SELECT id, name, "parentId", 0 as level 
+            FROM categories 
+            WHERE id = $1 AND "isActive" = true
             UNION ALL
-            SELECT c.id FROM categories c
+            SELECT c.id, c.name, c."parentId", ct.level + 1 
+            FROM categories c
             INNER JOIN cat_tree ct ON c."parentId" = ct.id
-            WHERE c."isActive" = true
+            WHERE c."isActive" = true AND ct.level < 10
           )
-          SELECT id FROM cat_tree
+          SELECT id, name, level FROM cat_tree
         `;
         
         const subcategoriesResult = await client.query(subcategoriesQuery, [categoryId]);
         const categoryIds = subcategoriesResult.rows.map(row => row.id);
         
+        console.log('Category tree:', subcategoriesResult.rows);
         console.log('Category IDs to search:', categoryIds);
         
         // If no categories found, return empty result
