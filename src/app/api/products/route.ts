@@ -86,21 +86,7 @@ export async function GET(request: NextRequest) {
         
         console.log('Found category:', categoryExistsResult.rows[0]);
         
-        // First, get all subcategory IDs for the given category
-        const subcategoriesQuery = `
-          SELECT id, name FROM categories 
-          WHERE "parentId" = $1 AND "isActive" = true
-        `;
-        const subcategoriesResult = await client.query(subcategoriesQuery, [categoryId]);
-        const subcategoryIds = subcategoriesResult.rows.map(row => row.id);
-        
-        console.log('Found subcategories for category', categoryId, ':', subcategoriesResult.rows);
-        console.log('Subcategory IDs:', subcategoryIds);
-        
-        // Build query with all category IDs (main + subcategories)
-        const allCategoryIds = [categoryId, ...subcategoryIds];
-        const placeholders = allCategoryIds.map((_, index) => `$${index + 2}`).join(',');
-        
+        // Use a simpler UNION approach to get products from main category and subcategories
         query = `
           SELECT 
             p.id,
@@ -122,14 +108,40 @@ export async function GET(request: NextRequest) {
             c.description as category_description
           FROM products p
           LEFT JOIN categories c ON p."categoryId" = c.id
+          WHERE p."isActive" = true AND p."categoryId" = $1
+          
+          UNION
+          
+          SELECT 
+            p.id,
+            p.name,
+            p.description,
+            p.price,
+            p."salePrice",
+            p.sku,
+            p.stock,
+            p.images,
+            p."isActive",
+            p."isFeatured",
+            p.artikul,
+            p."catalogNumber",
+            p."createdAt",
+            p."updatedAt",
+            p."categoryId",
+            c.name as category_name,
+            c.description as category_description
+          FROM products p
+          LEFT JOIN categories c ON p."categoryId" = c.id
           WHERE p."isActive" = true 
-          AND p."categoryId" IN (${placeholders})
+          AND p."categoryId" IN (
+            SELECT id FROM categories 
+            WHERE "parentId" = $1 AND "isActive" = true
+          )
         `;
         
-        queryParams.push(...allCategoryIds);
+        queryParams.push(categoryId);
         
-        console.log('Using query with category IDs:', allCategoryIds);
-        console.log('Query placeholders:', placeholders);
+        console.log('Using UNION query for category:', categoryId);
         
       } catch (error) {
         console.error('Error in category filtering:', error);
