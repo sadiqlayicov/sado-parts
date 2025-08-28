@@ -1,0 +1,15 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 18V12H8V18H4Z" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M8 12H12V18H8V12Z" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M12 12H16V18H12V12Z" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M16 12H20V18H16V12Z" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M6 18V20H18V18" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M8 20H16" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M4 8H20V12H4V8Z" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M6 6H18V8H6V6Z" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M8 4H16V6H8V4Z" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M10 2H14V4H10V2Z" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M12 0V2" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M12 18V22" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+  <path d="M10 22H14" stroke="#6B7280" stroke-width="1.5" fill="none"/>
+</svg>

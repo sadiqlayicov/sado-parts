@@ -231,22 +231,23 @@ export default function Header() {
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
-      if (name.includes('engine')) return '⚙️';
-      if (name.includes('transmission') || name.includes('transmissiya')) return '⚙️';
-      if (name.includes('brake') || name.includes('əyləc')) return '⭕';
-      if (name.includes('hydraulic') || name.includes('hidravlika')) return '💧';
-      if (name.includes('electrical') || name.includes('elektrik')) return '⚡';
-      if (name.includes('tire') || name.includes('wheel')) return '⭕';
-      if (name.includes('filter')) return '🔍';
-      if (name.includes('body')) return '⬜';
-      if (name.includes('cooling')) return '❄️';
-      if (name.includes('steering')) return '⭕';
-      if (name.includes('chassis')) return '⬜';
-      if (name.includes('mast')) return '📏';
-      if (name.includes('drive')) return '🔗';
-      if (name.includes('dizel')) return '🔥';
-      if (name.includes('forklift')) return '⬜';
-      return '📦';
+      if (name.includes('forklift')) return '/icons/forklift.svg';
+      if (name.includes('engine')) return '/icons/engine.svg';
+      if (name.includes('cooling')) return '/icons/cooling.svg';
+      if (name.includes('filter')) return '/icons/filter.svg';
+      if (name.includes('transmission') || name.includes('transmissiya')) return '/icons/transmission.svg';
+      if (name.includes('hydraulic') || name.includes('hidravlika')) return '/icons/hydraulic.svg';
+      if (name.includes('brake') || name.includes('əyləc')) return '/icons/brake.svg';
+      if (name.includes('steering')) return '/icons/steering.svg';
+      if (name.includes('chassis')) return '/icons/chassis.svg';
+      if (name.includes('mast')) return '/icons/mast.svg';
+      if (name.includes('electrical') || name.includes('elektrik')) return '/icons/electrical.svg';
+      if (name.includes('battery') || name.includes('electric')) return '/icons/battery.svg';
+      if (name.includes('drive')) return '/icons/drive.svg';
+      if (name.includes('tire') || name.includes('wheel')) return '/icons/wheel.svg';
+      if (name.includes('body')) return '/icons/chassis.svg';
+      if (name.includes('dizel')) return '/icons/engine.svg';
+      return '/icons/forklift.svg';
     };
 
     return mainCategories.map((category, index) => (
@@ -279,9 +280,16 @@ export default function Header() {
           }}
           onClick={() => setShowCategories(false)}
         >
-          <span style={{ fontSize: '18px', marginBottom: '6px', color: '#6c757d' }}>
-            {getCategoryIcon(category.name)}
-          </span>
+          <img 
+            src={getCategoryIcon(category.name)} 
+            alt={category.name}
+            style={{ 
+              width: '18px', 
+              height: '18px', 
+              marginBottom: '6px',
+              filter: 'brightness(0.7)'
+            }}
+          />
           <span style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500', color: '#495057' }}>
             {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
           </span>
