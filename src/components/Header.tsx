@@ -470,11 +470,11 @@ export default function Header() {
                 </svg>
               </button>
               {showCategories && (
-                <div className="absolute top-full left-0 mt-4 w-full z-50" style={{ marginLeft: '-40px' }}>
+                <div className="absolute top-full left-0 mt-4 z-50" style={{ marginLeft: '-40px' }}>
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', padding: '16px', justifyContent: 'flex-start', alignItems: 'center', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', gap: '12px', padding: '20px', justifyContent: 'flex-start', alignItems: 'center', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' }}>
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
