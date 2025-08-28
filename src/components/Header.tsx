@@ -207,12 +207,12 @@ export default function Header() {
   // Function to render categories in grid format for header
   const renderCategoriesForHeader = (cats: any[]): React.ReactElement[] => {
     // Filter out subcategories, only show main categories
-    const mainCategories = cats.filter(category => !category.parentId);
+    const mainCategories = cats.filter(category => !category.parentId && !category.name.toLowerCase().includes('test'));
     
     const getCategoryIcon = (categoryName: string) => {
       const name = categoryName.toLowerCase();
-      if (name.includes('engine')) return '⚙️';
-      if (name.includes('transmission') || name.includes('transmissiya')) return '🔧';
+      if (name.includes('engine')) return '🔧';
+      if (name.includes('transmission') || name.includes('transmissiya')) return '⚙️';
       if (name.includes('brake') || name.includes('əyləc')) return '🛑';
       if (name.includes('hydraulic') || name.includes('hidravlika')) return '💧';
       if (name.includes('electrical') || name.includes('elektrik')) return '⚡';
@@ -225,6 +225,7 @@ export default function Header() {
       if (name.includes('mast')) return '📏';
       if (name.includes('drive')) return '🔗';
       if (name.includes('dizel')) return '🔥';
+      if (name.includes('forklift')) return '🚛';
       return '📦';
     };
 
@@ -233,10 +234,9 @@ export default function Header() {
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
-        minWidth: '100px',
-        padding: '12px 6px',
-        borderRight: index < mainCategories.length - 1 ? '1px solid #e5e7eb' : 'none',
-        backgroundColor: '#f9fafb'
+        minWidth: '80px',
+        padding: '8px 4px',
+        borderRight: index < mainCategories.length - 1 ? '1px solid #e5e7eb' : 'none'
       }}>
         <Link
           href={`/catalog?category=${category.id}`}
@@ -244,35 +244,31 @@ export default function Header() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '8px',
-            fontSize: '11px',
+            padding: '6px',
+            fontSize: '10px',
             color: '#374151',
             textDecoration: 'none',
-            borderRadius: '6px',
+            borderRadius: '4px',
             transition: 'all 0.2s',
             textAlign: 'center',
             whiteSpace: 'nowrap',
-            minWidth: '70px',
-            backgroundColor: 'white',
-            border: '1px solid #e5e7eb'
+            minWidth: '60px'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = '#f3f4f6';
-            e.currentTarget.style.transform = 'scale(1.02)';
-            e.currentTarget.style.borderColor = '#3b82f6';
+            e.currentTarget.style.transform = 'scale(1.05)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'white';
+            e.currentTarget.style.backgroundColor = 'transparent';
             e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.borderColor = '#e5e7eb';
           }}
           onClick={() => setShowCategories(false)}
         >
-          <div style={{ fontSize: '24px', marginBottom: '6px' }}>
+          <div style={{ fontSize: '20px', marginBottom: '4px' }}>
             {getCategoryIcon(category.name)}
           </div>
-          <div style={{ fontSize: '11px', lineHeight: '1.2', fontWeight: '500' }}>
-            {category.name.length > 12 ? category.name.substring(0, 12) + '...' : category.name}
+          <div style={{ fontSize: '10px', lineHeight: '1.1', fontWeight: '400' }}>
+            {category.name.length > 10 ? category.name.substring(0, 10) + '...' : category.name}
           </div>
         </Link>
       </div>
