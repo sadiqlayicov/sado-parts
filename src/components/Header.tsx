@@ -221,10 +221,10 @@ export default function Header() {
     flattenCategories(cats);
     
     return allCategories.map((category) => (
-      <div key={category.id} className="w-full">
+      <div key={category.id} className="flex-shrink-0">
         <Link
           href={`/catalog?category=${category.id}`}
-          className={`block w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition font-sans text-center`}
+          className={`block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition font-sans whitespace-nowrap`}
           onClick={() => setShowCategories(false)}
         >
           {category.name}
@@ -421,7 +421,7 @@ export default function Header() {
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-500 font-sans">Загрузка...</div>
                   ) : categories.length > 0 ? (
-                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2 px-3">
+                    <div className="flex flex-wrap gap-2 px-3">
                       {renderCategoriesForHeader(categories)}
                     </div>
                   ) : (
