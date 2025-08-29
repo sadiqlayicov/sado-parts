@@ -32,18 +32,15 @@ export async function GET(request: NextRequest) {
   let client;
   
   try {
-    // Add caching headers
-    const response = new Response();
-    response.headers.set('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
-    response.headers.set('Vary', 'Accept-Encoding');
-    
     client = await pool.connect();
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
 
-    // Build query based on filters
+    console.log('API called with categoryId:', categoryId);
+
+    // Base query for products
     let query = `
       SELECT 
         p.id,
@@ -68,8 +65,7 @@ export async function GET(request: NextRequest) {
       WHERE p."isActive" = true
     `;
     
-    const queryParams = [];
-    let paramCount = 1;
+    const queryParams: any[] = [];
     
     if (categoryId) {
       try {
@@ -86,94 +82,42 @@ export async function GET(request: NextRequest) {
         
         console.log('Found category:', categoryExistsResult.rows[0]);
         
-        // Use a simpler UNION approach to get products from main category and subcategories
-        query = `
-          SELECT 
-            p.id,
-            p.name,
-            p.description,
-            p.price,
-            p."salePrice",
-            p.sku,
-            p.stock,
-            p.images,
-            p."isActive",
-            p."isFeatured",
-            p.artikul,
-            p."catalogNumber",
-            p."createdAt",
-            p."updatedAt",
-            p."categoryId",
-            c.name as category_name,
-            c.description as category_description
-          FROM products p
-          LEFT JOIN categories c ON p."categoryId" = c.id
-          WHERE p."isActive" = true AND p."categoryId" = $1
-          
-          UNION
-          
-          SELECT 
-            p.id,
-            p.name,
-            p.description,
-            p.price,
-            p."salePrice",
-            p.sku,
-            p.stock,
-            p.images,
-            p."isActive",
-            p."isFeatured",
-            p.artikul,
-            p."catalogNumber",
-            p."createdAt",
-            p."updatedAt",
-            p."categoryId",
-            c.name as category_name,
-            c.description as category_description
-          FROM products p
-          LEFT JOIN categories c ON p."categoryId" = c.id
-          WHERE p."isActive" = true 
-          AND p."categoryId" IN (
-            SELECT id FROM categories 
-            WHERE "parentId" = $1 AND "isActive" = true
-          )
-        `;
+        // Get all subcategory IDs for this category
+        const subcategoriesQuery = 'SELECT id FROM categories WHERE "parentId" = $1 AND "isActive" = true';
+        const subcategoriesResult = await client.query(subcategoriesQuery, [categoryId]);
+        const subcategoryIds = subcategoriesResult.rows.map(row => row.id);
         
-        queryParams.push(categoryId);
+        console.log('Subcategory IDs found:', subcategoryIds);
         
-        console.log('Using UNION query for category:', categoryId);
+        // Build the WHERE clause for category filtering
+        if (subcategoryIds.length === 0) {
+          // Only main category, no subcategories
+          query += ` AND p."categoryId" = $1`;
+          queryParams.push(categoryId);
+        } else {
+          // Main category + subcategories
+          const allCategoryIds = [categoryId, ...subcategoryIds];
+          
+          // Create placeholders for the IN clause
+          const placeholders = allCategoryIds.map((_, index) => `$${index + 1}`).join(', ');
+          query += ` AND p."categoryId" IN (${placeholders})`;
+          queryParams.push(...allCategoryIds);
+        }
+        
+        console.log('Using category filter with IDs:', queryParams);
         
       } catch (error) {
         console.error('Error in category filtering:', error);
         // Fallback to simple category filtering
-        query = `
-          SELECT 
-            p.id,
-            p.name,
-            p.description,
-            p.price,
-            p."salePrice",
-            p.sku,
-            p.stock,
-            p.images,
-            p."isActive",
-            p."isFeatured",
-            p.artikul,
-            p."catalogNumber",
-            p."createdAt",
-            p."updatedAt",
-            p."categoryId",
-            c.name as category_name,
-            c.description as category_description
-          FROM products p
-          LEFT JOIN categories c ON p."categoryId" = c.id
-          WHERE p."isActive" = true AND p."categoryId" = $1
-        `;
+        query += ` AND p."categoryId" = $1`;
         queryParams.push(categoryId);
       }
     }
     
     query += ` ORDER BY p."createdAt" DESC`;
+
+    console.log('Final query:', query);
+    console.log('Query parameters:', queryParams);
 
     // Get products with categories
     const productsResult = await client.query(query, queryParams)
@@ -202,8 +146,11 @@ export async function GET(request: NextRequest) {
       } : null
     }))
 
+    console.log(`Found ${products.length} products`);
+
     return successResponse(products, `${products.length} товаров найдено`)
   } catch (error: any) {
+    console.error('Error in GET /api/products:', error);
     return handleDatabaseError(error, 'GET /api/products')
   } finally {
     if (client) {
