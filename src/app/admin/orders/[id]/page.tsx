@@ -220,9 +220,11 @@ export default function AdminOrderDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
+      <div className="min-h-screen bg-gray-50 pt-24">
         <div className="max-w-6xl mx-auto px-6 py-8">
-                     <div className="text-white text-xl">Загрузка...</div>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-600 text-xl">Загрузка...</div>
+          </div>
         </div>
       </div>
     );
@@ -230,29 +232,31 @@ export default function AdminOrderDetailsPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
+      <div className="min-h-screen bg-gray-50 pt-24">
         <div className="max-w-6xl mx-auto px-6 py-8">
-                     <div className="text-white text-xl">Заказ не найден</div>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-600 text-xl">Заказ не найден</div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0ea5e9] pt-24">
+    <div className="min-h-screen bg-gray-50 pt-24">
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-                             <h1 className="text-3xl font-bold text-white mb-2">Детали заказа</h1>
-               <p className="text-gray-300">Заказ #{order.orderNumber}</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Детали заказа</h1>
+              <p className="text-gray-600">Заказ #{order.orderNumber}</p>
             </div>
             <button
               onClick={() => router.push('/admin/orders')}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
             >
-                             ← Назад
+              ← Назад
             </button>
           </div>
         </div>
@@ -261,24 +265,24 @@ export default function AdminOrderDetailsPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Order Info */}
-            <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-                             <h2 className="text-xl font-bold text-white mb-4">Информация о заказе</h2>
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Информация о заказе</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                                     <p className="text-gray-400 text-sm">Номер заказа</p>
-                  <p className="text-white font-mono text-lg">{order.orderNumber}</p>
+                  <p className="text-gray-500 text-sm font-medium">Номер заказа</p>
+                  <p className="text-gray-900 font-mono text-lg">{order.orderNumber}</p>
                 </div>
                 <div>
-                                     <p className="text-gray-400 text-sm">Статус</p>
+                  <p className="text-gray-500 text-sm font-medium">Статус</p>
                   <div className="mt-1">{getStatusBadge(order.status)}</div>
                 </div>
                 <div>
-                                     <p className="text-gray-400 text-sm">Дата</p>
-                  <p className="text-white">{new Date(order.createdAt).toLocaleDateString('az-AZ')}</p>
+                  <p className="text-gray-500 text-sm font-medium">Дата</p>
+                  <p className="text-gray-900">{new Date(order.createdAt).toLocaleDateString('az-AZ')}</p>
                 </div>
                 <div>
-                                     <p className="text-gray-400 text-sm">Время</p>
-                  <p className="text-white">
+                  <p className="text-gray-500 text-sm font-medium">Время</p>
+                  <p className="text-gray-900">
                     {new Date(order.createdAt).toLocaleTimeString('az-AZ', { 
                       hour: '2-digit', 
                       minute: '2-digit' 
@@ -286,100 +290,100 @@ export default function AdminOrderDetailsPage() {
                   </p>
                 </div>
                 <div>
-                                     <p className="text-gray-400 text-sm">Общая сумма</p>
-                  <p className="text-cyan-400 font-bold text-2xl">
+                  <p className="text-gray-500 text-sm font-medium">Общая сумма</p>
+                  <p className="text-blue-600 font-bold text-2xl">
                     {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} {order.currency}
                   </p>
                 </div>
                 <div>
-                                     <p className="text-gray-400 text-sm">Количество товаров</p>
-                                     <p className="text-white text-lg">{order.items.length} видов</p>
+                  <p className="text-gray-500 text-sm font-medium">Количество товаров</p>
+                  <p className="text-gray-900 text-lg">{order.items.length} видов</p>
                 </div>
               </div>
               {order.notes && (
                 <div className="mt-4">
-                                     <p className="text-gray-400 text-sm">Примечания</p>
-                  <p className="text-white bg-[#0f172a] p-3 rounded mt-1">{order.notes}</p>
+                  <p className="text-gray-500 text-sm font-medium">Примечания</p>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg mt-1 border">{order.notes}</p>
                 </div>
               )}
             </div>
 
             {/* Customer Info */}
-            <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-                             <h2 className="text-xl font-bold text-white mb-4">Информация о клиенте</h2>
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Информация о клиенте</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                                     <p className="text-gray-400 text-sm">Имя Фамилия</p>
-                   <p className="text-white font-medium">{order.customerName || 'Клиент'}</p>
+                  <p className="text-gray-500 text-sm font-medium">Имя Фамилия</p>
+                  <p className="text-gray-900 font-medium">{order.customerName || 'Клиент'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Email</p>
-                  <p className="text-white">{order.customerEmail}</p>
+                  <p className="text-gray-500 text-sm font-medium">Email</p>
+                  <p className="text-gray-900">{order.customerEmail}</p>
                 </div>
                 {order.customerPhone && (
                   <div>
-                    <p className="text-gray-400 text-sm">Телефон</p>
-                    <p className="text-white">📞 {order.customerPhone}</p>
+                    <p className="text-gray-500 text-sm font-medium">Телефон</p>
+                    <p className="text-gray-900">📞 {order.customerPhone}</p>
                   </div>
                 )}
                 <div>
-                                     <p className="text-gray-400 text-sm">ID клиента</p>
-                  <p className="text-white font-mono text-sm">{order.userId}</p>
+                  <p className="text-gray-500 text-sm font-medium">ID клиента</p>
+                  <p className="text-gray-900 font-mono text-sm">{order.userId}</p>
                 </div>
               </div>
             </div>
 
             {/* Products */}
-            <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-                             <h2 className="text-xl font-bold text-white mb-4">Товары ({order.items.length})</h2>
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Товары ({order.items.length})</h2>
               <div className="space-y-4">
                 {order.items.map((item, index) => (
-                  <div key={item.id} className="bg-[#0f172a] rounded-lg p-4">
+                  <div key={item.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
-                          <span className="text-gray-400 text-sm">#{index + 1}</span>
+                          <span className="text-gray-500 text-sm font-medium">#{index + 1}</span>
                           <div>
-                            <h3 className="text-white font-medium">{item.name}</h3>
-                                                         <p className="text-gray-400 text-sm">Артикул: {item.sku}</p>
+                            <h3 className="text-gray-900 font-medium">{item.name}</h3>
+                            <p className="text-gray-600 text-sm">Артикул: {item.sku}</p>
                             {item.categoryName && (
-                                                             <p className="text-gray-400 text-sm">Категория: {item.categoryName}</p>
+                              <p className="text-gray-600 text-sm">Категория: {item.categoryName}</p>
                             )}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-3 mb-2">
-                                                     <span className="text-white font-medium">Количество:</span>
+                          <span className="text-gray-700 font-medium">Количество:</span>
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
                                 console.log('Decrease button clicked for item:', item.id, 'current quantity:', item.quantity);
                                 updateItemQuantity(item.id, Math.max(1, item.quantity - 1));
                               }}
-                              className="w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded flex items-center justify-center transition"
+                              className="w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded flex items-center justify-center transition-colors"
                             >
                               -
                             </button>
-                            <span className="text-white font-bold min-w-[40px] text-center">{item.quantity}</span>
+                            <span className="text-gray-900 font-bold min-w-[40px] text-center">{item.quantity}</span>
                             <button
                               onClick={() => {
                                 console.log('Increase button clicked for item:', item.id, 'current quantity:', item.quantity);
                                 updateItemQuantity(item.id, item.quantity + 1);
                               }}
-                              className="w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded flex items-center justify-center transition"
+                              className="w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded flex items-center justify-center transition-colors"
                             >
                               +
                             </button>
                           </div>
                         </div>
-                                <p className="text-gray-400 text-sm">{item.price.toFixed(2)} ₽</p>
-        <p className="text-cyan-500 font-bold">{item.totalPrice.toFixed(2)} ₽</p>
+                        <p className="text-gray-600 text-sm">{item.price.toFixed(2)} ₽</p>
+                        <p className="text-blue-600 font-bold">{item.totalPrice.toFixed(2)} ₽</p>
                         <button
                           onClick={() => removeItem(item.id)}
-                          className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition"
+                          className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
                         >
-                                                     🗑️ Удалить
+                          🗑️ Удалить
                         </button>
                       </div>
                     </div>
@@ -392,8 +396,8 @@ export default function AdminOrderDetailsPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Actions */}
-            <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-                             <h2 className="text-xl font-bold text-white mb-4">Операции</h2>
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Операции</h2>
               <div className="space-y-3">
                 <button
                   onClick={async () => {
@@ -414,54 +418,54 @@ export default function AdminOrderDetailsPage() {
                       alert(e.message || 'Не удалось подтвердить оплату');
                     }
                   }}
-                  className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition font-medium"
+                  className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium"
                 >
                   💳 Отметить как оплачено
                 </button>
                 <button
                   onClick={() => updateOrderStatus('confirmed')}
-                  className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded transition font-medium"
+                  className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
                 >
-                                     ✅ Подтвердить
+                  ✅ Подтвердить
                 </button>
                 <button
                   onClick={() => updateOrderStatus('cancelled')}
-                  className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded transition font-medium"
+                  className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
                 >
-                                     ❌ Отклонить
+                  ❌ Отклонить
                 </button>
                 <button
                   onClick={() => updateOrderStatus('delivered')}
-                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition font-medium"
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
                 >
-                                     🔄 Завершить
+                  🔄 Завершить
                 </button>
                 <button
                   onClick={() => updateOrderStatus('pending')}
-                  className="w-full px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition font-medium"
+                  className="w-full px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors font-medium"
                 >
-                                     ⏳ В ожидании
+                  ⏳ В ожидании
                 </button>
               </div>
             </div>
 
             {/* Summary */}
-            <div className="bg-[#1e293b] rounded-xl p-6 shadow-2xl">
-                             <h2 className="text-xl font-bold text-white mb-4">Сводка</h2>
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Сводка</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                                     <span className="text-gray-400">Виды товаров:</span>
-                  <span className="text-white font-medium">{order.items.length}</span>
+                  <span className="text-gray-600">Виды товаров:</span>
+                  <span className="text-gray-900 font-medium">{order.items.length}</span>
                 </div>
                 <div className="flex justify-between">
-                                     <span className="text-gray-400">Общее количество:</span>
-                  <span className="text-white font-medium">
+                  <span className="text-gray-600">Общее количество:</span>
+                  <span className="text-gray-900 font-medium">
                     {order.items.reduce((sum, item) => sum + item.quantity, 0)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                                     <span className="text-gray-400">Общая сумма:</span>
-                  <span className="text-cyan-400 font-bold">
+                  <span className="text-gray-600">Общая сумма:</span>
+                  <span className="text-blue-600 font-bold">
                     {(parseFloat(order.totalAmount?.toString() || '0')).toFixed(2)} ₽
                   </span>
                 </div>
