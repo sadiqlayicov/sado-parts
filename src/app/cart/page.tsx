@@ -95,22 +95,34 @@ export default function CartPage() {
       return;
     }
 
+    if (!user?.id) {
+      alert('Пользователь не найден. Пожалуйста, войдите в систему.');
+      return;
+    }
+
     setCheckoutLoading(true);
     try {
+      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          userId: user.id,
+          orderNumber: orderNumber,
           items: cartItems.map(item => ({
             productId: item.productId,
+            name: item.name,
+            sku: item.sku || '',
+            categoryName: item.categoryName || '',
             quantity: item.quantity,
             price: item.price,
             totalPrice: item.totalPrice
           })),
           totalAmount: totalSalePrice,
-          currency: 'RUB'
+          notes: `Заказ создан пользователем ${user.email}`
         }),
       });
 
@@ -118,12 +130,13 @@ export default function CartPage() {
         const result = await response.json();
         if (result.success) {
           await clearCart();
-          router.push(`/payment/${result.orderId}`);
+          router.push(`/payment/${result.order.id}`);
         } else {
-          alert('Ошибка при создании заказа: ' + result.message);
+          alert('Ошибка при создании заказа: ' + (result.error || result.message));
         }
       } else {
-        alert('Ошибка при создании заказа');
+        const errorData = await response.json();
+        alert('Ошибка при создании заказа: ' + (errorData.error || 'Неизвестная ошибка'));
       }
     } catch (error) {
       console.error('Checkout error:', error);
