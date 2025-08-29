@@ -5,55 +5,23 @@ import { useAuth } from '../../../components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { FaEye, FaCheck, FaTimes, FaTrash } from 'react-icons/fa';
 
+interface Order {
+  id: string;
+  client: string;
+  email: string;
+  inn: string;
+  items: number;
+  totalAmount: number;
+  status: string;
+  date: string;
+  time: string;
+}
+
 export default function OrdersPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
-  const [orders, setOrders] = useState([
-    {
-      id: 'SADO-1756201857474-LYNJL9',
-      client: 'Admin User',
-      email: 'admin@sado-parts.ru',
-      inn: 'ИНН: Не указан',
-      items: 1,
-      totalAmount: 300.00,
-      status: 'pending',
-      date: '2025-08-26',
-      time: '12:50'
-    },
-    {
-      id: 'SADO-1756134024242-WMJ3M5',
-      client: 'Admin User',
-      email: 'admin@sado-parts.ru',
-      inn: 'ИНН: Не указан',
-      items: 2,
-      totalAmount: 210.00,
-      status: 'pending',
-      date: '2025-08-25',
-      time: '18:00'
-    },
-    {
-      id: 'SADO-1756112426283-FAIDQZ',
-      client: 'Admin User',
-      email: 'admin@sado-parts.ru',
-      inn: 'ИНН: Не указан',
-      items: 1,
-      totalAmount: 300.00,
-      status: 'pending',
-      date: '2025-08-25',
-      time: '12:00'
-    },
-    {
-      id: 'SADO-1756111517058-N7QMYS',
-      client: 'Admin User',
-      email: 'admin@sado-parts.ru',
-      inn: 'ИНН: Не указан',
-      items: 1,
-      totalAmount: 300.00,
-      status: 'pending',
-      date: '2025-08-25',
-      time: '11:45'
-    }
-  ]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   useEffect(() => {
@@ -65,7 +33,45 @@ export default function OrdersPage() {
       router.push('/');
       return;
     }
+    
+    // Fetch orders from API
+    fetchOrders();
   }, [isAuthenticated, user, router]);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/orders');
+      const data = await response.json();
+      
+      if (data.success) {
+        // Transform API data to match frontend format
+        const transformedOrders = data.orders.map((order: any) => ({
+          id: order.id,
+          client: order.customerName || 'Müştəri',
+          email: order.customerEmail || 'email@example.com',
+          inn: order.customerInn ? `ИНН: ${order.customerInn}` : 'ИНН: Не указан',
+          items: order.items?.length || 0,
+          totalAmount: parseFloat(order.totalAmount) || 0,
+          status: order.status || 'pending',
+          date: new Date(order.createdAt).toLocaleDateString('ru-RU'),
+          time: new Date(order.createdAt).toLocaleTimeString('ru-RU', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+        }));
+        setOrders(transformedOrders);
+      } else {
+        console.error('Failed to fetch orders:', data.error);
+        alert('Sifarişləri yükləmə zamanı xəta baş verdi');
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      alert('Sifarişləri yükləmə zamanı xəta baş verdi');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSelectAll = () => {
     if (selectedOrders.length === orders.length) {
@@ -232,7 +238,20 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {orders.map((order) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                      Загрузка заказов...
+                    </td>
+                  </tr>
+                ) : orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                      Заказы не найдены
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
@@ -290,7 +309,8 @@ export default function OrdersPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>
