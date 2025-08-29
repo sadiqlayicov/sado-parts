@@ -73,8 +73,6 @@ export default function Header() {
   // Fetch wishlist products when wishlist changes
   useEffect(() => {
     const fetchWishlistProducts = async () => {
-      console.log('Fetching wishlist products for:', wishlist);
-      
       if (wishlist.length === 0) {
         setWishlistProducts([]);
         setWishlistLoading(false);
@@ -85,28 +83,22 @@ export default function Header() {
       try {
         // Use GET method with query parameters
         const idsParam = wishlist.join(',');
-        console.log('Making request to batch API with IDs:', idsParam);
         
         const response = await fetch(`/api/products/batch?ids=${encodeURIComponent(idsParam)}`);
 
         if (response.ok) {
           const data = await response.json();
-          console.log('Batch API response:', data);
           
           // The API returns the products directly as an array
           if (Array.isArray(data)) {
-            console.log('Setting wishlist products:', data.length, 'products');
             setWishlistProducts(data);
           } else {
-            console.error('Unexpected response format:', data);
             setWishlistProducts([]);
           }
         } else {
-          console.error('Failed to fetch wishlist products:', response.status);
           setWishlistProducts([]);
         }
       } catch (error) {
-        console.error('Error fetching wishlist products:', error);
         setWishlistProducts([]);
       } finally {
         setWishlistLoading(false);

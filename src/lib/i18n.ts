@@ -10,11 +10,11 @@ import de from '../locales/de/common.json';
 
 const isServer = typeof window === 'undefined';
 
-const i18nInstance = isServer
-  ? i18n.use(initReactI18next)
-  : i18n.use(LanguageDetector).use(initReactI18next);
-
-i18nInstance.init({
+// Initialize i18next properly
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
   resources: {
     az: { translation: az },
     ru: { translation: ru },

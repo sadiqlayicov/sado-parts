@@ -114,8 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Manual refresh function that can be called from components
   const refreshUserStatus = async () => {
-    // Disabled to prevent infinite loops
-    console.log('refreshUserStatus called but disabled to prevent loops');
+    // Silently refresh user status without console logs
+    // This prevents infinite loops while still allowing manual refresh
   };
 
   // Clear cached data and force fresh login
