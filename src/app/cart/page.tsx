@@ -130,7 +130,7 @@ export default function CartPage() {
         const result = await response.json();
         if (result.success) {
           await clearCart();
-          router.push(`/payment/${result.order.id}`);
+          router.push(`/payment?orderId=${result.order.id}`);
         } else {
           alert('Ошибка при создании заказа: ' + (result.error || result.message));
         }
