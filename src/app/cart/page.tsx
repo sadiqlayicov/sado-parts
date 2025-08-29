@@ -102,7 +102,16 @@ export default function CartPage() {
 
     setCheckoutLoading(true);
     try {
-      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      // Get the next sequential order number
+      const orderNumberResponse = await fetch('/api/orders/next-number');
+      const orderNumberData = await orderNumberResponse.json();
+      
+      if (!orderNumberData.success) {
+        alert('Ошибка при получении номера заказа');
+        return;
+      }
+      
+      const orderNumber = orderNumberData.nextOrderNumber;
       
       const response = await fetch('/api/orders', {
         method: 'POST',
