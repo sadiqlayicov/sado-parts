@@ -181,43 +181,82 @@ function CatalogPage() {
 
   // Memoized filtered products
   const filteredProducts = useMemo(() => {
-    return products.filter((product: any) => {
-      // Category filtering - check by ID first, then by name
-      const matchesCategory = !filter || 
-        product.categoryId === filter || 
-        product.category?.id === filter || 
-        product.category?.name === filter;
-      
-      const matchesBrand = !brandFilter || product.brand === brandFilter;
-      
-      const matchesSearch = !searchQuery || 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      let matchesPrice = true;
-      if (priceFilter) {
-        const [min, max] = priceFilter.split('-').map(Number);
-        if (max) {
-          matchesPrice = product.price >= min && product.price <= max;
-        } else {
-          matchesPrice = product.price >= min;
+    // If a category is selected via URL params, don't do additional client-side filtering
+    // because the API already returns the correct filtered products
+    const cat = searchParams.get("category");
+    
+    if (cat) {
+      // Category is already filtered by API, only apply other filters
+      return products.filter((product: any) => {
+        const matchesBrand = !brandFilter || product.brand === brandFilter;
+        
+        const matchesSearch = !searchQuery || 
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+        let matchesPrice = true;
+        if (priceFilter) {
+          const [min, max] = priceFilter.split('-').map(Number);
+          if (max) {
+            matchesPrice = product.price >= min && product.price <= max;
+          } else {
+            matchesPrice = product.price >= min;
+          }
         }
-      }
-      
-      let matchesStock = true;
-      if (stockFilter) {
-        const [min, max] = stockFilter.split('-').map(Number);
-        if (max) {
-          matchesStock = product.stock >= min && product.stock <= max;
-        } else {
-          matchesStock = product.stock >= min;
+        
+        let matchesStock = true;
+        if (stockFilter) {
+          const [min, max] = stockFilter.split('-').map(Number);
+          if (max) {
+            matchesStock = product.stock >= min && product.stock <= max;
+          } else {
+            matchesStock = product.stock >= min;
+          }
         }
-      }
-      
-      return matchesCategory && matchesBrand && matchesSearch && matchesPrice && matchesStock;
-    });
-  }, [products, filter, brandFilter, searchQuery, priceFilter, stockFilter]);
+        
+        return matchesBrand && matchesSearch && matchesPrice && matchesStock;
+      });
+    } else {
+      // No category selected, apply all filters including category
+      return products.filter((product: any) => {
+        // Category filtering - check by ID first, then by name
+        const matchesCategory = !filter || 
+          product.categoryId === filter || 
+          product.category?.id === filter || 
+          product.category?.name === filter;
+        
+        const matchesBrand = !brandFilter || product.brand === brandFilter;
+        
+        const matchesSearch = !searchQuery || 
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+        let matchesPrice = true;
+        if (priceFilter) {
+          const [min, max] = priceFilter.split('-').map(Number);
+          if (max) {
+            matchesPrice = product.price >= min && product.price <= max;
+          } else {
+            matchesPrice = product.price >= min;
+          }
+        }
+        
+        let matchesStock = true;
+        if (stockFilter) {
+          const [min, max] = stockFilter.split('-').map(Number);
+          if (max) {
+            matchesStock = product.stock >= min && product.stock <= max;
+          } else {
+            matchesStock = product.stock >= min;
+          }
+        }
+        
+        return matchesCategory && matchesBrand && matchesSearch && matchesPrice && matchesStock;
+      });
+    }
+  }, [products, filter, brandFilter, searchQuery, priceFilter, stockFilter, searchParams]);
 
   // Memoized pagination
   const totalPages = Math.ceil(filteredProducts.length / perPage);
