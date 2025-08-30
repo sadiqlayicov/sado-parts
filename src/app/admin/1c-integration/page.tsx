@@ -76,6 +76,15 @@ export default function Admin1CIntegrationPage() {
   };
 
   const testConnection = async () => {
+    if (!connectionSettings.url || !connectionSettings.username || !connectionSettings.password) {
+      addSyncResult({
+        success: false,
+        message: 'Пожалуйста, заполните все поля настроек соединения',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await fetch('/api/1c-integration/test-connection', {
@@ -414,6 +423,77 @@ export default function Admin1CIntegrationPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Connection Settings - Always Visible */}
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Настройки соединения</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    URL 1C
+                  </label>
+                  <input
+                    type="url"
+                    value={connectionSettings.url}
+                    onChange={(e) => setConnectionSettings(prev => ({ ...prev, url: e.target.value }))}
+                    placeholder="http://192.168.1.100:8080"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Логин
+                  </label>
+                  <input
+                    type="text"
+                    value={connectionSettings.username}
+                    onChange={(e) => setConnectionSettings(prev => ({ ...prev, username: e.target.value }))}
+                    placeholder="admin"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Пароль
+                  </label>
+                  <input
+                    type="password"
+                    value={connectionSettings.password}
+                    onChange={(e) => setConnectionSettings(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Пароль"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex items-center justify-end">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={connectionSettings.enabled}
+                      onChange={(e) => setConnectionSettings(prev => ({ ...prev, enabled: e.target.checked }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label className="ml-2 block text-sm text-gray-900">
+                      Включить интеграцию
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div className="flex space-x-3 mt-4">
+                <button
+                  onClick={saveConnectionSettings}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+                >
+                  Сохранить настройки
+                </button>
+                <button 
+                  onClick={testConnection}
+                  disabled={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition"
+                >
+                  {isLoading ? 'Проверка...' : 'Проверить соединение'}
+                </button>
+              </div>
+            </div>
+
             {/* Integration Status */}
             <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Статус интеграции</h2>
@@ -512,13 +592,6 @@ export default function Admin1CIntegrationPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Быстрые действия</h2>
               <div className="space-y-3">
                 <button 
-                  onClick={testConnection}
-                  disabled={isLoading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition"
-                >
-                  {isLoading ? 'Проверка...' : 'Проверить соединение'}
-                </button>
-                <button 
                   onClick={syncProducts}
                   disabled={isLoading || !integrationStatus.isConnected}
                   className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition"
@@ -549,67 +622,18 @@ export default function Admin1CIntegrationPage() {
               </div>
             </div>
 
-            {/* Connection Settings */}
-            {activeTab === 'settings' && (
-              <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Настройки соединения</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      URL 1C
-                    </label>
-                    <input
-                      type="url"
-                      value={connectionSettings.url}
-                      onChange={(e) => setConnectionSettings(prev => ({ ...prev, url: e.target.value }))}
-                      placeholder="https://your-1c-server.com/your-base"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Логин
-                    </label>
-                    <input
-                      type="text"
-                      value={connectionSettings.username}
-                      onChange={(e) => setConnectionSettings(prev => ({ ...prev, username: e.target.value }))}
-                      placeholder="Логин для авторизации"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Пароль
-                    </label>
-                    <input
-                      type="password"
-                      value={connectionSettings.password}
-                      onChange={(e) => setConnectionSettings(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="Пароль для авторизации"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={connectionSettings.enabled}
-                      onChange={(e) => setConnectionSettings(prev => ({ ...prev, enabled: e.target.checked }))}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label className="ml-2 block text-sm text-gray-900">
-                      Включить интеграцию
-                    </label>
-                  </div>
-                  <button
-                    onClick={saveConnectionSettings}
-                    className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-                  >
-                    Сохранить настройки
-                  </button>
-                </div>
+            {/* Help Section */}
+            <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+              <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 Подсказка</h3>
+              <div className="text-sm text-blue-800 space-y-2">
+                <p>1. Заполните настройки соединения</p>
+                <p>2. Нажмите "Проверить соединение"</p>
+                <p>3. После успешного подключения используйте кнопки синхронизации</p>
+                <p className="text-xs mt-3">
+                  <strong>Пример URL:</strong> http://192.168.1.100:8080
+                </p>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
