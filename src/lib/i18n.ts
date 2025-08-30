@@ -10,27 +10,29 @@ import de from '../locales/de/common.json';
 
 const isServer = typeof window === 'undefined';
 
-// Initialize i18next properly
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-  resources: {
-    az: { translation: az },
-    ru: { translation: ru },
-    en: { translation: en },
-    zh: { translation: zh },
-    de: { translation: de },
-  },
-  lng: 'ru', // SSR üçün həmişə rusca
-  fallbackLng: 'ru',
-  interpolation: {
-    escapeValue: false,
-  },
-  detection: {
-    order: ['localStorage', 'navigator', 'htmlTag'],
-    caches: ['localStorage'],
-  },
-});
+// Only initialize i18n on the client side
+if (!isServer) {
+  i18n
+    .use(LanguageDetector)
+    .use(initReactI18next)
+    .init({
+    resources: {
+      az: { translation: az },
+      ru: { translation: ru },
+      en: { translation: en },
+      zh: { translation: zh },
+      de: { translation: de },
+    },
+    lng: 'ru', // SSR üçün həmişə rusca
+    fallbackLng: 'ru',
+    interpolation: {
+      escapeValue: false,
+    },
+    detection: {
+      order: ['localStorage', 'navigator', 'htmlTag'],
+      caches: ['localStorage'],
+    },
+  });
+}
 
 export default i18n; 

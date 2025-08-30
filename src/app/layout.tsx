@@ -4,9 +4,9 @@ import "./globals.css";
 import Head from "next/head";
 import { CartProvider } from "../components/CartProvider";
 import { AuthProvider } from "../components/AuthProvider";
+import I18nProvider from "../components/I18nProvider";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import "../lib/i18n"; // i18n konfiqurasiyasını import et
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,13 +50,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="google-site-verification" content="" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>
-          <CartProvider>
-            <Header />
-            <div className="pt-16">{children}</div>
-            <Footer />
-          </CartProvider>
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Header />
+              <div className="pt-16">{children}</div>
+              <Footer />
+            </CartProvider>
+          </AuthProvider>
+        </I18nProvider>
       </body>
     </html>
   );
