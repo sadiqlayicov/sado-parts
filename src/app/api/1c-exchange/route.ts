@@ -20,10 +20,17 @@ export async function GET(request: NextRequest) {
     
     console.log('CommerceML GET request:', { action, format });
 
+    // Handle connection test (no action parameter)
     if (!action) {
       return NextResponse.json(
-        { error: 'Требуется параметр action' },
-        { status: 400 }
+        { 
+          success: true,
+          message: 'CommerceML 2.05 API is ready',
+          version: '2.05',
+          server: 'Sado-Parts Online Store',
+          timestamp: new Date().toISOString()
+        },
+        { status: 200 }
       );
     }
 
@@ -40,6 +47,17 @@ export async function GET(request: NextRequest) {
         return await getClassifier(client, format);
       case 'get_export_jobs':
         return await getExportJobs(client);
+      case 'check':
+        return NextResponse.json(
+          { 
+            success: true,
+            message: 'CommerceML 2.05 API connection successful',
+            version: '2.05',
+            server: 'Sado-Parts Online Store',
+            timestamp: new Date().toISOString()
+          },
+          { status: 200 }
+        );
       default:
         return NextResponse.json(
           { error: 'Неизвестное действие' },
@@ -69,10 +87,17 @@ export async function POST(request: NextRequest) {
     
     console.log('CommerceML POST request:', { action });
 
+    // Handle connection test (no action parameter)
     if (!action) {
       return NextResponse.json(
-        { error: 'Требуется параметр action' },
-        { status: 400 }
+        { 
+          success: true,
+          message: 'CommerceML 2.05 API is ready for data exchange',
+          version: '2.05',
+          server: 'Sado-Parts Online Store',
+          timestamp: new Date().toISOString()
+        },
+        { status: 200 }
       );
     }
 
@@ -88,6 +113,17 @@ export async function POST(request: NextRequest) {
         return await importOrders(client, body);
       case 'export_data':
         return await exportData(client, body);
+      case 'check':
+        return NextResponse.json(
+          { 
+            success: true,
+            message: 'CommerceML 2.05 API connection successful',
+            version: '2.05',
+            server: 'Sado-Parts Online Store',
+            timestamp: new Date().toISOString()
+          },
+          { status: 200 }
+        );
       default:
         return NextResponse.json(
           { error: 'Неизвестное действие' },
