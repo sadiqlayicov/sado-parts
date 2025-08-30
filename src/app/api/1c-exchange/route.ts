@@ -60,30 +60,7 @@ export async function GET(request: NextRequest) {
     if (!action) {
       console.log('Connection test request - no action parameter');
       
-      // Check if we have any authentication
-      const hasAuth = username || basicAuthUsername;
-      
-      if (!hasAuth) {
-        console.log('No authentication provided');
-        return new NextResponse(
-          `<?xml version="1.0" encoding="UTF-8"?>
-<КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="${new Date().toISOString()}">
-  <Сообщение>
-    <Текст>Требуется авторизация</Текст>
-    <Статус>Ошибка</Статус>
-  </Сообщение>
-</КоммерческаяИнформация>`,
-          {
-            status: 401,
-            headers: {
-              'Content-Type': 'application/xml; charset=utf-8',
-              'WWW-Authenticate': 'Basic realm="1C Exchange"'
-            },
-          }
-        );
-      }
-      
-      // For 1C compatibility, return XML response
+      // For 1C compatibility, return XML response without authentication
       const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="${new Date().toISOString()}">
   <Сообщение>
@@ -162,43 +139,7 @@ export async function POST(request: NextRequest) {
     if (!action) {
       console.log('Connection test request - no action parameter');
       
-      // Check for Basic Auth header as fallback
-      const authHeader = request.headers.get('authorization');
-      let basicAuthUsername = null;
-      let basicAuthPassword = null;
-      
-      if (authHeader && authHeader.startsWith('Basic ')) {
-        const base64Credentials = authHeader.substring(6);
-        const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
-        const [user, pass] = credentials.split(':');
-        basicAuthUsername = user;
-        basicAuthPassword = pass;
-      }
-      
-      // Check if we have any authentication
-      const hasAuth = username || basicAuthUsername;
-      
-      if (!hasAuth) {
-        console.log('No authentication provided');
-        return new NextResponse(
-          `<?xml version="1.0" encoding="UTF-8"?>
-<КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="${new Date().toISOString()}">
-  <Сообщение>
-    <Текст>Требуется авторизация</Текст>
-    <Статус>Ошибка</Статус>
-  </Сообщение>
-</КоммерческаяИнформация>`,
-          {
-            status: 401,
-            headers: {
-              'Content-Type': 'application/xml; charset=utf-8',
-              'WWW-Authenticate': 'Basic realm="1C Exchange"'
-            },
-          }
-        );
-      }
-      
-      // For 1C compatibility, return XML response
+      // For 1C compatibility, return XML response without authentication
       const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="${new Date().toISOString()}">
   <Сообщение>
