@@ -22,10 +22,11 @@ function authenticateRequest(request: NextRequest): boolean {
     const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
     const [username, password] = credentials.split(':');
 
-    // Check against expected credentials
-    // You can make this configurable via environment variables
+    // Check against environment variables
     const expectedUsername = process.env.ONEC_USERNAME || 'admin';
     const expectedPassword = process.env.ONEC_PASSWORD || 'admin123';
+
+    console.log('Auth attempt:', { username, password: '***', expectedUsername, expectedPassword });
 
     return username === expectedUsername && password === expectedPassword;
   } catch (error) {
