@@ -9,6 +9,31 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
+// Simple authentication function
+function authenticateRequest(request: NextRequest): boolean {
+  const authHeader = request.headers.get('authorization');
+  
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    return false;
+  }
+
+  try {
+    const base64Credentials = authHeader.split(' ')[1];
+    const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+    const [username, password] = credentials.split(':');
+
+    // Check against expected credentials
+    // You can make this configurable via environment variables
+    const expectedUsername = process.env.ONEC_USERNAME || 'admin';
+    const expectedPassword = process.env.ONEC_PASSWORD || 'admin123';
+
+    return username === expectedUsername && password === expectedPassword;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return false;
+  }
+}
+
 // CommerceML 2.05 Standard API
 export async function GET(request: NextRequest) {
   let client: any;
@@ -22,6 +47,14 @@ export async function GET(request: NextRequest) {
 
     // Handle connection test (no action parameter)
     if (!action) {
+      // For connection test, we still need to authenticate
+      if (!authenticateRequest(request)) {
+        return NextResponse.json(
+          { error: 'Authentication failed' },
+          { status: 401 }
+        );
+      }
+
       return NextResponse.json(
         { 
           success: true,
@@ -31,6 +64,14 @@ export async function GET(request: NextRequest) {
           timestamp: new Date().toISOString()
         },
         { status: 200 }
+      );
+    }
+
+    // Authenticate all other requests
+    if (!authenticateRequest(request)) {
+      return NextResponse.json(
+        { error: 'Authentication failed' },
+        { status: 401 }
       );
     }
 
@@ -89,6 +130,14 @@ export async function POST(request: NextRequest) {
 
     // Handle connection test (no action parameter)
     if (!action) {
+      // For connection test, we still need to authenticate
+      if (!authenticateRequest(request)) {
+        return NextResponse.json(
+          { error: 'Authentication failed' },
+          { status: 401 }
+        );
+      }
+
       return NextResponse.json(
         { 
           success: true,
@@ -98,6 +147,14 @@ export async function POST(request: NextRequest) {
           timestamp: new Date().toISOString()
         },
         { status: 200 }
+      );
+    }
+
+    // Authenticate all other requests
+    if (!authenticateRequest(request)) {
+      return NextResponse.json(
+        { error: 'Authentication failed' },
+        { status: 401 }
       );
     }
 
