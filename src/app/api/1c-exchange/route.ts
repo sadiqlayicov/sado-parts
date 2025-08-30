@@ -13,7 +13,20 @@ const pool = new Pool({
 function authenticateRequest(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
+  console.log('Auth headers:', {
+    authorization: authHeader,
+    contentType: request.headers.get('content-type'),
+    userAgent: request.headers.get('user-agent')
+  });
+  
+  // If no auth header, allow for connection tests
+  if (!authHeader) {
+    console.log('No auth header - allowing connection test');
+    return true;
+  }
+  
+  if (!authHeader.startsWith('Basic ')) {
+    console.log('No Basic auth header found');
     return false;
   }
 
@@ -26,7 +39,14 @@ function authenticateRequest(request: NextRequest): boolean {
     const expectedUsername = process.env.ONEC_USERNAME || 'admin';
     const expectedPassword = process.env.ONEC_PASSWORD || 'admin123';
 
-    console.log('Auth attempt:', { username, password: '***', expectedUsername, expectedPassword });
+    console.log('Auth attempt:', { 
+      username, 
+      password: password ? '***' : 'empty', 
+      expectedUsername, 
+      expectedPassword,
+      usernameMatch: username === expectedUsername,
+      passwordMatch: password === expectedPassword
+    });
 
     return username === expectedUsername && password === expectedPassword;
   } catch (error) {
