@@ -9,7 +9,7 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-// Simple authentication function
+// Simple authentication function - always allow for 1C compatibility
 function authenticateRequest(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   
@@ -20,43 +20,9 @@ function authenticateRequest(request: NextRequest): boolean {
     userAgent: request.headers.get('user-agent')
   });
   
-  // For connection tests, always allow
-  if (!authHeader) {
-    console.log('No auth header - allowing connection test');
-    return true;
-  }
-  
-  if (!authHeader.startsWith('Basic ')) {
-    console.log('No Basic auth header found - but allowing anyway for testing');
-    return true;
-  }
-
-  try {
-    const base64Credentials = authHeader.split(' ')[1];
-    const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
-    const [username, password] = credentials.split(':');
-
-    // Check against environment variables
-    const expectedUsername = process.env.ONEC_USERNAME || 'admin';
-    const expectedPassword = process.env.ONEC_PASSWORD || 'admin123';
-
-    console.log('Auth attempt:', { 
-      username, 
-      password: password ? '***' : 'empty', 
-      expectedUsername, 
-      expectedPassword,
-      usernameMatch: username === expectedUsername,
-      passwordMatch: password === expectedPassword
-    });
-
-    // For now, allow all requests for testing
-    console.log('Allowing request for testing');
-    return true;
-  } catch (error) {
-    console.error('Authentication error:', error);
-    // For testing, allow even on error
-    return true;
-  }
+  // For 1C compatibility, allow all requests
+  console.log('Allowing all requests for 1C compatibility');
+  return true;
 }
 
 // CommerceML 2.05 Standard API
@@ -166,10 +132,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           success: true,
-          message: 'CommerceML 2.05 API is ready for data exchange',
-          version: '2.05',
-          server: 'Sado-Parts Online Store',
-          timestamp: new Date().toISOString()
+          message: 'Connection successful',
+          status: 'ready'
         },
         { status: 200 }
       );
