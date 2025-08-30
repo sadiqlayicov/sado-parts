@@ -28,27 +28,35 @@ function authenticateRequest(request: NextRequest): boolean {
 // CommerceML 2.05 Standard API
 export async function GET(request: NextRequest) {
   let client: any;
-  
+
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
     const format = searchParams.get('format') || 'xml';
-    
-    console.log('CommerceML GET request:', { action, format });
+    const username = searchParams.get('username');
+    const password = searchParams.get('password');
+
+    console.log('CommerceML GET request:', { action, format, username: username ? 'provided' : 'not provided' });
 
     // Handle connection test (no action parameter)
     if (!action) {
       console.log('Connection test request - no action parameter');
       
-      // Always return success for connection tests
-      return NextResponse.json(
-        { 
-          success: true,
-          message: 'Connection successful',
-          status: 'ready'
+      // For 1C compatibility, return XML response
+      const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
+<КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="${new Date().toISOString()}">
+  <Сообщение>
+    <Текст>Соединение установлено успешно</Текст>
+    <Статус>Готов</Статус>
+  </Сообщение>
+</КоммерческаяИнформация>`;
+
+      return new NextResponse(xmlResponse, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
         },
-        { status: 200 }
-      );
+      });
     }
 
     // Log the request
@@ -111,15 +119,21 @@ export async function POST(request: NextRequest) {
     if (!action) {
       console.log('Connection test request - no action parameter');
       
-      // Always return success for connection tests
-      return NextResponse.json(
-        { 
-          success: true,
-          message: 'Connection successful',
-          status: 'ready'
+      // For 1C compatibility, return XML response
+      const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
+<КоммерческаяИнформация ВерсияСхемы="2.05" ДатаФормирования="${new Date().toISOString()}">
+  <Сообщение>
+    <Текст>Соединение установлено успешно</Текст>
+    <Статус>Готов</Статус>
+  </Сообщение>
+</КоммерческаяИнформация>`;
+
+      return new NextResponse(xmlResponse, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
         },
-        { status: 200 }
-      );
+      });
     }
 
     // Log the request
