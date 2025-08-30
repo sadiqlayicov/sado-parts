@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
+// Declare global variable for storing uploaded file content
+declare global {
+  var uploadedFileContent: string | null;
+}
+
+// Initialize global variable
+if (!global.uploadedFileContent) {
+  global.uploadedFileContent = null;
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
@@ -68,25 +78,69 @@ export async function POST(request: NextRequest) {
   if (type === 'catalog' && mode === 'file') {
     console.log('1C File upload:', filename);
     
-    // For now, just return success
-    return new NextResponse('success', {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-      },
-    });
+    try {
+      const body = await request.text();
+      console.log('📁 Received file content length:', body.length);
+      console.log('📄 File content preview:', body.substring(0, 500));
+      
+      // Store the file content for processing
+      global.uploadedFileContent = body;
+      
+      return new NextResponse('success', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      });
+    } catch (error) {
+      console.error('❌ Error processing file upload:', error);
+      return new NextResponse('failure', {
+        status: 500,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      });
+    }
   }
 
   // D. Пошаговая загрузка данных (Step-by-step data import)
   if (type === 'catalog' && mode === 'import') {
     console.log('1C Data import:', filename);
     
-    return new NextResponse('success', {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-      },
-    });
+    try {
+      // Process the uploaded file content
+      if (global.uploadedFileContent) {
+        console.log('🔄 Starting product import...');
+        const result = await importProductsFromCommerceML(global.uploadedFileContent);
+        console.log('✅ Import completed:', result);
+        
+        // Clear the stored content
+        global.uploadedFileContent = null;
+        
+        return new NextResponse('success', {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+          },
+        });
+      } else {
+        console.log('⚠️ No file content found for import');
+        return new NextResponse('failure', {
+          status: 400,
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error during import:', error);
+      return new NextResponse('failure', {
+        status: 500,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      });
+    }
   }
 
   // Default response
