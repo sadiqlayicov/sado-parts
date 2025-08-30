@@ -1,14 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
-// Declare global variable for storing uploaded file content
+// Declare global variables for 1C integration
 declare global {
   var uploadedFileContent: string | null;
+  var lastActivityTime: string | null;
+  var uploadProgress: string;
+  var recentLogs: Array<{timestamp: string, message: string}>;
 }
 
 // Initialize global variable
 if (!global.uploadedFileContent) {
   global.uploadedFileContent = null;
+}
+
+// Initialize global variables for tracking
+if (!global.lastActivityTime) {
+  global.lastActivityTime = null;
+}
+if (!global.uploadProgress) {
+  global.uploadProgress = 'Waiting for 1C...';
+}
+if (!global.recentLogs) {
+  global.recentLogs = [];
+}
+
+// Helper function to add log
+function addLog(message: string) {
+  const timestamp = new Date().toISOString();
+  global.lastActivityTime = timestamp;
+  global.recentLogs = global.recentLogs || [];
+  global.recentLogs.unshift({ timestamp, message });
+  
+  // Keep only last 10 logs
+  if (global.recentLogs.length > 10) {
+    global.recentLogs = global.recentLogs.slice(0, 10);
+  }
+  
+  console.log(`[${timestamp}] ${message}`);
 }
 
 const pool = new Pool({
@@ -28,7 +57,8 @@ export async function GET(request: NextRequest) {
 
   // A. Начало сеанса (Session Start)
   if (type === 'catalog' && mode === 'checkauth') {
-    console.log('1C Session start - checkauth');
+    addLog('1C Session start - checkauth');
+    global.uploadProgress = 'Authentication successful';
     
     const response = `success
 sessid
@@ -44,7 +74,8 @@ ${Date.now()}`;
 
   // B. Запрос параметров (Parameters Request)
   if (type === 'catalog' && mode === 'init') {
-    console.log('1C Parameters request - init');
+    addLog('1C Parameters request - init');
+    global.uploadProgress = 'Parameters initialized';
     
     const response = `zip=no
 file_limit=1048576`;
@@ -76,20 +107,23 @@ export async function POST(request: NextRequest) {
 
   // C. Выгрузка файлов (File Upload)
   if (type === 'catalog' && mode === 'file') {
-    console.log('1C File upload:', filename);
+    addLog(`1C File upload: ${filename}`);
+    global.uploadProgress = `Receiving file: ${filename}`;
     
     try {
       const body = await request.text();
-      console.log('📁 Received file content length:', body.length);
-      console.log('📄 File content preview:', body.substring(0, 500));
+      addLog(`📁 Received file content length: ${body.length}`);
+      addLog(`📄 File content preview: ${body.substring(0, 200)}...`);
       
       // Check if it's XML content
       const isXml = body.includes('<?xml') || body.includes('<Товар') || body.includes('<Каталог');
-      console.log('🔍 Is XML content:', isXml);
+      addLog(`🔍 Is XML content: ${isXml}`);
       
       // Count products in XML
       const productCount = (body.match(/<Товар/g) || []).length;
-      console.log('📦 Products found in XML:', productCount);
+      addLog(`📦 Products found in XML: ${productCount}`);
+      
+      global.uploadProgress = `File received: ${productCount} products found`;
       
       // Store the file content for processing
       global.uploadedFileContent = body;
