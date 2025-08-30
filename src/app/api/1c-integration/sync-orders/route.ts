@@ -86,8 +86,7 @@ async function syncOrdersFrom1C(url: string, username: string, password: string)
       headers: {
         'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
         'Content-Type': 'application/xml'
-      },
-      timeout: 30000
+      }
     });
     
     if (!response.ok) {

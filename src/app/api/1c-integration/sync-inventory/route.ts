@@ -86,8 +86,7 @@ async function syncInventoryFrom1C(url: string, username: string, password: stri
       headers: {
         'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
         'Content-Type': 'application/xml'
-      },
-      timeout: 30000
+      }
     });
     
     if (!response.ok) {

@@ -93,8 +93,7 @@ async function exportDataTo1C(url: string, username: string, password: string) {
         'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
         'Content-Type': 'application/xml'
       },
-      body: xmlData,
-      timeout: 60000
+      body: xmlData
     });
     
     if (!response.ok) {

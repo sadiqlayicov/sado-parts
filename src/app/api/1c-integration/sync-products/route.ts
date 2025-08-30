@@ -86,8 +86,7 @@ async function syncProductsFrom1C(url: string, username: string, password: strin
       headers: {
         'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
         'Content-Type': 'application/xml'
-      },
-      timeout: 30000
+      }
     });
     
     if (!response.ok) {

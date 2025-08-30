@@ -78,8 +78,7 @@ async function test1CConnection(url: string, username: string, password: string)
       headers: {
         'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
         'Content-Type': 'application/json'
-      },
-      timeout: 10000
+      }
     });
     
     if (response.ok) {
