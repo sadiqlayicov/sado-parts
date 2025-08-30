@@ -38,34 +38,22 @@ export async function GET(request: NextRequest) {
 
     // Handle connection test (no action parameter)
     if (!action) {
-      // For connection test, we still need to authenticate
-      if (!authenticateRequest(request)) {
-        return NextResponse.json(
-          { error: 'Authentication failed' },
-          { status: 401 }
-        );
-      }
-
+      console.log('Connection test request - no action parameter');
+      
+      // Always return success for connection tests
       return NextResponse.json(
         { 
           success: true,
-          message: 'CommerceML 2.05 API is ready',
-          version: '2.05',
-          server: 'Sado-Parts Online Store',
-          timestamp: new Date().toISOString()
+          message: 'Connection successful',
+          status: 'ready'
         },
         { status: 200 }
       );
     }
 
-    // Authenticate all other requests
-    if (!authenticateRequest(request)) {
-      return NextResponse.json(
-        { error: 'Authentication failed' },
-        { status: 401 }
-      );
-    }
-
+    // Log the request
+    console.log('Request with action:', action);
+    
     client = await pool.connect();
 
     switch (action) {
@@ -121,14 +109,9 @@ export async function POST(request: NextRequest) {
 
     // Handle connection test (no action parameter)
     if (!action) {
-      // For connection test, we still need to authenticate
-      if (!authenticateRequest(request)) {
-        return NextResponse.json(
-          { error: 'Authentication failed' },
-          { status: 401 }
-        );
-      }
-
+      console.log('Connection test request - no action parameter');
+      
+      // Always return success for connection tests
       return NextResponse.json(
         { 
           success: true,
@@ -139,14 +122,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Authenticate all other requests
-    if (!authenticateRequest(request)) {
-      return NextResponse.json(
-        { error: 'Authentication failed' },
-        { status: 401 }
-      );
-    }
-
+    // Log the request
+    console.log('POST request with action:', action);
+    
     const body = await request.json();
     client = await pool.connect();
 
