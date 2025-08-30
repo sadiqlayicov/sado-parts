@@ -83,6 +83,14 @@ export async function POST(request: NextRequest) {
       console.log('📁 Received file content length:', body.length);
       console.log('📄 File content preview:', body.substring(0, 500));
       
+      // Check if it's XML content
+      const isXml = body.includes('<?xml') || body.includes('<Товар') || body.includes('<Каталог');
+      console.log('🔍 Is XML content:', isXml);
+      
+      // Count products in XML
+      const productCount = (body.match(/<Товар/g) || []).length;
+      console.log('📦 Products found in XML:', productCount);
+      
       // Store the file content for processing
       global.uploadedFileContent = body;
       
