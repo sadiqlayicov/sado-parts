@@ -30,10 +30,18 @@ export default function Admin1CIntegrationPage() {
   const [syncResults, setSyncResults] = useState<SyncResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [connectionSettings, setConnectionSettings] = useState({
-    url: '',
-    username: '',
-    password: '',
-    enabled: false
+    url: 'https://sado-parts.vercel.app/api/1c_exchange.php',
+    username: 'admin',
+    password: 'Admin123',
+    enabled: true
+  });
+
+  const [uploadStatus, setUploadStatus] = useState({
+    hasContent: false,
+    contentLength: 0,
+    productCount: 0,
+    lastActivity: null as string | null,
+    uploadProgress: 'Waiting for 1C...'
   });
 
   useEffect(() => {
@@ -49,6 +57,7 @@ export default function Admin1CIntegrationPage() {
     // Load integration settings and status
     loadIntegrationStatus();
     loadConnectionSettings();
+    loadUploadStatus(); // Load upload status on mount
   }, [isAuthenticated, user, router]);
 
   const loadIntegrationStatus = async () => {
@@ -72,6 +81,26 @@ export default function Admin1CIntegrationPage() {
       }
     } catch (error) {
       console.error('Error loading connection settings:', error);
+    }
+  };
+
+  const loadUploadStatus = async () => {
+    try {
+      const response = await fetch('/api/1c-debug');
+      if (response.ok) {
+        const data = await response.json();
+        setUploadStatus({
+          hasContent: !!data.globalState?.uploadedFileContent,
+          contentLength: data.globalState?.uploadedFileContent?.includes('Content length:') 
+            ? parseInt(data.globalState.uploadedFileContent.match(/Content length: (\d+)/)?.[1] || '0')
+            : 0,
+          productCount: 0, // Will be calculated from content
+          lastActivity: data.globalState?.uploadedFileContent ? 'File received' : null,
+          uploadProgress: data.globalState?.uploadedFileContent ? 'File uploaded successfully' : 'Waiting for 1C...'
+        });
+      }
+    } catch (error) {
+      console.error('Error loading upload status:', error);
     }
   };
 
@@ -336,6 +365,16 @@ export default function Admin1CIntegrationPage() {
     setSyncResults(prev => [result, ...prev.slice(0, 9)]); // Keep last 10 results
   };
 
+  const refreshStatus = async () => {
+    await loadIntegrationStatus();
+    await loadUploadStatus();
+    addSyncResult({
+      success: true,
+      message: 'Статус обновлен',
+      timestamp: new Date().toISOString()
+    });
+  };
+
   const saveConnectionSettings = async () => {
     try {
       const response = await fetch('/api/1c-integration/settings', {
@@ -387,110 +426,61 @@ export default function Admin1CIntegrationPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">1C Управление нашей фирмой 3.0 Интеграция</h1>
-          <p className="text-gray-600">Синхронизация с 1C Управление нашей фирмой, редакция 3.0 (3.0.12.146)</p>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="mb-6">
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-            {[
-              { id: 'overview', name: 'Обзор', icon: '📊' },
-              { id: 'products', name: 'Товары', icon: '📦' },
-              { id: 'orders', name: 'Заказы', icon: '📋' },
-              { id: 'categories', name: 'Категории', icon: '📁' },
-              { id: 'inventory', name: 'Остатки', icon: '📈' },
-              { id: 'sync', name: 'Синхронизация', icon: '🔄' },
-              { id: 'settings', name: 'Настройки', icon: '⚙️' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.name}</span>
-              </button>
-            ))}
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">1C Интеграция - Статус</h1>
+          <p className="text-gray-600">Мониторинг синхронизации с 1C</p>
         </div>
 
         {/* Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Connection Settings - Always Visible */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Status Section */}
+          <div className="space-y-6">
+            {/* Real-time Upload Status */}
             <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Настройки соединения</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    URL 1C
-                  </label>
-                  <input
-                    type="url"
-                    value={connectionSettings.url}
-                    onChange={(e) => setConnectionSettings(prev => ({ ...prev, url: e.target.value }))}
-                    placeholder="http://192.168.1.100:8080"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Логин
-                  </label>
-                  <input
-                    type="text"
-                    value={connectionSettings.username}
-                    onChange={(e) => setConnectionSettings(prev => ({ ...prev, username: e.target.value }))}
-                    placeholder="admin"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Пароль
-                  </label>
-                  <input
-                    type="password"
-                    value={connectionSettings.password}
-                    onChange={(e) => setConnectionSettings(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Пароль"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div className="flex items-center justify-end">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Статус загрузки 1C</h2>
+                <button
+                  onClick={refreshStatus}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+                >
+                  Обновить
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Статус загрузки:</span>
                   <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={connectionSettings.enabled}
-                      onChange={(e) => setConnectionSettings(prev => ({ ...prev, enabled: e.target.checked }))}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label className="ml-2 block text-sm text-gray-900">
-                      Включить интеграцию
-                    </label>
+                    <div className={`w-2 h-2 rounded-full mr-2 ${uploadStatus.hasContent ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                    <span className={`font-semibold ${uploadStatus.hasContent ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {uploadStatus.uploadProgress}
+                    </span>
                   </div>
                 </div>
-              </div>
-              <div className="flex space-x-3 mt-4">
-                <button
-                  onClick={saveConnectionSettings}
-                  className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-                >
-                  Сохранить настройки
-                </button>
-                <button 
-                  onClick={testConnection}
-                  disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition"
-                >
-                  {isLoading ? 'Проверка...' : 'Проверить соединение'}
-                </button>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Размер файла:</span>
+                  <span className="text-gray-900 font-medium">
+                    {uploadStatus.contentLength > 0 ? `${uploadStatus.contentLength} байт` : 'Нет данных'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Последняя активность:</span>
+                  <span className="text-gray-500">
+                    {uploadStatus.lastActivity || 'Нет активности'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">API статус:</span>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-green-600 font-semibold">Активен</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">База данных:</span>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-green-600 font-semibold">Подключена</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -535,103 +525,78 @@ export default function Admin1CIntegrationPage() {
                 )}
               </div>
             </div>
+          </div>
 
-            {/* System Status */}
+          {/* Products and Orders Section */}
+          <div className="space-y-6">
+            {/* Uploaded Products */}
             <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Статус системы</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Загруженные товары</h2>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">API статус:</span>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-green-600 font-semibold">Активен</span>
-                  </div>
+                  <span className="text-gray-600">Всего товаров:</span>
+                  <span className="text-gray-900 font-semibold text-lg">
+                    {uploadStatus.productCount > 0 ? uploadStatus.productCount : '0'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">База данных:</span>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-green-600 font-semibold">Подключена</span>
-                  </div>
+                  <span className="text-gray-600">Последнее обновление:</span>
+                  <span className="text-gray-500">
+                    {uploadStatus.lastActivity || 'Нет данных'}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">1C версия:</span>
-                  <span className="text-gray-900 font-medium">Управление нашей фирмой 3.0.12.146</span>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-blue-700 text-sm">
+                    Товары автоматически загружаются из 1C при синхронизации
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Sync Results */}
-            {syncResults.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">История синхронизации</h2>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {syncResults.map((result, index) => (
+            {/* Uploaded Orders */}
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Загруженные заказы</h2>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Всего заказов:</span>
+                  <span className="text-gray-900 font-semibold text-lg">0</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Последнее обновление:</span>
+                  <span className="text-gray-500">Нет данных</span>
+                </div>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-green-700 text-sm">
+                    Заказы с сайта автоматически экспортируются в 1C
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sync History */}
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">История синхронизации</h2>
+              <div className="space-y-3">
+                {syncResults.length > 0 ? (
+                  syncResults.map((result, index) => (
                     <div key={index} className={`p-3 rounded-lg border ${
                       result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
                     }`}>
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm ${result.success ? 'text-green-700' : 'text-red-700'}`}>
+                      <div className="flex justify-between items-start">
+                        <p className={`text-sm ${result.success ? 'text-green-700' : 'text-red-700'}`}>
                           {result.message}
-                        </span>
-                        <span className="text-xs text-gray-500">
+                        </p>
+                        <span className="text-xs text-gray-500 ml-2">
                           {new Date(result.timestamp).toLocaleTimeString('ru-RU')}
                         </span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Быстрые действия</h2>
-              <div className="space-y-3">
-                <button 
-                  onClick={syncProducts}
-                  disabled={isLoading || !integrationStatus.isConnected}
-                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition"
-                >
-                  {isLoading ? 'Синхронизация...' : 'Синхронизировать товары'}
-                </button>
-                <button 
-                  onClick={syncInventory}
-                  disabled={isLoading || !integrationStatus.isConnected}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition"
-                >
-                  {isLoading ? 'Синхронизация...' : 'Синхронизировать остатки'}
-                </button>
-                <button 
-                  onClick={syncOrders}
-                  disabled={isLoading || !integrationStatus.isConnected}
-                  className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition"
-                >
-                  {isLoading ? 'Синхронизация...' : 'Синхронизировать заказы'}
-                </button>
-                <button 
-                  onClick={exportTo1C}
-                  disabled={isLoading || !integrationStatus.isConnected}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition"
-                >
-                  {isLoading ? 'Экспорт...' : 'Экспорт в 1C'}
-                </button>
-              </div>
-            </div>
-
-            {/* Help Section */}
-            <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-              <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 Подсказка</h3>
-              <div className="text-sm text-blue-800 space-y-2">
-                <p>1. Заполните настройки соединения</p>
-                <p>2. Нажмите "Проверить соединение"</p>
-                <p>3. После успешного подключения используйте кнопки синхронизации</p>
-                <p className="text-xs mt-3">
-                  <strong>Пример URL:</strong> http://192.168.1.100:8080
-                </p>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">История синхронизации пуста</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
