@@ -89,14 +89,22 @@ export default function Admin1CIntegrationPage() {
       const response = await fetch('/api/1c-debug');
       if (response.ok) {
         const data = await response.json();
+        
+        // Parse product count from content
+        let productCount = 0;
+        if (data.globalState?.uploadedFileContent && data.globalState.uploadedFileContent !== 'No content stored') {
+          const match = data.globalState.uploadedFileContent.match(/Products: (\d+)/);
+          productCount = match ? parseInt(match[1]) : 0;
+        }
+        
         setUploadStatus({
-          hasContent: !!data.globalState?.uploadedFileContent,
+          hasContent: data.globalState?.uploadedFileContent && data.globalState.uploadedFileContent !== 'No content stored',
           contentLength: data.globalState?.uploadedFileContent?.includes('Content length:') 
             ? parseInt(data.globalState.uploadedFileContent.match(/Content length: (\d+)/)?.[1] || '0')
             : 0,
-          productCount: 0, // Will be calculated from content
-          lastActivity: data.globalState?.uploadedFileContent ? 'File received' : null,
-          uploadProgress: data.globalState?.uploadedFileContent ? 'File uploaded successfully' : 'Waiting for 1C...'
+          productCount: productCount,
+          lastActivity: data.globalState?.lastActivityTime || data.globalState?.uploadProgress || null,
+          uploadProgress: data.globalState?.uploadProgress || 'Waiting for 1C...'
         });
       }
     } catch (error) {

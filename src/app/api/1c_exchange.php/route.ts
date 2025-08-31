@@ -112,21 +112,26 @@ export async function POST(request: NextRequest) {
     
     try {
       const body = await request.text();
-      addLog(`📁 Received file content length: ${body.length}`);
+      addLog(`📁 Received file content length: ${body.length} bytes`);
       addLog(`📄 File content preview: ${body.substring(0, 200)}...`);
       
       // Check if it's XML content
-      const isXml = body.includes('<?xml') || body.includes('<Товар') || body.includes('<Каталог');
+      const isXml = body.includes('<?xml') || body.includes('<Товар') || body.includes('<Каталог') || body.includes('<КоммерческаяИнформация');
       addLog(`🔍 Is XML content: ${isXml}`);
       
       // Count products in XML
       const productCount = (body.match(/<Товар/g) || []).length;
-      addLog(`📦 Products found in XML: ${productCount}`);
+      const catalogCount = (body.match(/<Каталог/g) || []).length;
+      const commercialInfoCount = (body.match(/<КоммерческаяИнформация/g) || []).length;
       
-      global.uploadProgress = `File received: ${productCount} products found`;
+      addLog(`📦 Products found in XML: ${productCount}`);
+      addLog(`📚 Catalogs found in XML: ${catalogCount}`);
+      addLog(`🏢 Commercial info found in XML: ${commercialInfoCount}`);
+      
+      global.uploadProgress = `File received: ${productCount} products, ${catalogCount} catalogs`;
       
       // Store the file content for processing
-      global.uploadedFileContent = body;
+      global.uploadedFileContent = `Content length: ${body.length}\nProducts: ${productCount}\nCatalogs: ${catalogCount}\nContent preview: ${body.substring(0, 500)}...`;
       
       return new NextResponse('success', {
         status: 200,
@@ -136,6 +141,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       console.error('❌ Error processing file upload:', error);
+      addLog(`❌ Error: ${error}`);
       return new NextResponse('failure', {
         status: 500,
         headers: {
