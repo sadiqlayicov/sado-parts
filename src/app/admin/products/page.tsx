@@ -47,6 +47,7 @@ export default function ProductsPage() {
   }, [isAuthenticated, user, router]);
 
   const filteredProducts = products.filter(product => {
+    if (!product) return false;
     const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.artikul?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.catalogNumber?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -59,7 +60,7 @@ export default function ProductsPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  const categories = ['all', ...Array.from(new Set(products.map(p => p?.category).filter(Boolean)))];
 
   if (!isAuthenticated || !user?.isAdmin) {
     return null;
@@ -171,51 +172,51 @@ export default function ProductsPage() {
                     </td>
                   </tr>
                 ) : (
-                  currentProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
+                                     currentProducts.map((product) => (
+                     <tr key={product?.id || Math.random()} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <img
-                          src={product.image || '/placeholder.png'}
-                          alt={product.name}
-                          className="h-10 w-10 rounded-lg object-cover"
-                        />
+                                                 <img
+                           src={product?.image || '/placeholder.png'}
+                           alt={product?.name || 'Product'}
+                           className="h-10 w-10 rounded-lg object-cover"
+                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.id}
-                      </td>
+                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                         {product?.id || '-'}
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap">
+                         <div className="text-sm font-medium text-gray-900">{product?.name || '-'}</div>
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                         {product?.category || '-'}
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                         {product?.artikul || '-'}
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                         {product?.catalogNumber || '-'}
+                       </td>
+                       <td className="px-6 py-4">
+                         <div className="text-sm text-gray-900 max-w-xs truncate">
+                           {product?.description || '-'}
+                         </div>
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                         {product?.price || 0} ₽
+                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.category || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.artikul || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.catalogNumber || '-'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {product.description || '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {product.price || 0} ₽
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={product.isActive || false}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={product.isFeatured || false}
-                          className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                        />
+                                                 <input
+                           type="checkbox"
+                           checked={product?.isActive || false}
+                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                         />
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap">
+                         <input
+                           type="checkbox"
+                           checked={product?.isFeatured || false}
+                           className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
