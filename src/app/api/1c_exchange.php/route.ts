@@ -103,7 +103,8 @@ export async function POST(request: NextRequest) {
   const mode = searchParams.get('mode');
   const filename = searchParams.get('filename');
 
-  console.log('1C Exchange POST request:', { type, mode, filename });
+  console.log('1C Exchange POST request:', { type, mode, filename, url: request.url });
+  addLog(`1C POST: ${type}/${mode} - ${filename || 'no filename'}`);
 
   // C. Выгрузка файлов (File Upload)
   if (type === 'catalog' && mode === 'file') {
@@ -153,6 +154,7 @@ export async function POST(request: NextRequest) {
 
   // D. Пошаговая загрузка данных (Step-by-step data import)
   if (type === 'catalog' && mode === 'import') {
+    addLog('1C Data import started');
     console.log('1C Data import:', filename);
     
     try {
@@ -161,6 +163,7 @@ export async function POST(request: NextRequest) {
         console.log('🔄 Starting product import...');
         const result = await importProductsFromCommerceML(global.uploadedFileContent);
         console.log('✅ Import completed:', result);
+        addLog('✅ Product import completed successfully');
         
         // Clear the stored content
         global.uploadedFileContent = null;
@@ -173,6 +176,7 @@ export async function POST(request: NextRequest) {
         });
       } else {
         console.log('⚠️ No file content found for import');
+        addLog('⚠️ No file content found for import');
         return new NextResponse('failure', {
           status: 400,
           headers: {
@@ -182,6 +186,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (error) {
       console.error('❌ Error during import:', error);
+      addLog(`❌ Import error: ${error}`);
       return new NextResponse('failure', {
         status: 500,
         headers: {
@@ -191,6 +196,9 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Log unknown POST requests
+  addLog(`Unknown POST request: ${type}/${mode}`);
+  
   // Default response
   return new NextResponse('success', {
     status: 200,
