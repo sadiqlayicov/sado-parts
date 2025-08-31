@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheckCircle, FaTrashAlt, FaEye, FaFilter, FaSave, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheckCircle, FaTrashAlt, FaEye, FaFilter, FaSave, FaTimes, FaUpload, FaImage } from 'react-icons/fa';
 
 interface Product {
   id: string;
@@ -19,10 +19,17 @@ interface Product {
   stock: number;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export default function ProductsPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -33,30 +40,34 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Form states
   const [newProduct, setNewProduct] = useState({
     name: '',
     description: '',
     price: 0,
-    category: '',
+    categoryId: '',
     artikul: '',
     catalogNumber: '',
     stock: 0,
     isActive: true,
-    isFeatured: false
+    isFeatured: false,
+    image: null as File | null
   });
 
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
     price: 0,
-    category: '',
+    categoryId: '',
     artikul: '',
     catalogNumber: '',
     stock: 0,
     isActive: true,
-    isFeatured: false
+    isFeatured: false,
+    image: null as File | null,
+    currentImage: ''
   });
 
   useEffect(() => {
@@ -70,6 +81,7 @@ export default function ProductsPage() {
     }
 
     loadProducts();
+    loadCategories();
   }, [isAuthenticated, user, router]);
 
   // Auto-hide messages
@@ -152,6 +164,37 @@ export default function ProductsPage() {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data)) {
+          setCategories(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
+
+  const handleImageUpload = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Şəkil yüklənə bilmədi');
+    }
+    
+    const data = await response.json();
+    return data.url;
+  };
+
   const handleAddProduct = async () => {
     if (!newProduct.name.trim()) {
       setError('Məhsul adı tələb olunur');
@@ -160,12 +203,34 @@ export default function ProductsPage() {
 
     setIsSubmitting(true);
     try {
+      let imageUrl = null;
+      
+      // Upload image if selected
+      if (newProduct.image) {
+        setUploadingImage(true);
+        imageUrl = await handleImageUpload(newProduct.image);
+        setUploadingImage(false);
+      }
+
+      const productData = {
+        name: newProduct.name,
+        description: newProduct.description,
+        price: newProduct.price,
+        categoryId: newProduct.categoryId || null,
+        artikul: newProduct.artikul,
+        catalogNumber: newProduct.catalogNumber,
+        stock: newProduct.stock,
+        isActive: newProduct.isActive,
+        isFeatured: newProduct.isFeatured,
+        images: imageUrl ? [imageUrl] : []
+      };
+
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newProduct),
+        body: JSON.stringify(productData),
       });
 
       if (response.ok) {
@@ -175,12 +240,13 @@ export default function ProductsPage() {
           name: '',
           description: '',
           price: 0,
-          category: '',
+          categoryId: '',
           artikul: '',
           catalogNumber: '',
           stock: 0,
           isActive: true,
-          isFeatured: false
+          isFeatured: false,
+          image: null
         });
         loadProducts();
       } else {
@@ -192,6 +258,7 @@ export default function ProductsPage() {
       setError('Məhsul əlavə edilərkən xəta baş verdi');
     } finally {
       setIsSubmitting(false);
+      setUploadingImage(false);
     }
   };
 
@@ -203,12 +270,34 @@ export default function ProductsPage() {
 
     setIsSubmitting(true);
     try {
+      let imageUrl = editForm.currentImage;
+      
+      // Upload new image if selected
+      if (editForm.image) {
+        setUploadingImage(true);
+        imageUrl = await handleImageUpload(editForm.image);
+        setUploadingImage(false);
+      }
+
+      const productData = {
+        name: editForm.name,
+        description: editForm.description,
+        price: editForm.price,
+        categoryId: editForm.categoryId || null,
+        artikul: editForm.artikul,
+        catalogNumber: editForm.catalogNumber,
+        stock: editForm.stock,
+        isActive: editForm.isActive,
+        isFeatured: editForm.isFeatured,
+        images: imageUrl ? [imageUrl] : []
+      };
+
       const response = await fetch(`/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(productData),
       });
 
       if (response.ok) {
@@ -224,6 +313,7 @@ export default function ProductsPage() {
       setError('Məhsul yenilənərkən xəta baş verdi');
     } finally {
       setIsSubmitting(false);
+      setUploadingImage(false);
     }
   };
 
@@ -308,13 +398,26 @@ export default function ProductsPage() {
       name: product.name,
       description: product.description,
       price: product.price,
-      category: product.category,
+      categoryId: '', // Will be set based on category name
       artikul: product.artikul,
       catalogNumber: product.catalogNumber,
       stock: product.stock,
       isActive: product.isActive,
-      isFeatured: product.isFeatured
+      isFeatured: product.isFeatured,
+      image: null,
+      currentImage: product.image || ''
     });
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (isEdit) {
+        setEditForm(prev => ({ ...prev, image: file }));
+      } else {
+        setNewProduct(prev => ({ ...prev, image: file }));
+      }
+    }
   };
 
   const filteredProducts = products.filter(product => {
@@ -325,7 +428,7 @@ export default function ProductsPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  const productCategories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
 
   if (!isAuthenticated || !user?.isAdmin) {
     return null;
@@ -392,7 +495,7 @@ export default function ProductsPage() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
-                {categories.map(category => (
+                {productCategories.map(category => (
                   <option key={category} value={category}>
                     {category === 'all' ? 'Bütün kateqoriyalar' : category}
                   </option>
@@ -448,13 +551,18 @@ export default function ProductsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Kateqoriya</label>
-                <input
-                  type="text"
-                  value={newProduct.category}
-                  onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                <select
+                  value={newProduct.categoryId}
+                  onChange={(e) => setNewProduct({...newProduct, categoryId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Kateqoriya"
-                />
+                >
+                  <option value="">Kateqoriya seçin</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Artikul</label>
@@ -485,6 +593,38 @@ export default function ProductsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="0"
                 />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Məhsul Şəkli</label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, false)}
+                      className="hidden"
+                      id="new-product-image"
+                    />
+                    <label
+                      htmlFor="new-product-image"
+                      className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <FaUpload className="mr-2 text-gray-500" />
+                      <span className="text-gray-700">
+                        {newProduct.image ? newProduct.image.name : 'Şəkil seçin'}
+                      </span>
+                    </label>
+                  </div>
+                  {newProduct.image && (
+                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                      <img
+                        src={URL.createObjectURL(newProduct.image)}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Təsvir</label>
@@ -524,7 +664,7 @@ export default function ProductsPage() {
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
               >
                 <FaSave className="mr-2" />
-                {isSubmitting ? 'Əlavə edilir...' : 'Əlavə et'}
+                {isSubmitting ? (uploadingImage ? 'Şəkil yüklənir...' : 'Əlavə edilir...') : 'Əlavə et'}
               </button>
               <button
                 onClick={() => setShowAddForm(false)}
@@ -561,12 +701,18 @@ export default function ProductsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Kateqoriya</label>
-                <input
-                  type="text"
-                  value={editForm.category}
-                  onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                <select
+                  value={editForm.categoryId}
+                  onChange={(e) => setEditForm({...editForm, categoryId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                >
+                  <option value="">Kateqoriya seçin</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Artikul</label>
@@ -594,6 +740,50 @@ export default function ProductsPage() {
                   onChange={(e) => setEditForm({...editForm, stock: parseInt(e.target.value) || 0})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Məhsul Şəkli</label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, true)}
+                      className="hidden"
+                      id="edit-product-image"
+                    />
+                    <label
+                      htmlFor="edit-product-image"
+                      className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <FaUpload className="mr-2 text-gray-500" />
+                      <span className="text-gray-700">
+                        {editForm.image ? editForm.image.name : 'Yeni şəkil seçin'}
+                      </span>
+                    </label>
+                  </div>
+                  {(editForm.image || editForm.currentImage) && (
+                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                      <img
+                        src={editForm.image ? URL.createObjectURL(editForm.image) : editForm.currentImage}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          target.style.display = 'none';
+                          const sibling = target.nextElementSibling as HTMLElement;
+                          if (sibling) {
+                            sibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                      <FaImage className="w-6 h-6 text-gray-400" style={{ display: 'none' }} />
+                    </div>
+                  )}
+                </div>
+                {editForm.currentImage && !editForm.image && (
+                  <p className="text-sm text-gray-500 mt-1">Mövcud şəkil saxlanılacaq</p>
+                )}
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Təsvir</label>
@@ -632,7 +822,7 @@ export default function ProductsPage() {
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
               >
                 <FaSave className="mr-2" />
-                {isSubmitting ? 'Yadda saxlanılır...' : 'Yadda saxla'}
+                {isSubmitting ? (uploadingImage ? 'Şəkil yüklənir...' : 'Yadda saxlanılır...') : 'Yadda saxla'}
               </button>
               <button
                 onClick={() => setEditingProduct(null)}
