@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       global.uploadProgress = `File received: ${productCount} products, ${catalogCount} catalogs`;
       
       // Store the file content for processing
-      global.uploadedFileContent = `Content length: ${body.length}\nProducts: ${productCount}\nCatalogs: ${catalogCount}\nContent preview: ${body.substring(0, 500)}...`;
+      global.uploadedFileContent = body;
       
       addLog(`✅ File upload completed successfully`);
       
