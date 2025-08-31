@@ -8,68 +8,8 @@ import { FaPlus, FaEdit, FaTrash, FaSearch } from 'react-icons/fa';
 export default function ProductsPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'Electrical Wiring Harness',
-      category: 'test alt kateqoriya',
-      artikul: 'EWH-006',
-      catalogNumber: 'test kataloq nomresi sadiq',
-      description: 'Electrical wiring harness for vehicle electrical systems',
-      price: 150,
-      isActive: true,
-      isFeatured: true,
-      image: '/placeholder.png'
-    },
-    {
-      id: 2,
-      name: 'Tire Set (4 pieces)',
-      category: 'Filters',
-      artikul: 'TS-007',
-      catalogNumber: 'CAT-010',
-      description: 'Complete tire set for vehicle wheels',
-      price: 450,
-      isActive: true,
-      isFeatured: false,
-      image: '/placeholder.png'
-    },
-    {
-      id: 3,
-      name: 'Body Panel - Front Bumper',
-      category: 'Hydraulic Systems',
-      artikul: 'BP-008',
-      catalogNumber: 'CAT-009',
-      description: 'Front bumper panel for vehicle body repair',
-      price: 320,
-      isActive: true,
-      isFeatured: false,
-      image: '/placeholder.png'
-    },
-    {
-      id: 4,
-      name: 'Hydraulic Hose',
-      category: 'Hydraulic Systems',
-      artikul: 'HH-009',
-      catalogNumber: '',
-      description: 'Durable hydraulic hose for hydraulic systems',
-      price: 75,
-      isActive: true,
-      isFeatured: false,
-      image: '/placeholder.png'
-    },
-    {
-      id: 5,
-      name: 'Fuel Filter',
-      category: 'Filters',
-      artikul: 'FF-010',
-      catalogNumber: '',
-      description: 'High-quality fuel filter for optimal engine performance',
-      price: 30,
-      isActive: true,
-      isFeatured: false,
-      image: '/placeholder.png'
-    }
-  ]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -84,6 +24,26 @@ export default function ProductsPage() {
       router.push('/');
       return;
     }
+
+    // Load products from database
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/products');
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data.products || []);
+        } else {
+          console.error('Failed to load products');
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
   }, [isAuthenticated, user, router]);
 
   const filteredProducts = products.filter(product => {
@@ -198,7 +158,20 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentProducts.map((product) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={11} className="px-6 py-4 text-center text-gray-500">
+                      Məhsullar yüklənir...
+                    </td>
+                  </tr>
+                ) : currentProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="px-6 py-4 text-center text-gray-500">
+                      Məhsul tapılmadı
+                    </td>
+                  </tr>
+                ) : (
+                  currentProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <img
