@@ -19,12 +19,12 @@ const pool = new Pool({
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let client;
   
   try {
-    const productId = params.id;
+    const { id: productId } = await params;
     const body = await request.json();
     const { 
       name, 
@@ -102,12 +102,12 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let client;
   
   try {
-    const productId = params.id;
+    const { id: productId } = await params;
 
     client = await pool.connect();
 
