@@ -27,6 +27,7 @@ export default function ProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,21 +51,36 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('/api/products');
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.data || data.products || []);
+        // Ensure we have a valid array of products
+        const productsArray = Array.isArray(data.data) ? data.data : 
+                            Array.isArray(data.products) ? data.products : 
+                            Array.isArray(data) ? data : [];
+        
+        // Filter out any invalid products
+        const validProducts = productsArray.filter((product: any) => 
+          product && typeof product === 'object' && product.id && product.name
+        );
+        
+        setProducts(validProducts);
+        console.log('Loaded products:', validProducts.length);
       } else {
-        console.error('Failed to load products');
+        setError('Məhsullar yüklənə bilmədi');
       }
     } catch (error) {
       console.error('Error loading products:', error);
+      setError('Məhsullar yüklənərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
   };
 
   const handleApproveProduct = async (productId: string) => {
+    if (!productId) return;
+    
     try {
       const response = await fetch('/api/products', {
         method: 'POST',
@@ -78,20 +94,22 @@ export default function ProductsPage() {
       });
 
       if (response.ok) {
-        alert('Товар успешно подтвержден');
+        alert('Məhsul uğurla təsdiqləndi');
         loadProducts();
       } else {
         const error = await response.json();
-        alert(`Ошибка подтверждения: ${error.error}`);
+        alert(`Təsdiqləmə xətası: ${error.error}`);
       }
     } catch (error) {
-      console.error('Ошибка подтверждения товара:', error);
-      alert('Ошибка подтверждения товара');
+      console.error('Məhsul təsdiqləmə xətası:', error);
+      alert('Məhsul təsdiqləmə xətası');
     }
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Вы уверены, что хотите удалить этот товар?')) {
+    if (!productId) return;
+    
+    if (!confirm('Bu məhsulu silmək istədiyinizə əminsiniz?')) {
       return;
     }
 
@@ -107,25 +125,25 @@ export default function ProductsPage() {
       });
 
       if (response.ok) {
-        alert('Товар успешно удален');
+        alert('Məhsul uğurla silindi');
         loadProducts();
       } else {
         const error = await response.json();
-        alert(`Ошибка удаления: ${error.error}`);
+        alert(`Silmə xətası: ${error.error}`);
       }
     } catch (error) {
-      console.error('Ошибка удаления товара:', error);
-      alert('Ошибка удаления товара');
+      console.error('Məhsul silmə xətası:', error);
+      alert('Məhsul silmə xətası');
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedProducts.length === 0) {
-      alert('Выберите товары для удаления');
+      alert('Silmək üçün məhsullar seçin');
       return;
     }
 
-    if (!confirm(`Вы уверены, что хотите удалить ${selectedProducts.length} товаров?`)) {
+    if (!confirm(`${selectedProducts.length} məhsulu silmək istədiyinizə əminsiniz?`)) {
       return;
     }
 
@@ -141,21 +159,23 @@ export default function ProductsPage() {
       });
 
       if (response.ok) {
-        alert(`${selectedProducts.length} товаров успешно удалены`);
+        alert(`${selectedProducts.length} məhsul uğurla silindi`);
         setSelectedProducts([]);
         setSelectAll(false);
         loadProducts();
       } else {
         const error = await response.json();
-        alert(`Ошибка удаления: ${error.error}`);
+        alert(`Silmə xətası: ${error.error}`);
       }
     } catch (error) {
-      console.error('Ошибка массового удаления:', error);
-      alert('Ошибка массового удаления');
+      console.error('Toplu silmə xətası:', error);
+      alert('Toplu silmə xətası');
     }
   };
 
   const handleSelectProduct = (productId: string) => {
+    if (!productId) return;
+    
     setSelectedProducts(prev => 
       prev.includes(productId) 
         ? prev.filter(id => id !== productId)
@@ -168,16 +188,20 @@ export default function ProductsPage() {
       setSelectedProducts([]);
       setSelectAll(false);
     } else {
-      setSelectedProducts(filteredProducts.map(p => p.id));
+      const validProductIds = filteredProducts
+        .filter(p => p && p.id)
+        .map(p => p.id);
+      setSelectedProducts(validProductIds);
       setSelectAll(true);
     }
   };
 
   const filteredProducts = products.filter(product => {
-    if (!product) return false;
-    const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.artikul?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.catalogNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!product || !product.name) return false;
+    
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.artikul && product.artikul.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (product.catalogNumber && product.catalogNumber.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -187,7 +211,11 @@ export default function ProductsPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
-  const categories = ['all', ...Array.from(new Set(products.map(p => p?.category).filter(Boolean)))];
+  const categories = ['all', ...Array.from(new Set(products
+    .filter(p => p && p.category)
+    .map(p => p.category)
+    .filter(Boolean)
+  ))];
 
   if (!isAuthenticated || !user?.isAdmin) {
     return null;
@@ -204,13 +232,26 @@ export default function ProductsPage() {
           <p className="text-gray-600">Məhsulların idarə edilməsi</p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center">
+            <span>{error}</span>
+            <button 
+              onClick={() => setError(null)}
+              className="text-red-700 hover:text-red-900 text-xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Filters and Actions */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center space-x-2">
                 <FaFilter className="text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Фильтры:</span>
+                <span className="text-sm font-medium text-gray-700">Filterlər:</span>
               </div>
               
               <div className="relative">
@@ -231,7 +272,7 @@ export default function ProductsPage() {
               >
                 {categories.map(category => (
                   <option key={category} value={category}>
-                    {category === 'all' ? 'Все категории' : category}
+                    {category === 'all' ? 'Bütün kateqoriyalar' : category}
                   </option>
                 ))}
               </select>
@@ -244,7 +285,7 @@ export default function ProductsPage() {
                   className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
                 >
                   <FaTrashAlt className="mr-2" />
-                  Удалить выбранные ({selectedProducts.length})
+                  Seçilmişləri sil ({selectedProducts.length})
                 </button>
               )}
               <button className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2">
@@ -281,22 +322,7 @@ export default function ProductsPage() {
                     Kateqoriya
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Artikul
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Kataloq №
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Təsvir
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Qiymət
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Aktiv
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ana səhifədə
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Əməliyyatlar
@@ -306,103 +332,90 @@ export default function ProductsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={12} className="px-6 py-4 text-center text-gray-500">
-                      Məhsullar yüklənir...
+                    <td colSpan={7} className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                        <span className="text-gray-600">Məhsullar yüklənir...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : currentProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                       Məhsul tapılmadı
                     </td>
                   </tr>
                 ) : (
-                  currentProducts.map((product) => (
-                    <tr key={product?.id || Math.random()} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedProducts.includes(product?.id || '')}
-                          onChange={() => handleSelectProduct(product?.id || '')}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <img
-                          src={product?.image || '/placeholder.png'}
-                          alt={product?.name || 'Product'}
-                          className="h-10 w-10 rounded-lg object-cover"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product?.id || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{product?.name || '-'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product?.category || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product?.artikul || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product?.catalogNumber || '-'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {product?.description || '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {product?.price || 0} ₽
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={product?.isActive || false}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={product?.isFeatured || false}
-                          className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
-                            title="Baxış"
-                          >
-                            <FaEye className="w-4 h-4" />
-                          </button>
-                          <button
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
-                            title="Redaktə"
-                          >
-                            <FaEdit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleApproveProduct(product?.id || '')}
-                            className="text-green-600 hover:text-green-900 transition-colors"
-                            title="Təsdiqlə"
-                          >
-                            <FaCheckCircle className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product?.id || '')}
-                            className="text-red-600 hover:text-red-900 transition-colors"
-                            title="Sil"
-                          >
-                            <FaTrash className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  currentProducts.map((product) => {
+                    if (!product || !product.id || !product.name) {
+                      return null;
+                    }
+                    
+                    return (
+                      <tr key={product.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.includes(product.id)}
+                            onChange={() => handleSelectProduct(product.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <img
+                            src={product.image || '/placeholder.png'}
+                            alt={product.name}
+                            className="h-10 w-10 rounded-lg object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder.png';
+                            }}
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {product.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {product.category || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {product.price || 0} ₽
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              className="text-blue-600 hover:text-blue-900 transition-colors"
+                              title="Baxış"
+                            >
+                              <FaEye className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="text-blue-600 hover:text-blue-900 transition-colors"
+                              title="Redaktə"
+                            >
+                              <FaEdit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleApproveProduct(product.id)}
+                              className="text-green-600 hover:text-green-900 transition-colors"
+                              title="Təsdiqlə"
+                            >
+                              <FaCheckCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(product.id)}
+                              className="text-red-600 hover:text-red-900 transition-colors"
+                              title="Sil"
+                            >
+                              <FaTrash className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
