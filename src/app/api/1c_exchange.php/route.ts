@@ -53,11 +53,12 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type');
   const mode = searchParams.get('mode');
 
-  console.log('1C Exchange GET request:', { type, mode });
+  console.log('🔍 1C Exchange GET request:', { type, mode, url: request.url });
+  addLog(`🔍 1C GET: ${type}/${mode} - ${request.url}`);
 
   // A. Начало сеанса (Session Start)
   if (type === 'catalog' && mode === 'checkauth') {
-    addLog('1C Session start - checkauth');
+    addLog('✅ 1C Session start - checkauth');
     global.uploadProgress = 'Authentication successful';
     
     const response = `success
@@ -74,7 +75,7 @@ ${Date.now()}`;
 
   // B. Запрос параметров (Parameters Request)
   if (type === 'catalog' && mode === 'init') {
-    addLog('1C Parameters request - init');
+    addLog('✅ 1C Parameters request - init');
     global.uploadProgress = 'Parameters initialized';
     
     const response = `zip=no
@@ -88,6 +89,9 @@ file_limit=1048576`;
     });
   }
 
+  // Log unknown requests
+  addLog(`❓ Unknown GET request: ${type}/${mode} - ${request.url}`);
+  
   // Default response
   return new NextResponse('success', {
     status: 200,
@@ -103,12 +107,12 @@ export async function POST(request: NextRequest) {
   const mode = searchParams.get('mode');
   const filename = searchParams.get('filename');
 
-  console.log('1C Exchange POST request:', { type, mode, filename, url: request.url });
-  addLog(`1C POST: ${type}/${mode} - ${filename || 'no filename'}`);
+  console.log('🔍 1C Exchange POST request:', { type, mode, filename, url: request.url });
+  addLog(`🔍 1C POST: ${type}/${mode} - ${filename || 'no filename'} - ${request.url}`);
 
   // C. Выгрузка файлов (File Upload)
   if (type === 'catalog' && mode === 'file') {
-    addLog(`1C File upload: ${filename}`);
+    addLog(`📁 1C File upload started: ${filename}`);
     global.uploadProgress = `Receiving file: ${filename}`;
     
     try {
@@ -134,6 +138,8 @@ export async function POST(request: NextRequest) {
       // Store the file content for processing
       global.uploadedFileContent = `Content length: ${body.length}\nProducts: ${productCount}\nCatalogs: ${catalogCount}\nContent preview: ${body.substring(0, 500)}...`;
       
+      addLog(`✅ File upload completed successfully`);
+      
       return new NextResponse('success', {
         status: 200,
         headers: {
@@ -142,7 +148,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       console.error('❌ Error processing file upload:', error);
-      addLog(`❌ Error: ${error}`);
+      addLog(`❌ File upload error: ${error}`);
       return new NextResponse('failure', {
         status: 500,
         headers: {
@@ -154,8 +160,8 @@ export async function POST(request: NextRequest) {
 
   // D. Пошаговая загрузка данных (Step-by-step data import)
   if (type === 'catalog' && mode === 'import') {
-    addLog('1C Data import started');
-    console.log('1C Data import:', filename);
+    addLog('🔄 1C Data import started');
+    console.log('🔄 1C Data import:', filename);
     
     try {
       // Process the uploaded file content
@@ -197,7 +203,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Log unknown POST requests
-  addLog(`Unknown POST request: ${type}/${mode}`);
+  addLog(`❓ Unknown POST request: ${type}/${mode} - ${request.url}`);
   
   // Default response
   return new NextResponse('success', {

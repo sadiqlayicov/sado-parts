@@ -64,7 +64,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Маркетплейсы', href: '/admin/marketplaces', icon: FaGlobe },
     { name: 'Импорт/Экспорт', href: '/admin/import-export', icon: FaFileExcel },
     { name: 'CommerceML 2.05', href: '/admin/1c-integration', icon: FaExchangeAlt },
-    { name: 'CommerceML Экспорт', href: '/admin/1c-export', icon: FaDownload },
     { name: 'Аналитика', href: '/admin/analytics', icon: FaChartBar },
     { name: 'Логотип', href: '/admin/logo-upload', icon: FaImage },
     { name: 'Настройки', href: '/admin/settings', icon: FaCog },
