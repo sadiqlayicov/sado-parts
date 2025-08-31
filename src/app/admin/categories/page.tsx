@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { formatId, resetIdCounter } from '@/lib/utils';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 
 interface Category {
   id: string;
@@ -258,28 +259,38 @@ export default function AdminCategoriesPage() {
   const renderCategories = (cats: Category[], level: number): React.ReactElement[] => {
     return cats.map((cat) => (
       <>
-        <tr key={cat.id} style={{ background: '#232b3b', borderBottom: '1px solid #333' }}>
-          <td style={{ border: "1px solid #333", padding: 8, paddingLeft: 8 + (level * 20) }}>
+        <tr key={cat.id} className="hover:bg-gray-50">
+          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" style={{ paddingLeft: 8 + (level * 20) }}>
             {formatId(cat.id)}
           </td>
-          <td style={{ border: "1px solid #333", padding: 8, paddingLeft: 8 + (level * 20) }}>
+          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" style={{ paddingLeft: 8 + (level * 20) }}>
             {editing?.id === cat.id ? (
-              <input value={editName} onChange={e => setEditName(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
+              <input 
+                value={editName} 
+                onChange={e => setEditName(e.target.value)} 
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             ) : (
-              <span style={{ fontWeight: level === 0 ? 'bold' : 'normal' }}>
+              <span className={`font-medium ${level === 0 ? 'font-bold' : 'font-normal'}`}>
                 {level > 0 && '└─ '}{cat.name}
               </span>
             )}
           </td>
-          <td style={{ border: "1px solid #333", padding: 8 }}>{editing?.id === cat.id ? (
-            <input value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }} />
-          ) : cat.description || "-"}</td>
-          <td style={{ border: "1px solid #333", padding: 8 }}>
+          <td className="px-6 py-4 text-sm text-gray-900">
+            {editing?.id === cat.id ? (
+              <input 
+                value={editDesc} 
+                onChange={e => setEditDesc(e.target.value)} 
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            ) : cat.description || "-"}
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
             {editing?.id === cat.id ? (
               <select 
                 value={editParentId} 
                 onChange={e => setEditParentId(e.target.value)} 
-                style={{ padding: 6, borderRadius: 3, border: '1px solid #333', background: '#1a2233', color: '#fff', width: '100%' }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Ana kateqoriya yoxdur</option>
                 {parentCategories.filter(p => p.id !== cat.id).map((parentCat) => (
@@ -297,77 +308,45 @@ export default function AdminCategoriesPage() {
               </span>
             )}
           </td>
-          <td style={{ border: "1px solid #333", padding: 8, textAlign: 'center', minWidth: 180 }}>
+          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
             {editing?.id === cat.id ? (
-              <>
+              <div className="flex space-x-2 justify-center">
                 <button 
                   onClick={saveEdit} 
                   disabled={isSubmitting}
-                  style={{ 
-                    marginRight: 8, 
-                    padding: "6px 16px", 
-                    background: isSubmitting ? "#666" : "#0af", 
-                    color: "#fff", 
-                    border: "none", 
-                    borderRadius: 4, 
-                    fontWeight: 600, 
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
+                  className="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
+                  <FaSave className="w-4 h-4 mr-1" />
                   {isSubmitting ? 'Yadda saxlanılır...' : 'Yadda saxla'}
                 </button>
                 <button 
                   onClick={() => setEditing(null)} 
                   disabled={isSubmitting}
-                  style={{ 
-                    padding: "6px 16px", 
-                    background: "#888", 
-                    color: "#fff", 
-                    border: "none", 
-                    borderRadius: 4, 
-                    fontWeight: 600, 
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
+                  className="flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
+                  <FaTimes className="w-4 h-4 mr-1" />
                   Ləğv et
                 </button>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="flex space-x-2 justify-center">
                 <button 
                   onClick={() => startEdit(cat)} 
                   disabled={isSubmitting}
-                  style={{ 
-                    marginRight: 8, 
-                    padding: "6px 16px", 
-                    background: "#0af", 
-                    color: "#fff", 
-                    border: "none", 
-                    borderRadius: 4, 
-                    fontWeight: 600, 
-                    cursor: 'pointer' 
-                  }}
+                  className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                 >
+                  <FaEdit className="w-4 h-4 mr-1" />
                   Redaktə
                 </button>
                 <button 
                   onClick={() => deleteCategory(cat.id)} 
                   disabled={isSubmitting}
-                  style={{ 
-                    padding: "6px 16px", 
-                    background: "#f44", 
-                    color: "#fff", 
-                    border: "none", 
-                    borderRadius: 4, 
-                    fontWeight: 600, 
-                    cursor: 'pointer' 
-                  }}
+                  className="flex items-center px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
                 >
+                  <FaTrash className="w-4 h-4 mr-1" />
                   Sil
                 </button>
-              </>
+              </div>
             )}
           </td>
         </tr>
@@ -377,148 +356,110 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div style={{ maxWidth: '100%', margin: "40px auto", background: "#232b3b", color: "#fff", padding: 24, borderRadius: 10, boxShadow: '0 4px 24px #0002' }}>
-              <h2 style={{ fontSize: 28, marginBottom: 24, textAlign: 'left', letterSpacing: 1 }}>Категории</h2>
-      
-      {/* Success Message */}
-      {successMessage && (
-        <div style={{ 
-          background: "#4CAF50", 
-          color: "#fff", 
-          padding: "12px 16px", 
-          borderRadius: 6, 
-          marginBottom: 16,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span>{successMessage}</span>
-          <button 
-            onClick={() => setSuccessMessage(null)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: '#fff', 
-              fontSize: 18, 
-              cursor: 'pointer',
-              padding: 0,
-              width: 20,
-              height: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            ×
-          </button>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Kateqoriyalar ({categories.length} ədəd)
+          </h1>
+          <p className="text-gray-600">Kateqoriyaların idarə edilməsi</p>
         </div>
-      )}
-      
-      {/* Error Message */}
-      {error && (
-        <div style={{ 
-          background: "#f44336", 
-          color: "#fff", 
-          padding: "12px 16px", 
-          borderRadius: 6, 
-          marginBottom: 16,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span>{error}</span>
-          <button 
-            onClick={() => setError(null)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: '#fff', 
-              fontSize: 18, 
-              cursor: 'pointer',
-              padding: 0,
-              width: 20,
-              height: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            ×
-          </button>
+
+        {/* Messages */}
+        {successMessage && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg flex justify-between items-center">
+            <span>{successMessage}</span>
+            <button 
+              onClick={() => setSuccessMessage(null)}
+              className="text-green-700 hover:text-green-900 text-xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center">
+            <span>{error}</span>
+            <button 
+              onClick={() => setError(null)}
+              className="text-red-700 hover:text-red-900 text-xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* Add Category Form */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Yeni Kateqoriya Əlavə Et</h2>
+          <div className="flex flex-wrap gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Kateqoriya Adı</label>
+              <input 
+                value={newName} 
+                onChange={e => setNewName(e.target.value)} 
+                placeholder="Yeni kateqoriya adı" 
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Təsvir</label>
+              <input 
+                value={newDesc} 
+                onChange={e => setNewDesc(e.target.value)} 
+                placeholder="Təsvir (optional)" 
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-80"
+              />
+            </div>
+            <button 
+              onClick={addCategory} 
+              disabled={isSubmitting}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaPlus className="w-4 h-4 mr-2" />
+              {isSubmitting ? 'Əlavə edilir...' : 'Əlavə et'}
+            </button>
+          </div>
         </div>
-      )}
-      
-              {loading ? <div>Загрузка...</div> : null}
-      
-      <div style={{ marginBottom: 24, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input 
-          value={newName} 
-          onChange={e => setNewName(e.target.value)} 
-          placeholder="Yeni kateqoriya adı" 
-          style={{ padding: 8, width: 200, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }} 
-        />
-        <input 
-          value={newDesc} 
-          onChange={e => setNewDesc(e.target.value)} 
-          placeholder="Təsvir (optional)" 
-          style={{ padding: 8, width: 220, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }} 
-        />
-        {/* Temporarily disabled parentId and sortOrder fields
-        <select 
-          value={newParentId} 
-          onChange={e => setNewParentId(e.target.value)} 
-          style={{ padding: 8, width: 180, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }}
-        >
-          <option value="">Ana kateqoriya seçin</option>
-          {parentCategories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-        <input 
-          type="number"
-          value={newSortOrder} 
-          onChange={e => setNewSortOrder(parseInt(e.target.value) || 0)} 
-          placeholder="Sıra" 
-          style={{ padding: 8, width: 80, borderRadius: 4, border: '1px solid #333', background: '#1a2233', color: '#fff' }} 
-        />
-        */}
-        <button 
-          onClick={addCategory} 
-          disabled={isSubmitting}
-          style={{ 
-            padding: "8px 18px", 
-            background: isSubmitting ? "#666" : "#0af", 
-            color: "#fff", 
-            border: "none", 
-            borderRadius: 4, 
-            fontWeight: 600, 
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            opacity: isSubmitting ? 0.7 : 1
-          }}
-        >
-          {isSubmitting ? 'Əlavə edilir...' : 'Əlavə et'}
-        </button>
-      </div>
-      
-      <div style={{overflowX:'auto'}}>
-      <table style={{ width: "100%", background: "#1a2233", color: "#fff", borderCollapse: "collapse", minWidth: 600 }}>
-        <thead>
-          <tr>
-            <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>ID</th>
-            <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ad</th>
-            <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Təsvir</th>
-              {/* Temporarily disabled parent category column
-              <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'left' }}>Ana Kateqoriya</th>
-              */}
-            <th style={{ border: "1px solid #333", padding: 8, fontWeight: 700, background:'#232b3b', textAlign:'center' }}>Əməliyyatlar</th>
-          </tr>
-        </thead>
-        <tbody>
-            {renderCategories(categories, 0)}
-        </tbody>
-      </table>
+
+        {/* Categories Table */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Kateqoriyalar yüklənir...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ad
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Təsvir
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ana Kateqoriya
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Əməliyyatlar
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {renderCategories(categories, 0)}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
