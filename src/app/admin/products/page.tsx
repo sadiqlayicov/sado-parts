@@ -49,7 +49,7 @@ export default function ProductsPage() {
           }
         }
         
-        // Validate each product
+        // Validate and clean each product
         const validProducts = productsArray.filter(item => {
           return item && 
                  typeof item === 'object' && 
@@ -57,9 +57,25 @@ export default function ProductsPage() {
                  item.name &&
                  typeof item.id === 'string' &&
                  typeof item.name === 'string';
+        }).map(product => {
+          // Clean the product object to prevent React Error #31
+          return {
+            id: String(product.id || ''),
+            name: String(product.name || ''),
+            description: product.description ? String(product.description) : '',
+            price: typeof product.price === 'number' ? product.price : 0,
+            category: product.category ? String(product.category.name || product.category) : '',
+            image: product.images && Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null,
+            artikul: product.artikul ? String(product.artikul) : '',
+            catalogNumber: product.catalogNumber ? String(product.catalogNumber) : '',
+            isActive: Boolean(product.isActive),
+            isFeatured: Boolean(product.isFeatured),
+            stock: typeof product.stock === 'number' ? product.stock : 0
+          };
         });
         
         console.log('Valid products count:', validProducts.length);
+        console.log('First product sample:', validProducts[0]);
         setProducts(validProducts);
         
       } else {
@@ -125,14 +141,31 @@ export default function ProductsPage() {
                 Mövcud Məhsullar
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {products.map((product) => (
+                {products.slice(0, 20).map((product, index) => (
                   <div 
-                    key={product.id} 
+                    key={`${product.id}-${index}`} 
                     className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-500 text-xs">IMG</span>
+                        {product.image ? (
+                          <img 
+                            src={product.image} 
+                            alt={product.name}
+                            className="w-full h-full object-cover rounded-lg"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.display = 'none';
+                              const sibling = target.nextElementSibling as HTMLElement;
+                              if (sibling) {
+                                sibling.style.display = 'flex';
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <span className="text-gray-500 text-xs" style={{ display: product.image ? 'none' : 'flex' }}>
+                          IMG
+                        </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-gray-900 truncate">
@@ -146,9 +179,14 @@ export default function ProductsPage() {
                             Kateqoriya: {product.category}
                           </p>
                         )}
-                        {product.price && (
+                        {product.price > 0 && (
                           <p className="text-xs text-green-600 font-medium">
                             {product.price} ₽
+                          </p>
+                        )}
+                        {product.stock > 0 && (
+                          <p className="text-xs text-blue-600">
+                            Stok: {product.stock}
                           </p>
                         )}
                       </div>
@@ -156,6 +194,13 @@ export default function ProductsPage() {
                   </div>
                 ))}
               </div>
+              {products.length > 20 && (
+                <div className="text-center mt-4">
+                  <p className="text-gray-500 text-sm">
+                    və {products.length - 20} ədəd daha...
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -169,6 +214,9 @@ export default function ProductsPage() {
             <p>Error: {error || 'Yoxdur'}</p>
             <p>Authenticated: {isAuthenticated ? 'Bəli' : 'Xeyr'}</p>
             <p>Is Admin: {user?.isAdmin ? 'Bəli' : 'Xeyr'}</p>
+            {products.length > 0 && (
+              <p>First product keys: {Object.keys(products[0]).join(', ')}</p>
+            )}
           </div>
         </div>
       </div>
