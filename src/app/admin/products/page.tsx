@@ -32,7 +32,7 @@ export default function ProductsPage() {
         const response = await fetch('/api/products');
         if (response.ok) {
           const data = await response.json();
-          setProducts(data.products || []);
+          setProducts(data.data || data.products || []);
         } else {
           console.error('Failed to load products');
         }
