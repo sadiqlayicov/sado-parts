@@ -8,7 +8,7 @@ import { FaPlus, FaEdit, FaTrash, FaSearch } from 'react-icons/fa';
 export default function ProductsPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
