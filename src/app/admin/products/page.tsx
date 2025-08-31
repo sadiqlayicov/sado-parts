@@ -47,9 +47,9 @@ export default function ProductsPage() {
   }, [isAuthenticated, user, router]);
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.artikul.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.catalogNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.artikul?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.catalogNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -175,7 +175,7 @@ export default function ProductsPage() {
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <img
-                          src={product.image}
+                          src={product.image || '/placeholder.png'}
                           alt={product.name}
                           className="h-10 w-10 rounded-lg object-cover"
                         />
@@ -190,30 +190,30 @@ export default function ProductsPage() {
                         {product.category || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.artikul}
+                        {product.artikul || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {product.catalogNumber || '-'}
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {product.description}
+                          {product.description || '-'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {product.price} ₽
+                        {product.price || 0} ₽
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
-                          checked={product.isActive}
+                          checked={product.isActive || false}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
-                          checked={product.isFeatured}
+                          checked={product.isFeatured || false}
                           className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
                         />
                       </td>
@@ -234,7 +234,8 @@ export default function ProductsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
