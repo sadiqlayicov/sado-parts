@@ -40,6 +40,12 @@ export default function Admin1CIntegrationPage() {
     hasContent: false,
     contentLength: 0,
     productCount: 0,
+    importedCount: 0,
+    updatedCount: 0,
+    withPrice: 0,
+    withoutPrice: 0,
+    withImage: 0,
+    withoutImage: 0,
     lastActivity: null as string | null,
     uploadProgress: 'Waiting for 1C...'
   });
@@ -103,6 +109,12 @@ export default function Admin1CIntegrationPage() {
             ? parseInt(data.globalState.uploadedFileContent.match(/Content length: (\d+)/)?.[1] || '0')
             : 0,
           productCount: productCount,
+          importedCount: 0, // Will be updated from logs
+          updatedCount: 0, // Will be updated from logs
+          withPrice: 0, // Will be updated from logs
+          withoutPrice: 0, // Will be updated from logs
+          withImage: 0, // Will be updated from logs
+          withoutImage: 0, // Will be updated from logs
           lastActivity: data.globalState?.lastActivityTime || data.globalState?.uploadProgress || null,
           uploadProgress: data.globalState?.uploadProgress || 'Waiting for 1C...'
         });
@@ -548,6 +560,42 @@ export default function Admin1CIntegrationPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Новых товаров:</span>
+                  <span className="text-green-600 font-semibold">
+                    {uploadStatus.importedCount > 0 ? uploadStatus.importedCount : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Обновлено товаров:</span>
+                  <span className="text-blue-600 font-semibold">
+                    {uploadStatus.updatedCount > 0 ? uploadStatus.updatedCount : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">С ценой:</span>
+                  <span className="text-green-600 font-semibold">
+                    {uploadStatus.withPrice > 0 ? uploadStatus.withPrice : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Без цены:</span>
+                  <span className="text-orange-600 font-semibold">
+                    {uploadStatus.withoutPrice > 0 ? uploadStatus.withoutPrice : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">С изображениями:</span>
+                  <span className="text-green-600 font-semibold">
+                    {uploadStatus.withImage > 0 ? uploadStatus.withImage : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Без изображений:</span>
+                  <span className="text-orange-600 font-semibold">
+                    {uploadStatus.withoutImage > 0 ? uploadStatus.withoutImage : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
                   <span className="text-gray-600">Последнее обновление:</span>
                   <span className="text-gray-500">
                     {uploadStatus.lastActivity || 'Нет данных'}
@@ -555,7 +603,7 @@ export default function Admin1CIntegrationPage() {
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-blue-700 text-sm">
-                    Товары автоматически загружаются из 1C при синхронизации
+                    Все товары загружаются из 1C (с ценой и без, с изображениями и без)
                   </p>
                 </div>
               </div>

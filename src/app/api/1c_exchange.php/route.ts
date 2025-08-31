@@ -215,84 +215,92 @@ async function importProductsFromCommerceML(xmlContent: string) {
   try {
     client = await pool.connect();
     
-    // Simple XML parsing (in production, use a proper XML parser)
+    // Parse XML content
     const products: any[] = [];
     
-    // Extract products from XML using regex (simplified)
+    // Extract products from XML
     const productMatches = xmlContent.match(/<Товар[^>]*>([\s\S]*?)<\/Товар>/g);
     
     if (productMatches) {
       for (const productMatch of productMatches) {
-        const product: any = {};
-        
-        // Extract product ID
-        const idMatch = productMatch.match(/<Ид>([^<]+)<\/Ид>/);
-        if (idMatch) product.id = idMatch[1];
-        
-        // Extract product name
-        const nameMatch = productMatch.match(/<Наименование>([^<]+)<\/Наименование>/);
-        if (nameMatch) product.name = nameMatch[1];
-        
-        // Extract price
-        const priceMatch = productMatch.match(/<ЦенаЗаЕдиницу>([^<]+)<\/ЦенаЗаЕдиницу>/);
-        if (priceMatch) product.price = parseFloat(priceMatch[1]);
-        
-        // Extract description
-        const descMatch = productMatch.match(/<Описание>([^<]+)<\/Описание>/);
-        if (descMatch) product.description = descMatch[1];
-        
-        if (product.id && product.name) {
+        try {
+          // Extract basic product information
+          const idMatch = productMatch.match(/<Ид>([^<]+)<\/Ид>/);
+          const nameMatch = productMatch.match(/<Наименование>([^<]+)<\/Наименование>/);
+          const skuMatch = productMatch.match(/<Артикул>([^<]+)<\/Артикул>/);
+          const descriptionMatch = productMatch.match(/<Описание>([^<]+)<\/Описание>/);
+          const priceMatch = productMatch.match(/<ЦенаЗаЕдиницу>([^<]+)<\/ЦенаЗаЕдиницу>/);
+          const categoryMatch = productMatch.match(/<Группы>([^<]+)<\/Группы>/);
+          
+          const product = {
+            id: idMatch ? idMatch[1] : null,
+            name: nameMatch ? nameMatch[1] : 'Без названия',
+            sku: skuMatch ? skuMatch[1] : '',
+            description: descriptionMatch ? descriptionMatch[1] : '',
+            price: priceMatch ? parseFloat(priceMatch[1]) || 0 : 0,
+            category: categoryMatch ? categoryMatch[1] : 'Общие',
+            hasImage: productMatch.includes('<Картинка>'),
+            hasPrice: priceMatch && parseFloat(priceMatch[1]) > 0
+          };
+          
           products.push(product);
+        } catch (error) {
+          console.error('Error parsing individual product:', error);
         }
       }
     }
     
-    console.log(`Found ${products.length} products to import`);
+    console.log(`📦 Found ${products.length} products in XML`);
+    addLog(`📦 Parsed ${products.length} products from XML`);
     
     // Import products to database
+    let importedCount = 0;
+    let updatedCount = 0;
+    
     for (const product of products) {
-      // Check if product already exists
-      const existingProduct = await client.query(
-        'SELECT id FROM products WHERE "1c_id" = $1',
-        [product.id]
-      );
-      
-      if (existingProduct.rows.length === 0) {
-        // Insert new product
-        await client.query(
-          `INSERT INTO products (name, price, description, "1c_id", "categoryId", "isActive", "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
-          [
-            product.name,
-            product.price || 0,
-            product.description || '',
-            product.id,
-            1, // Default category ID
-            true
-          ]
+      try {
+        // Check if product exists
+        const existingProduct = await client.query(
+          'SELECT id FROM products WHERE 1c_id = $1 OR sku = $2',
+          [product.id, product.sku]
         );
-        console.log(`Imported product: ${product.name}`);
-      } else {
-        // Update existing product
-        await client.query(
-          `UPDATE products 
-           SET name = $1, price = $2, description = $3, "updatedAt" = NOW()
-           WHERE "1c_id" = $4`,
-          [
-            product.name,
-            product.price || 0,
-            product.description || '',
-            product.id
-          ]
-        );
-        console.log(`Updated product: ${product.name}`);
+        
+        if (existingProduct.rows.length > 0) {
+          // Update existing product
+          await client.query(`
+            UPDATE products 
+            SET name = $1, description = $2, price = $3, category_name = $4, updated_at = NOW()
+            WHERE 1c_id = $5 OR sku = $6
+          `, [product.name, product.description, product.price, product.category, product.id, product.sku]);
+          updatedCount++;
+        } else {
+          // Insert new product
+          await client.query(`
+            INSERT INTO products (1c_id, name, sku, description, price, category_name, stock_quantity, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, 0, NOW(), NOW())
+          `, [product.id, product.name, product.sku, product.description, product.price, product.category]);
+          importedCount++;
+        }
+      } catch (error) {
+        console.error(`Error importing product ${product.name}:`, error);
       }
     }
     
-    return { success: true, imported: products.length };
+    addLog(`✅ Import completed: ${importedCount} new, ${updatedCount} updated`);
+    
+    return {
+      totalProducts: products.length,
+      imported: importedCount,
+      updated: updatedCount,
+      withPrice: products.filter(p => p.hasPrice).length,
+      withImage: products.filter(p => p.hasImage).length,
+      withoutPrice: products.filter(p => !p.hasPrice).length,
+      withoutImage: products.filter(p => !p.hasImage).length
+    };
     
   } catch (error) {
-    console.error('Error importing products:', error);
+    console.error('❌ Error in importProductsFromCommerceML:', error);
+    addLog(`❌ Import error: ${error}`);
     throw error;
   } finally {
     if (client) {
