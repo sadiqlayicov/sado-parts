@@ -238,15 +238,24 @@ async function importProductsFromCommerceML(xmlContent: string) {
           const priceMatch = productMatch.match(/<ЦенаЗаЕдиницу>([^<]+)<\/ЦенаЗаЕдиницу>/);
           const categoryMatch = productMatch.match(/<Группы>([^<]+)<\/Группы>/);
           
+          // Extract additional attributes
+          const fullNameMatch = productMatch.match(/<НаименованиеПолное>([^<]+)<\/НаименованиеПолное>/);
+          const catalogNumberMatch = productMatch.match(/<КаталожныйНомер>([^<]+)<\/КаталожныйНомер>/);
+          const commentMatch = productMatch.match(/<Комментарий>([^<]+)<\/Комментарий>/);
+          
           const product = {
             id: idMatch ? idMatch[1] : null,
-            name: nameMatch ? nameMatch[1] : 'Без названия',
-            sku: skuMatch ? skuMatch[1] : '',
-            description: descriptionMatch ? descriptionMatch[1] : '',
+            name: nameMatch ? nameMatch[1] : (fullNameMatch ? fullNameMatch[1] : 'Без названия'),
+            sku: skuMatch ? skuMatch[1] : (catalogNumberMatch ? catalogNumberMatch[1] : ''),
+            description: descriptionMatch ? descriptionMatch[1] : (commentMatch ? commentMatch[1] : ''),
             price: priceMatch ? parseFloat(priceMatch[1]) || 0 : 0,
             category: categoryMatch ? categoryMatch[1] : 'Общие',
             hasImage: productMatch.includes('<Картинка>'),
-            hasPrice: priceMatch && parseFloat(priceMatch[1]) > 0
+            hasPrice: priceMatch && parseFloat(priceMatch[1]) > 0,
+            // Additional attributes
+            fullName: fullNameMatch ? fullNameMatch[1] : '',
+            catalogNumber: catalogNumberMatch ? catalogNumberMatch[1] : '',
+            comment: commentMatch ? commentMatch[1] : ''
           };
           
           products.push(product);
@@ -275,16 +284,22 @@ async function importProductsFromCommerceML(xmlContent: string) {
           // Update existing product
           await client.query(`
             UPDATE products 
-            SET name = $1, description = $2, price = $3, category_name = $4, updated_at = NOW()
-            WHERE 1c_id = $5 OR sku = $6
-          `, [product.name, product.description, product.price, product.category, product.id, product.sku]);
+            SET name = $1, description = $2, price = $3, category_name = $4, 
+                sku = $5, full_name = $6, catalog_number = $7, comment = $8, updated_at = NOW()
+            WHERE 1c_id = $9 OR sku = $10
+          `, [product.name, product.description, product.price, product.category, 
+              product.sku, product.fullName, product.catalogNumber, product.comment, 
+              product.id, product.sku]);
           updatedCount++;
         } else {
           // Insert new product
           await client.query(`
-            INSERT INTO products (1c_id, name, sku, description, price, category_name, stock_quantity, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, 0, NOW(), NOW())
-          `, [product.id, product.name, product.sku, product.description, product.price, product.category]);
+            INSERT INTO products (1c_id, name, sku, description, price, category_name, 
+                                 stock_quantity, full_name, catalog_number, comment, 
+                                 created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8, $9, NOW(), NOW())
+          `, [product.id, product.name, product.sku, product.description, product.price, 
+              product.category, product.fullName, product.catalogNumber, product.comment]);
           importedCount++;
         }
       } catch (error) {
