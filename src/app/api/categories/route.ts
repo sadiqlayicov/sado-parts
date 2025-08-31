@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { Pool } from 'pg'
 import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
 
@@ -12,6 +12,17 @@ const pool = new Pool({
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 5000,
 })
+
+// Helper function to handle database errors
+function handleDatabaseError(error: any, operation: string) {
+  logError(operation, error)
+  
+  if (error.message?.includes('Max client connections reached')) {
+    return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
+  }
+  
+  return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
+}
 
 /**
  * GET - Get all categories
@@ -52,10 +63,7 @@ export async function POST(request: NextRequest) {
     
     // Validation
     if (!name) {
-      return NextResponse.json(
-        { success: false, error: 'Kateqoriya adı tələb olunur' },
-        { status: 400 }
-      );
+      return errorResponse('Kateqoriya adı tələb olunur', 400);
     }
 
     client = await pool.connect();
@@ -71,10 +79,7 @@ export async function POST(request: NextRequest) {
     `, [name]);
     
     if (existingResult.rows.length > 0) {
-      return NextResponse.json(
-        { success: false, error: 'Bu adda kateqoriya artıq mövcuddur' },
-        { status: 400 }
-      );
+      return errorResponse('Bu adda kateqoriya artıq mövcuddur', 400);
     }
 
     // Create new category (with optional parent)
@@ -96,11 +101,7 @@ export async function POST(request: NextRequest) {
     const newCategory = newCategoryResult.rows[0];
     console.log('Category created successfully:', newCategory);
     
-    return NextResponse.json({
-      success: true,
-      data: newCategory,
-      message: 'Kateqoriya uğurla yaradıldı'
-    });
+    return successResponse(newCategory, 'Kateqoriya uğurla yaradıldı');
   } catch (error: any) {
     console.error('Database error in POST /api/categories:', error);
     return handleDatabaseError(error, 'POST /api/categories');
