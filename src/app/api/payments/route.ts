@@ -675,48 +675,6 @@ async function generatePaymentUrl(paymentId: number, paymentSystem: string, amou
   }
 }
 
-// Approve payment
-async function approvePayment(client: any, body: any) {
-  const { paymentId } = body;
-
-  if (!paymentId) {
-    return NextResponse.json(
-      { error: 'Требуется paymentId' },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const result = await client.query(`
-      UPDATE payments 
-      SET status = 'completed', 
-          processed_at = NOW(),
-          updated_at = NOW()
-      WHERE id = $1
-      RETURNING *
-    `, [paymentId]);
-
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Платеж не найден' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Платеж успешно подтвержден',
-      payment: result.rows[0]
-    });
-  } catch (error: any) {
-    console.error('Error approving payment:', error);
-    return NextResponse.json(
-      { error: `Ошибка подтверждения платежа: ${error.message}` },
-      { status: 500 }
-    );
-  }
-}
-
 // Delete payment
 async function deletePayment(client: any, body: any) {
   const { paymentId } = body;
