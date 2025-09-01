@@ -102,14 +102,15 @@ export async function GET(request: NextRequest) {
     
     console.log('Payment GET request:', { action });
 
-    if (!action) {
-      return NextResponse.json(
-        { error: 'Требуется параметр action' },
-        { status: 400 }
-      );
-    }
-
     client = await pool.connect();
+
+    // Ensure payments table exists
+    await ensurePaymentsTable(client);
+
+    if (!action) {
+      // If no action specified, return all payments (for admin panel)
+      return await getPayments(client);
+    }
 
     switch (action) {
       case 'get_systems':
@@ -173,6 +174,10 @@ export async function POST(request: NextRequest) {
         return await uploadReceipt(client, body);
       case 'approve_payment':
         return await approvePayment(client, body);
+      case 'delete_payment':
+        return await deletePayment(client, body);
+      case 'bulk_delete_payments':
+        return await bulkDeletePayments(client, body);
       default:
         return NextResponse.json(
           { error: 'Неизвестное действие' },
@@ -667,5 +672,117 @@ async function generatePaymentUrl(paymentId: number, paymentSystem: string, amou
       return `${baseUrl}/payment/p2p/${paymentId}`;
     default:
       return `${baseUrl}/payment/process/${paymentId}`;
+  }
+}
+
+// Approve payment
+async function approvePayment(client: any, body: any) {
+  const { paymentId } = body;
+
+  if (!paymentId) {
+    return NextResponse.json(
+      { error: 'Требуется paymentId' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const result = await client.query(`
+      UPDATE payments 
+      SET status = 'completed', 
+          processed_at = NOW(),
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `, [paymentId]);
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Платеж не найден' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Платеж успешно подтвержден',
+      payment: result.rows[0]
+    });
+  } catch (error: any) {
+    console.error('Error approving payment:', error);
+    return NextResponse.json(
+      { error: `Ошибка подтверждения платежа: ${error.message}` },
+      { status: 500 }
+    );
+  }
+}
+
+// Delete payment
+async function deletePayment(client: any, body: any) {
+  const { paymentId } = body;
+
+  if (!paymentId) {
+    return NextResponse.json(
+      { error: 'Требуется paymentId' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const result = await client.query(`
+      DELETE FROM payments 
+      WHERE id = $1
+      RETURNING *
+    `, [paymentId]);
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Платеж не найден' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Платеж успешно удален'
+    });
+  } catch (error: any) {
+    console.error('Error deleting payment:', error);
+    return NextResponse.json(
+      { error: `Ошибка удаления платежа: ${error.message}` },
+      { status: 500 }
+    );
+  }
+}
+
+// Bulk delete payments
+async function bulkDeletePayments(client: any, body: any) {
+  const { paymentIds } = body;
+
+  if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
+    return NextResponse.json(
+      { error: 'Требуется массив paymentIds' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const result = await client.query(`
+      DELETE FROM payments 
+      WHERE id = ANY($1)
+      RETURNING id
+    `, [paymentIds]);
+
+    return NextResponse.json({
+      success: true,
+      message: `${result.rows.length} платежей успешно удалены`,
+      deletedCount: result.rows.length
+    });
+  } catch (error: any) {
+    console.error('Error bulk deleting payments:', error);
+    return NextResponse.json(
+      { error: `Ошибка массового удаления платежей: ${error.message}` },
+      { status: 500 }
+    );
   }
 }
