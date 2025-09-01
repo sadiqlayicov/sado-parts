@@ -79,13 +79,12 @@ export default function AdminPayments() {
     }
 
     try {
-      const response = await fetch('/api/payments', {
+      const response = await fetch('/api/payments?action=refund_payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'refund_payment',
           paymentId: selectedPayment.id,
           amount: refundAmount,
           reason: refundReason
@@ -111,13 +110,12 @@ export default function AdminPayments() {
 
   const handleApprovePayment = async (paymentId: number) => {
     try {
-      const response = await fetch('/api/payments', {
+      const response = await fetch('/api/payments?action=approve_payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'approve_payment',
           paymentId: paymentId
         }),
       });
@@ -141,13 +139,12 @@ export default function AdminPayments() {
     }
 
     try {
-      const response = await fetch('/api/payments', {
+      const response = await fetch('/api/payments?action=delete_payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'delete_payment',
           paymentId: paymentId
         }),
       });
@@ -176,13 +173,12 @@ export default function AdminPayments() {
     }
 
     try {
-      const response = await fetch('/api/payments', {
+      const response = await fetch('/api/payments?action=bulk_delete_payments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'bulk_delete_payments',
           paymentIds: selectedPayments
         }),
       });
