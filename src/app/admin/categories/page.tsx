@@ -77,7 +77,33 @@ export default function AdminCategoriesPage() {
       } else if (Array.isArray(data)) {
         categoriesArray = data; // fallback
       }
-      setCategories(categoriesArray);
+      
+      // Build hierarchical structure from flat data
+      const buildHierarchy = (flatCategories: any[]): Category[] => {
+        const categoryMap = new Map();
+        const rootCategories: Category[] = [];
+        
+        // First pass: create map of all categories
+        flatCategories.forEach(cat => {
+          categoryMap.set(cat.id, { ...cat, children: [] });
+        });
+        
+        // Second pass: build hierarchy
+        flatCategories.forEach(cat => {
+          const category = categoryMap.get(cat.id);
+          if (cat.parentId && categoryMap.has(cat.parentId)) {
+            const parent = categoryMap.get(cat.parentId);
+            parent.children.push(category);
+          } else {
+            rootCategories.push(category);
+          }
+        });
+        
+        return rootCategories;
+      };
+      
+      const hierarchicalCategories = buildHierarchy(categoriesArray);
+      setCategories(hierarchicalCategories);
       
       // Extract all categories (including children) for parent selection
       const allCategories: Category[] = [];
@@ -89,10 +115,10 @@ export default function AdminCategoriesPage() {
           }
         });
       };
-      extractCategories(categoriesArray);
+      extractCategories(hierarchicalCategories);
       setParentCategories(allCategories);
       
-      console.log('Categories set:', categoriesArray);
+      console.log('Categories set:', hierarchicalCategories);
     } catch (e: any) {
       console.error('Error fetching categories:', e);
       setError(e.message || "Kateqoriyalar yüklənərkən xəta baş verdi");
@@ -394,14 +420,14 @@ export default function AdminCategoriesPage() {
         {/* Add Category Form */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Yeni Kateqoriya Əlavə Et</h2>
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Kateqoriya Adı</label>
               <input 
                 value={newName} 
                 onChange={e => setNewName(e.target.value)} 
                 placeholder="Yeni kateqoriya adı" 
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -410,17 +436,34 @@ export default function AdminCategoriesPage() {
                 value={newDesc} 
                 onChange={e => setNewDesc(e.target.value)} 
                 placeholder="Təsvir (optional)" 
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-80"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            <button 
-              onClick={addCategory} 
-              disabled={isSubmitting}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaPlus className="w-4 h-4 mr-2" />
-              {isSubmitting ? 'Əlavə edilir...' : 'Əlavə et'}
-            </button>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ana Kateqoriya</label>
+              <select 
+                value={newParentId} 
+                onChange={e => setNewParentId(e.target.value)} 
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Ana kateqoriya yoxdur</option>
+                {parentCategories.map((parentCat) => (
+                  <option key={parentCat.id} value={parentCat.id}>
+                    {parentCat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <button 
+                onClick={addCategory} 
+                disabled={isSubmitting}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full"
+              >
+                <FaPlus className="w-4 h-4 mr-2" />
+                {isSubmitting ? 'Əlavə edilir...' : 'Əlavə et'}
+              </button>
+            </div>
           </div>
         </div>
 
