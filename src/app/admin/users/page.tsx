@@ -396,7 +396,7 @@ export default function UsersManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between">
