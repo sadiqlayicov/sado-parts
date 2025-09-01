@@ -3,6 +3,9 @@ import bcrypt from 'bcryptjs';
 import { Client } from 'pg';
 import nodemailer from 'nodemailer';
 
+// Import notification function
+import { addNotification } from '../../../../lib/notifications';
+
 export async function POST(request: NextRequest) {
   let client: Client | null = null;
   try {
@@ -77,6 +80,18 @@ export async function POST(request: NextRequest) {
       'INSERT INTO email_verification_codes (id, email, code_hash, expires_at) VALUES ($1,$2,$3,$4)',
       [codeId, email, codeHash, expiresAt]
     );
+
+    // Add notification for new user registration
+    const userDisplayName = [firstName, lastName].filter(Boolean).join(' ') || email;
+    addNotification('user', `Yeni istifadəçi qeydiyyatdan keçdi: ${userDisplayName}`, {
+      userId: id,
+      email,
+      firstName,
+      lastName,
+      phone,
+      country,
+      city
+    });
 
     let debugCode: string | undefined = rawCode; // always return for UX while SMTP is tuned
     try {

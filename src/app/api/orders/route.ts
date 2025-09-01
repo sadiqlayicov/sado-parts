@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import nodemailer from 'nodemailer';
+import { addNotification } from '../../../lib/notifications';
 
 // Create a connection pool
 const pool = new Pool({
@@ -141,6 +142,15 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Order created successfully:', orderId);
+
+    // Add notification for new order
+    addNotification('order', `Yeni sifariş alındı: #${order.orderNumber} - ${totalAmount} ₽`, {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      userId,
+      totalAmount,
+      itemCount: items.length
+    });
 
     // Email notifications to customer and admin
     try {
