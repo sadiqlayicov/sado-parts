@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheckCircle, FaTrashAlt, FaEye, FaFilter, FaSave, FaTimes, FaUpload, FaImage } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheckCircle, FaTrashAlt, FaEye, FaFilter, FaSave, FaTimes, FaUpload, FaImage, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 interface Product {
   id: string;
@@ -41,6 +41,10 @@ export default function ProductsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Form states
   const [newProduct, setNewProduct] = useState({
@@ -169,9 +173,14 @@ export default function ProductsPage() {
       const response = await fetch('/api/categories');
       if (response.ok) {
         const data = await response.json();
-        if (data && Array.isArray(data)) {
-          setCategories(data);
+        // Handle both array and successResponse formats
+        let categoriesArray: any[] = [];
+        if (data && data.success && Array.isArray(data.data)) {
+          categoriesArray = data.data;
+        } else if (Array.isArray(data)) {
+          categoriesArray = data;
         }
+        setCategories(categoriesArray);
       }
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -394,11 +403,13 @@ export default function ProductsPage() {
 
   const startEdit = (product: Product) => {
     setEditingProduct(product);
+    // Find the category ID that matches the product's category name
+    const matchingCategory = categories.find(cat => cat.name === product.category);
     setEditForm({
       name: product.name,
       description: product.description,
       price: product.price,
-      categoryId: '', // Will be set based on category name
+      categoryId: matchingCategory ? matchingCategory.id : '',
       artikul: product.artikul,
       catalogNumber: product.catalogNumber,
       stock: product.stock,
@@ -427,6 +438,33 @@ export default function ProductsPage() {
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
 
   const productCategories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
 
@@ -891,7 +929,7 @@ export default function ProductsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredProducts.map((product) => (
+                  currentProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
@@ -979,6 +1017,51 @@ export default function ProductsPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="bg-white px-6 py-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Göstərilir {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)} / {filteredProducts.length} məhsul
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 1}
+                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FaChevronLeft className="w-4 h-4 mr-1" />
+                    Əvvəlki
+                  </button>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  
+                  <button
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Sonrakı
+                    <FaChevronRight className="w-4 h-4 ml-1" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
