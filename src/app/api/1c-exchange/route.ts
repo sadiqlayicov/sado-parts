@@ -9,24 +9,34 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-// Simple authentication function - always allow for 1C compatibility
+// Authenticate 1C requests via Basic Auth against env-configured credentials
 function authenticateRequest(request: NextRequest): boolean {
+  const expectedUser = process.env.EXCHANGE_1C_USERNAME;
+  const expectedPass = process.env.EXCHANGE_1C_PASSWORD;
+
+  if (!expectedUser || !expectedPass) {
+    console.error('1C exchange credentials not configured (EXCHANGE_1C_USERNAME / EXCHANGE_1C_PASSWORD)');
+    return false;
+  }
+
   const authHeader = request.headers.get('authorization');
-  
-  console.log('=== AUTH DEBUG ===');
-  console.log('Auth headers:', {
-    authorization: authHeader,
-    contentType: request.headers.get('content-type'),
-    userAgent: request.headers.get('user-agent')
-  });
-  
-  // For 1C compatibility, allow all requests
-  console.log('Allowing all requests for 1C compatibility');
-  return true;
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    return false;
+  }
+
+  const base64Credentials = authHeader.substring(6);
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
+  const [user, pass] = credentials.split(':');
+
+  return user === expectedUser && pass === expectedPass;
 }
 
 // CommerceML 2.05 Standard API
 export async function GET(request: NextRequest) {
+  if (!authenticateRequest(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   let client: any;
 
   try {
@@ -140,6 +150,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!authenticateRequest(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   let client: any;
   
   try {

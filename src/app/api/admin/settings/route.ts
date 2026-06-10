@@ -107,16 +107,10 @@ export async function GET() {
 
   } catch (error: any) {
     console.error('Get settings error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      code: error.code
-    });
     return NextResponse.json(
       { 
         success: false, 
-        error: `Get settings error: ${error.message}`,
-        details: error.stack
+        error: 'Internal server error'
       },
       { status: 500 }
     );

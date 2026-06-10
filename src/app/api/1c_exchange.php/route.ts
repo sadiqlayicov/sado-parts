@@ -48,7 +48,32 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
+function authenticateRequest(request: NextRequest): boolean {
+  const expectedUser = process.env.EXCHANGE_1C_USERNAME;
+  const expectedPass = process.env.EXCHANGE_1C_PASSWORD;
+
+  if (!expectedUser || !expectedPass) {
+    console.error('1C exchange credentials not configured (EXCHANGE_1C_USERNAME / EXCHANGE_1C_PASSWORD)');
+    return false;
+  }
+
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    return false;
+  }
+
+  const base64Credentials = authHeader.substring(6);
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
+  const [user, pass] = credentials.split(':');
+
+  return user === expectedUser && pass === expectedPass;
+}
+
 export async function GET(request: NextRequest) {
+  if (!authenticateRequest(request)) {
+    return new NextResponse('failure\nAuth required', { status: 401, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
+
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
   const mode = searchParams.get('mode');
@@ -102,6 +127,10 @@ file_limit=1048576`;
 }
 
 export async function POST(request: NextRequest) {
+  if (!authenticateRequest(request)) {
+    return new NextResponse('failure\nAuth required', { status: 401, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
+
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
   const mode = searchParams.get('mode');
