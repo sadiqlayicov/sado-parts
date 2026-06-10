@@ -24,7 +24,7 @@ function handleDatabaseError(error: any, operation: string) {
   }
   
   return NextResponse.json(
-    { success: false, error: `Database xətası: ${error.message}` },
+    { success: false, error: 'Verilənlər bazası xətası baş verdi' },
     { status: 500 }
   )
 }
@@ -48,8 +48,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     client = await pool.connect();
 
     // Ensure columns
-    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
-    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch (e) { console.warn('Schema migration warning (parentId):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch (e) { console.warn('Schema migration warning (sortOrder):', e instanceof Error ? e.message : e); }
 
     const categoryResult = await client.query(`
       SELECT id, name, description, "isActive", "parentId", COALESCE("sortOrder",0) as "sortOrder", "createdAt", "updatedAt"
@@ -124,8 +124,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Update category
     // Ensure columns
-    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
-    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch (e) { console.warn('Schema migration warning (parentId):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch (e) { console.warn('Schema migration warning (sortOrder):', e instanceof Error ? e.message : e); }
 
     const updateResult = await client.query(`
       UPDATE categories 
@@ -178,7 +178,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         body = JSON.parse(text);
       }
     } catch (e) {
-      // No body or invalid JSON - continue with empty body
+      console.warn('DELETE /api/categories/[id]: Could not parse request body, proceeding with defaults:', e instanceof Error ? e.message : e);
     }
     
     const { forceDelete } = body as { forceDelete?: boolean };

@@ -14,12 +14,12 @@ export async function POST(request: NextRequest) {
     // Ensure structures (ignore errors to avoid 500)
     try {
       await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN DEFAULT false');
-    } catch (_) {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" TEXT'); } catch (_) {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" TEXT'); } catch (_) {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT'); } catch (_) {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN DEFAULT true'); } catch (_) {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "discountPercentage" INT DEFAULT 0'); } catch (_) {}
+    } catch (e) { console.warn('Schema migration warning (emailVerified):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" TEXT'); } catch (e) { console.warn('Schema migration warning (firstName):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" TEXT'); } catch (e) { console.warn('Schema migration warning (lastName):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT'); } catch (e) { console.warn('Schema migration warning (role):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN DEFAULT true'); } catch (e) { console.warn('Schema migration warning (isActive):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "discountPercentage" INT DEFAULT 0'); } catch (e) { console.warn('Schema migration warning (discountPercentage):', e instanceof Error ? e.message : e); }
     try {
       await client.query(`
         CREATE TABLE IF NOT EXISTS email_verification_codes (
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `);
-    } catch (_) {}
+    } catch (e) { console.warn('Schema migration warning (email_verification_codes):', e instanceof Error ? e.message : e); }
     
     const { email, password } = await request.json();
 

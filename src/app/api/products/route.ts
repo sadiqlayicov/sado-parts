@@ -107,8 +107,7 @@ export async function GET(request: NextRequest) {
         console.log('Using category filter with IDs:', queryParams);
         
       } catch (error) {
-        console.error('Error in category filtering:', error);
-        // Fallback to simple category filtering
+        console.error('Error in category filtering for categoryId', categoryId, '- falling back to simple filter:', error instanceof Error ? error.message : error);
         query += ` AND p."categoryId" = $1`;
         queryParams.push(categoryId);
       }

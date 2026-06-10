@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Get import/export error:', error);
     return NextResponse.json(
-      { error: `Ошибка получения статуса импорта: ${error.message}` },
+      { error: 'Ошибка получения статуса импорта' },
       { status: 500 }
     );
   } finally {
@@ -419,7 +419,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json({ 
-      error: `Ошибка импорта: ${error.message}` 
+      error: 'Ошибка импорта файла' 
     }, { status: 500 });
   } finally {
     if (client) {

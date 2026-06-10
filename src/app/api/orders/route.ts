@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
         await Promise.all(tasks);
       }
     } catch (mailErr) {
-      console.error('Order create email error:', mailErr);
+      console.error('Order create email error: Failed to send order notification emails for order', orderId, mailErr instanceof Error ? mailErr.message : mailErr);
     }
 
     // Clear user's cart after successful order creation
@@ -187,8 +187,7 @@ export async function POST(request: NextRequest) {
       await client.query('DELETE FROM cart_items WHERE "userId" = $1', [userId]);
       console.log('Cart cleared for user after order creation:', userId);
     } catch (clearError) {
-      console.error('Error clearing cart after order creation:', clearError);
-      // Continue even if cart clearing fails
+      console.error('Error clearing cart after order creation for user', userId, ':', clearError instanceof Error ? clearError.message : clearError);
     }
 
     return NextResponse.json({
