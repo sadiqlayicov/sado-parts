@@ -156,13 +156,8 @@ export async function GET(
 
   } catch (error: any) {
     console.error('Get similar products error for product ID:', productId, error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      code: error.code
-    });
     return NextResponse.json(
-      { error: 'Failed to fetch similar products', details: error.message },
+      { error: 'Failed to fetch similar products' },
       { status: 500 }
     );
   } finally {

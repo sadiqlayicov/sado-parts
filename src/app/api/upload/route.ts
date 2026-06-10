@@ -38,10 +38,11 @@ export async function POST(request: NextRequest) {
       await mkdir(uploadsDir, { recursive: true })
     }
 
-    // Generate unique filename
+    // Generate unique filename with sanitized extension
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
-    const extension = file.name.split('.').pop()
+    const rawExtension = (file.name.split('.').pop() || 'bin').replace(/[^a-zA-Z0-9]/g, '')
+    const extension = rawExtension.slice(0, 10)
     const filename = `${timestamp}-${randomString}.${extension}`
     
     // Save file

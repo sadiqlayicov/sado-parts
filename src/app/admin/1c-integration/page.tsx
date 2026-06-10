@@ -31,8 +31,8 @@ export default function Admin1CIntegrationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [connectionSettings, setConnectionSettings] = useState({
     url: 'https://sado-parts.vercel.app/api/1c_exchange.php',
-    username: 'admin',
-    password: 'Admin123',
+    username: '',
+    password: '',
     enabled: true
   });
 
@@ -91,37 +91,20 @@ export default function Admin1CIntegrationPage() {
   };
 
   const loadUploadStatus = async () => {
-    try {
-      const response = await fetch('/api/1c-debug');
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Parse product count from content
-        let productCount = 0;
-        if (data.globalState?.uploadedFileContent && data.globalState.uploadedFileContent !== 'No content stored') {
-          const match = data.globalState.uploadedFileContent.match(/Products: (\d+)/);
-          productCount = match ? parseInt(match[1]) : 0;
-        }
-        
-        setUploadStatus({
-          hasContent: data.globalState?.uploadedFileContent && data.globalState.uploadedFileContent !== 'No content stored',
-          contentLength: data.globalState?.uploadedFileContent?.includes('Content length:') 
-            ? parseInt(data.globalState.uploadedFileContent.match(/Content length: (\d+)/)?.[1] || '0')
-            : 0,
-          productCount: productCount,
-          importedCount: 0, // Will be updated from logs
-          updatedCount: 0, // Will be updated from logs
-          withPrice: 0, // Will be updated from logs
-          withoutPrice: 0, // Will be updated from logs
-          withImage: 0, // Will be updated from logs
-          withoutImage: 0, // Will be updated from logs
-          lastActivity: data.globalState?.lastActivityTime || data.globalState?.uploadProgress || null,
-          uploadProgress: data.globalState?.uploadProgress || 'Waiting for 1C...'
-        });
-      }
-    } catch (error) {
-      console.error('Error loading upload status:', error);
-    }
+    // Debug endpoint removed for security — upload status not available via API
+    setUploadStatus({
+      hasContent: false,
+      contentLength: 0,
+      productCount: 0,
+      importedCount: 0,
+      updatedCount: 0,
+      withPrice: 0,
+      withoutPrice: 0,
+      withImage: 0,
+      withoutImage: 0,
+      lastActivity: null,
+      uploadProgress: 'Status unavailable'
+    });
   };
 
   const testConnection = async () => {
