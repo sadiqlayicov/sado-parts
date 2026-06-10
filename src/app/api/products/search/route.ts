@@ -1,32 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-// Create a connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 2,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+import { withConnection } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q');
 
   if (!query || query.trim().length === 0) {
-    return NextResponse.json({
-      success: true,
-      products: []
-    });
+    return NextResponse.json({ success: true, products: [] });
   }
 
-  let client;
-  
-  try {
-    client = await pool.connect();
-
-    // Search in products table with multiple fields
+  return withConnection(async (client) => {
     const searchQuery = `
       SELECT 
         p.id,
@@ -94,24 +77,5 @@ export async function GET(request: NextRequest) {
       products,
       total: products.length
     });
-
-  } catch (error: any) {
-    console.error('Search error:', error);
-    
-    if (error.message?.includes('Max client connections reached')) {
-      return NextResponse.json(
-        { error: 'Достигнут лимит подключений к базе данных. Пожалуйста, подождите немного.' },
-        { status: 503 }
-      );
-    }
-    
-    return NextResponse.json(
-      { error: 'Ошибка при поиске товаров' },
-      { status: 500 }
-    );
-  } finally {
-    if (client) {
-      client.release();
-    }
-  }
+  }, 'GET /api/products/search');
 }
