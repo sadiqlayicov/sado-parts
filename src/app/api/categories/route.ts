@@ -1,43 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { Pool } from 'pg'
-import { successResponse, errorResponse, logError, ErrorMessages } from '@/lib/api-utils'
-
-// Create a connection pool optimized for Supabase
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 3,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 5000,
-})
-
-// Helper function to handle database errors
-function handleDatabaseError(error: any, operation: string) {
-  logError(operation, error)
-  
-  if (error.message?.includes('Max client connections reached')) {
-    return errorResponse('Verilənlər bazası bağlantı limiti dolub. Zəhmət olmasa bir az gözləyin.', 503)
-  }
-  
-  return errorResponse(ErrorMessages.INTERNAL_ERROR, 500)
-}
+import { NextRequest } from 'next/server'
+import { successResponse, errorResponse } from '@/lib/api-utils'
+import { withConnection } from '@/lib/db'
 
 /**
  * GET - Get all categories
  * Returns a list of all categories
  */
 export async function GET(request: NextRequest) {
-  let client;
-  
-  try {
-    client = await pool.connect();
-    
+  return withConnection(async (client) => {
     // Ensure columns exist
     try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
     try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
-    
+
     const result = await client.query(`
       SELECT id, name, description, "isActive", "parentId", COALESCE("sortOrder",0) as "sortOrder", "createdAt", "updatedAt"
       FROM categories 
@@ -46,32 +20,18 @@ export async function GET(request: NextRequest) {
     `);
 
     return successResponse(result.rows, 'Kateqoriyalar uğurla yükləndi');
-  } catch (error: any) {
-    logError('GET /api/categories', error);
-    return errorResponse(ErrorMessages.INTERNAL_ERROR, 500);
-  } finally {
-    if (client) {
-      client.release();
-    }
-  }
+  }, 'GET /api/categories');
 }
 
 export async function POST(request: NextRequest) {
-  let client;
-  
-  try {
-    console.log('POST /api/categories called');
-    
-    const body = await request.json();
-    const { name, description, isActive, parentId, sortOrder } = body;
-    
-    // Validation
-    if (!name) {
-      return errorResponse('Kateqoriya adı tələb olunur', 400);
-    }
+  const body = await request.json();
+  const { name, description, isActive, parentId, sortOrder } = body;
 
-    client = await pool.connect();
+  if (!name) {
+    return errorResponse('Kateqoriya adı tələb olunur', 400);
+  }
 
+  return withConnection(async (client) => {
     // Ensure columns
     try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
     try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
@@ -81,13 +41,11 @@ export async function POST(request: NextRequest) {
       SELECT id FROM categories 
       WHERE name = $1 AND "isActive" = true
     `, [name]);
-    
+
     if (existingResult.rows.length > 0) {
       return errorResponse('Bu adda kateqoriya artıq mövcuddur', 400);
     }
 
-    // Create new category (with optional parent)
-    // Ensure we provide an explicit id because this table may not have a default
     const newId = `cat_${Date.now()}`;
     const newCategoryResult = await client.query(`
       INSERT INTO categories (id, name, description, "isActive", "parentId", "sortOrder", "createdAt", "updatedAt")
@@ -103,15 +61,6 @@ export async function POST(request: NextRequest) {
     ]);
 
     const newCategory = newCategoryResult.rows[0];
-    console.log('Category created successfully:', newCategory);
-    
     return successResponse(newCategory, 'Kateqoriya uğurla yaradıldı');
-  } catch (error: any) {
-    console.error('Database error in POST /api/categories:', error);
-    return handleDatabaseError(error, 'POST /api/categories');
-  } finally {
-    if (client) {
-      client.release();
-    }
-  }
-} 
+  }, 'POST /api/categories');
+}
