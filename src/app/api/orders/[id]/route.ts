@@ -50,7 +50,7 @@ async function getProductInfo(productId: string) {
         }
       }
     } catch (error) {
-      console.error('Error fetching from products API:', error);
+      console.error('Error fetching from products API for product', productId, ':', error instanceof Error ? error.message : error);
     }
     
     // If API fails, try database
@@ -82,12 +82,12 @@ async function getProductInfo(productId: string) {
         };
       }
     } catch (dbError) {
-      console.error('Error getting product info from database:', dbError);
+      console.error('Error getting product info from database for product', productId, ':', dbError instanceof Error ? dbError.message : dbError);
     }
     
     return null;
   } catch (error) {
-    console.error('Error in getProductInfo:', error);
+    console.error('Error in getProductInfo for product', productId, ':', error instanceof Error ? error.message : error);
     return null;
   }
 }

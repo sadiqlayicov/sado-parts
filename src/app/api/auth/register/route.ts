@@ -33,18 +33,18 @@ export async function POST(request: NextRequest) {
     await client.connect();
 
     // Ensure required columns/tables exist (best-effort)
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" TEXT'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" TEXT'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isApproved" BOOLEAN DEFAULT false'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN DEFAULT true'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN DEFAULT false'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS inn TEXT'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS city TEXT'); } catch {}
-    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT'); } catch {}
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT'); } catch (e) { console.warn('Schema migration warning (name):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" TEXT'); } catch (e) { console.warn('Schema migration warning (firstName):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" TEXT'); } catch (e) { console.warn('Schema migration warning (lastName):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT'); } catch (e) { console.warn('Schema migration warning (phone):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT'); } catch (e) { console.warn('Schema migration warning (role):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isApproved" BOOLEAN DEFAULT false'); } catch (e) { console.warn('Schema migration warning (isApproved):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN DEFAULT true'); } catch (e) { console.warn('Schema migration warning (isActive):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN DEFAULT false'); } catch (e) { console.warn('Schema migration warning (emailVerified):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS inn TEXT'); } catch (e) { console.warn('Schema migration warning (inn):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT'); } catch (e) { console.warn('Schema migration warning (country):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS city TEXT'); } catch (e) { console.warn('Schema migration warning (city):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT'); } catch (e) { console.warn('Schema migration warning (address):', e instanceof Error ? e.message : e); }
     try {
       await client.query(`CREATE TABLE IF NOT EXISTS email_verification_codes (
         id TEXT PRIMARY KEY,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         attempts INT NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
-    } catch {}
+    } catch (e) { console.warn('Schema migration warning (email_verification_codes):', e instanceof Error ? e.message : e); }
 
     // Check if exists
     const exist = await client.query('SELECT id FROM users WHERE email = $1', [email]);

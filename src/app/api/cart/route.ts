@@ -71,7 +71,7 @@ async function getProductInfo(productId: string) {
       client.release();
     }
   } catch (error) {
-    console.error('Error in getProductInfo:', error);
+    console.error('Error in getProductInfo: Failed to retrieve product data for', productId, error instanceof Error ? error.message : error);
     return null;
   }
 }
@@ -540,7 +540,7 @@ export async function DELETE(request: NextRequest) {
       const body = await request.json();
       bodyCartItemId = body.cartItemId;
     } catch (e) {
-      // No body or invalid JSON
+      console.warn('DELETE /api/cart: Could not parse request body, using query params:', e instanceof Error ? e.message : e);
     }
 
     const finalCartItemId = cartItemId || bodyCartItemId;

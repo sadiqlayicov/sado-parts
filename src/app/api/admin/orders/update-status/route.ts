@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
               { filename: `invoice_${o?.orderNumber || 'order'}.png`, content: pngBuffer, contentType: 'image/png' }
             ];
           } catch (e) {
-            console.error('Inline PDF generation error:', e);
+            console.error('Inline PDF generation error for order', orderId, ':', e instanceof Error ? e.message : e);
             // Fallback to simple jsPDF to ensure attachment is present
             try {
               const orderRow2 = await client.query(`SELECT o."orderNumber", o."totalAmount", o."createdAt", u.email, u."firstName", u."lastName", u.inn, u.country, u.city, u.address FROM orders o LEFT JOIN users u ON u.id=o."userId" WHERE o.id=$1`, [orderId]);
@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
               const buf = Buffer.from(doc.output('arraybuffer'));
               attachments = [{ filename: `invoice_${o2?.orderNumber || 'order'}.pdf`, content: buf, contentType: 'application/pdf' }];
             } catch (fErr) {
-              console.error('jsPDF fallback generation error:', fErr);
+              console.error('jsPDF fallback generation error for order', orderId, ':', fErr instanceof Error ? fErr.message : fErr);
             }
           }
         }
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
         mailTasks.push(transporter.sendMail({ from: smtpUser, to: adminEmail, subject: `[ADMIN] ${subject}`, html: adminHtml, attachments }));
         await Promise.all(mailTasks);
       } catch (mailErr) {
-        console.error('Mail send error:', mailErr);
+        console.error('Mail send error for order status update', orderId, 'to status', status, ':', mailErr instanceof Error ? mailErr.message : mailErr);
       }
     } else {
       console.warn('SMTP envs not configured; skipping email notifications');

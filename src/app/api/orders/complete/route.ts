@@ -62,9 +62,8 @@ export async function POST(request: NextRequest) {
     try {
       await dbClient.query('DELETE FROM cart_items WHERE "userId" = $1', [userId]);
       console.log('Cart cleared for user after order completion:', userId);
-    } catch (error) {
-      console.error('Error clearing cart after completion:', error);
-      // Continue even if cart clearing fails
+    } catch (cartError) {
+      console.error('Error clearing cart after completion for user', userId, 'order', orderId, ':', cartError instanceof Error ? cartError.message : cartError);
     }
 
     return NextResponse.json({

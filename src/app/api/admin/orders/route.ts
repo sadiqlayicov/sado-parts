@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
       }
       
       return NextResponse.json(
-        { error: `Verilənlər bazası xətası: ${dbError.message}` },
+        { error: 'Verilənlər bazası xətası baş verdi' },
         { status: 500 }
       );
     }

@@ -136,5 +136,7 @@ export async function GET(request: NextRequest) {
       { error: 'Profil məlumatlarını əldə etmə zamanı xəta baş verdi' },
       { status: 500 }
     );
+  } finally {
+    await closeClient();
   }
 } 

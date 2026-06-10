@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
     client = await pool.connect();
     
     // Ensure columns exist
-    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
-    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch (e) { console.warn('Schema migration warning (parentId):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch (e) { console.warn('Schema migration warning (sortOrder):', e instanceof Error ? e.message : e); }
     
     const result = await client.query(`
       SELECT id, name, description, "isActive", "parentId", COALESCE("sortOrder",0) as "sortOrder", "createdAt", "updatedAt"
@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
     client = await pool.connect();
 
     // Ensure columns
-    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch {}
-    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch {}
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "parentId" TEXT'); } catch (e) { console.warn('Schema migration warning (parentId):', e instanceof Error ? e.message : e); }
+    try { await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0'); } catch (e) { console.warn('Schema migration warning (sortOrder):', e instanceof Error ? e.message : e); }
 
     // Check if category with same name already exists
     const existingResult = await client.query(`

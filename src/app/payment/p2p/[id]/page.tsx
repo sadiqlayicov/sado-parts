@@ -41,7 +41,9 @@ export default function P2PPaymentPage() {
     try {
       await navigator.clipboard.writeText(text);
       alert('Скопировано');
-    } catch {}
+    } catch (e) {
+      console.warn('Clipboard copy failed:', e instanceof Error ? e.message : e);
+    }
   };
 
   if (loading) {
